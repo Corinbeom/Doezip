@@ -1,0 +1,26 @@
+{
+  "id": "3d88358b-9fe2-5db7-b2a1-6a3cc9617417",
+  "title": "결제 API 오류 로그",
+  "type": "LOG",
+  "sortOrder": 2,
+  "contentMarkdown": "관찰 구간: 12:00~12:10\n12:00~12:03: 결제 요청 100건 중 시간초과 1건\n12:04~12:10: 결제 요청 100건 중 시간초과 30건\n애플리케이션 로그: payment gateway request timed out",
+  "contentHash": "9503cb061abe047324521f86fad4192ac7f9e18ae60f727cefe92d2cc229c845",
+  "lines": [
+    {
+      "number": 1,
+      "text": "관찰 구간: 12:00~12:10"
+    },
+    {
+      "number": 2,
+      "text": "12:00~12:03: 결제 요청 100건 중 시간초과 1건"
+    },
+    {
+      "number": 3,
+      "text": "12:04~12:10: 결제 요청 100건 중 시간초과 30건"
+    },
+    {
+      "number": 4,
+      "text": "애플리케이션 로그: payment gateway request timed out"
+    }
+  ]
+}

@@ -1,0 +1,2874 @@
+openapi: 3.0.3
+info:
+  title: 되짚 MVP API — 구현 계약 제안
+  version: 1.0.0
+  description: '기획 v5 + ERD v1.0 + 2인·2주 범위. 서버 구현·실행 검증은 포함하지 않는다. 모든 private 응답 Cache-Control: no-store. 개발 fixture는 sample
+    표시. 동작 제약은 docs/API_CONTRACT.md 참조.'
+servers:
+- url: http://localhost:8080/api/v1
+  description: 로컬 개발 API (앱 구현 후)
+security:
+- bearerAuth: []
+tags:
+- name: auth
+- name: task
+- name: learning
+- name: chat
+- name: challenge
+- name: evaluation
+- name: defense
+paths:
+  /me/bootstrap:
+    post:
+      operationId: bootstrapUser
+      tags:
+      - auth
+      summary: 검증된 외부 사용자와 최소 users 행 연결
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: 입력 형식 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 없거나 소유권 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 상태·잠금·중복 충돌
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 의미·참조 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 사용량 한도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 서비스 일시 불가
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BootstrapRequest'
+  /me:
+    get:
+      operationId: getMe
+      tags:
+      - auth
+      summary: 기존 사용자 조회; DB 생성 없음
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: 입력 형식 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 없거나 소유권 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 상태·잠금·중복 충돌
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 의미·참조 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 사용량 한도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 서비스 일시 불가
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /tasks:
+    get:
+      operationId: listTasks
+      tags:
+      - task
+      summary: 발행 과제 목록; 비공개 기준·자료 없음
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskList'
+        '400':
+          description: 입력 형식 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 없거나 소유권 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 상태·잠금·중복 충돌
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 의미·참조 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 사용량 한도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 서비스 일시 불가
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security: []
+  /tasks/{taskId}:
+    get:
+      operationId: getTask
+      tags:
+      - task
+      summary: 과제 설명·공개 루브릭
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          description: 입력 형식 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 없거나 소유권 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 상태·잠금·중복 충돌
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 의미·참조 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 사용량 한도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 서비스 일시 불가
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: taskId
+        in: path
+        required: true
+        schema: &id001
+          type: string
+          format: uuid
+      security: []
+  /sessions:
+    post:
+      operationId: createSession
+      tags:
+      - learning
+      summary: 과제 수행 시작
+      responses:
+        '201':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '400':
+          description: 입력 형식 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 없거나 소유권 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 상태·잠금·중복 충돌
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 의미·참조 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 사용량 한도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 서비스 일시 불가
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionCreateRequest'
+  /sessions/{sessionId}/workspace:
+    get:
+      operationId: getWorkspace
+      tags:
+      - learning
+      summary: 현재 상태·draft·공개 자료 목록 복원
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '400':
+          description: 입력 형식 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 없거나 소유권 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 상태·잠금·중복 충돌
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 의미·참조 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 사용량 한도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 서비스 일시 불가
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema: *id001
+  /sessions/{sessionId}/materials/{materialId}:
+    get:
+      operationId: getMaterial
+      tags:
+      - learning
+      summary: 현재 공개된 자료만 조회
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Material'
+        '400':
+          description: 입력 형식 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 없거나 소유권 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 상태·잠금·중복 충돌
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 의미·참조 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 사용량 한도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 서비스 일시 불가
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema: *id001
+      - name: materialId
+        in: path
+        required: true
+        schema: *id001
+  /sessions/{sessionId}/draft:
+    put:
+      operationId: saveDraft
+      tags:
+      - learning
+      summary: 문서 버퍼 CAS 자동 저장
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Draft'
+        '400':
+          description: 입력 형식 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 없거나 소유권 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 상태·잠금·중복 충돌
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 의미·참조 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 사용량 한도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 서비스 일시 불가
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DraftSaveRequest'
+  /sessions/{sessionId}/document-versions:
+    post:
+      operationId: snapshotDocument
+      tags:
+      - learning
+      summary: 예상 버퍼 확인 후 스냅샷 생성·봉인
+      responses:
+        '201':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentVersion'
+        '400':
+          description: 입력 형식 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 없거나 소유권 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 상태·잠금·중복 충돌
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 의미·참조 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 사용량 한도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 서비스 일시 불가
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentCreateRequest'
+    get:
+      operationId: listDocumentVersions
+      tags:
+      - learning
+      summary: 자기 문서 스냅샷 이력
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentList'
+        '400':
+          description: 입력 형식 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 없거나 소유권 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 상태·잠금·중복 충돌
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 의미·참조 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 사용량 한도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 서비스 일시 불가
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema: *id001
+  /sessions/{sessionId}/document-versions/{versionId}:
+    get:
+      operationId: getDocumentVersion
+      tags:
+      - learning
+      summary: 리포트가 참조하는 고정 문서 조회
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentVersion'
+        '400':
+          description: 입력 형식 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 없거나 소유권 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 상태·잠금·중복 충돌
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 의미·참조 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 사용량 한도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 서비스 일시 불가
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema: *id001
+      - name: versionId
+        in: path
+        required: true
+        schema: *id001
+  /sessions/{sessionId}/messages:
+    get:
+      operationId: listMessages
+      tags:
+      - chat
+      summary: 확정·진행 메시지 조회
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageList'
+        '400':
+          description: 입력 형식 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 없거나 소유권 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 상태·잠금·중복 충돌
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 의미·참조 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 사용량 한도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 서비스 일시 불가
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema: *id001
+      - name: afterSeq
+        in: query
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 50
+    post:
+      operationId: sendMessage
+      tags:
+      - chat
+      summary: AI 대화 HTTP 스트리밍
+      responses:
+        '200':
+          description: 인증·검증 성공 후 SSE. start/delta/done/stream_error. 헤더 전 실패는 JSON. 자세한 이벤트 예시는 API_CONTRACT.md.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        '400':
+          description: 입력 형식 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 없거나 소유권 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 상태·잠금·중복 충돌
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 의미·참조 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 사용량 한도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 서비스 일시 불가
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+  /sessions/{sessionId}/messages/{messageId}/cancel:
+    post:
+      operationId: cancelMessage
+      tags:
+      - chat
+      summary: 자기 세션의 진행 중 ASSISTANT 생성 취소
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '400':
+          description: 입력 형식 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 없거나 소유권 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 상태·잠금·중복 충돌
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 의미·참조 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 사용량 한도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 서비스 일시 불가
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema: *id001
+      - name: messageId
+        in: path
+        required: true
+        schema: *id001
+  /sessions/{sessionId}/challenge:
+    post:
+      operationId: startChallenge
+      tags:
+      - challenge
+      summary: 훈련 안내 확인 후 별도 초안 배정
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChallengeRun'
+        '400':
+          description: 입력 형식 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 없거나 소유권 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 상태·잠금·중복 충돌
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 의미·참조 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 사용량 한도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 서비스 일시 불가
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NoticeRequest'
+  /challenge-runs/{runId}:
+    get:
+      operationId: getChallenge
+      tags:
+      - challenge
+      summary: 공개 문장과 본인의 검토 조회
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChallengeRun'
+        '400':
+          description: 입력 형식 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 없거나 소유권 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 상태·잠금·중복 충돌
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 의미·참조 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 사용량 한도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 서비스 일시 불가
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: runId
+        in: path
+        required: true
+        schema: *id001
+  /challenge-runs/{runId}/reviews:
+    put:
+      operationId: saveReviews
+      tags:
+      - challenge
+      summary: 전체 편집 버퍼 CAS 저장; 미포함 검토는 제거
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChallengeRun'
+        '400':
+          description: 입력 형식 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 없거나 소유권 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 상태·잠금·중복 충돌
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 의미·참조 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 사용량 한도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 서비스 일시 불가
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: runId
+        in: path
+        required: true
+        schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewSaveRequest'
+  /challenge-runs/{runId}/submit:
+    post:
+      operationId: submitChallenge
+      tags:
+      - challenge
+      summary: 검토와 인용 동결
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChallengeRun'
+        '400':
+          description: 입력 형식 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 없거나 소유권 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 상태·잠금·중복 충돌
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 의미·참조 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 사용량 한도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 서비스 일시 불가
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: runId
+        in: path
+        required: true
+        schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChallengeSubmitRequest'
+  /sessions/{sessionId}/evaluations:
+    post:
+      operationId: requestEvaluation
+      tags:
+      - evaluation
+      summary: 고정 입력으로 평가 작업 요청
+      responses:
+        '202':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Evaluation'
+        '400':
+          description: 입력 형식 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 없거나 소유권 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 상태·잠금·중복 충돌
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 의미·참조 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 사용량 한도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 서비스 일시 불가
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema: *id001
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvaluationRequest'
+  /evaluations/{evaluationId}:
+    get:
+      operationId: getEvaluation
+      tags:
+      - evaluation
+      summary: 평가 상태·공개 실패 코드; 내부 입력과 lease 제외
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Evaluation'
+        '400':
+          description: 입력 형식 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 없거나 소유권 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 상태·잠금·중복 충돌
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 의미·참조 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 사용량 한도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 서비스 일시 불가
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: evaluationId
+        in: path
+        required: true
+        schema: *id001
+  /evaluations/{evaluationId}/retry:
+    post:
+      operationId: retryEvaluation
+      tags:
+      - evaluation
+      summary: 실패 작업의 동일 입력 재시도
+      responses:
+        '202':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Evaluation'
+        '400':
+          description: 입력 형식 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 없거나 소유권 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 상태·잠금·중복 충돌
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 의미·참조 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 사용량 한도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 서비스 일시 불가
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: evaluationId
+        in: path
+        required: true
+        schema: *id001
+  /reports/{reportId}:
+    get:
+      operationId: getReport
+      tags:
+      - evaluation
+      summary: 성공 평가의 불변 공개 리포트
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Report'
+        '400':
+          description: 입력 형식 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 없거나 소유권 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 상태·잠금·중복 충돌
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 의미·참조 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 사용량 한도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 서비스 일시 불가
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: reportId
+        in: path
+        required: true
+        schema: *id001
+  /sessions/{sessionId}/follow-ups:
+    post:
+      operationId: createFollowUps
+      tags:
+      - defense
+      summary: INITIAL 성공 후 두 질문 생성·공개
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FollowUps'
+        '400':
+          description: 입력 형식 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 없거나 소유권 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 상태·잠금·중복 충돌
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 의미·참조 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 사용량 한도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 서비스 일시 불가
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema: *id001
+    get:
+      operationId: getFollowUps
+      tags:
+      - defense
+      summary: 이미 공개된 두 질문; 미공개 세 번째 질문 제외
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FollowUps'
+        '400':
+          description: 입력 형식 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 없거나 소유권 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 상태·잠금·중복 충돌
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 의미·참조 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 사용량 한도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 서비스 일시 불가
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema: *id001
+  /defense-questions/{questionId}/answers:
+    post:
+      operationId: answerQuestion
+      tags:
+      - defense
+      summary: 공개 질문 확정 답변
+      responses:
+        '201':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Answer'
+        '400':
+          description: 입력 형식 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 없거나 소유권 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 상태·잠금·중복 충돌
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 의미·참조 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 사용량 한도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 서비스 일시 불가
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: questionId
+        in: path
+        required: true
+        schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnswerRequest'
+  /sessions/{sessionId}/condition-change/reveal:
+    post:
+      operationId: revealCondition
+      tags:
+      - defense
+      summary: 두 답변 후 조건 변경 질문·자료 원자적 공개
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConditionReveal'
+        '400':
+          description: 입력 형식 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 없거나 소유권 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 상태·잠금·중복 충돌
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 의미·참조 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 사용량 한도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 서비스 일시 불가
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema: *id001
+  /sessions/{sessionId}/events:
+    post:
+      operationId: recordMaterialOpen
+      tags:
+      - learning
+      summary: 허용된 열람 이벤트만 기록
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventReceipt'
+        '400':
+          description: 입력 형식 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 없거나 소유권 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 상태·잠금·중복 충돌
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 의미·참조 검증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 사용량 한도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 서비스 일시 불가
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventRequest'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Error:
+      type: object
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        requestId:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+      required:
+      - code
+      - message
+      - requestId
+    User:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id001
+        displayName:
+          type: string
+        email:
+          type: string
+          format: email
+          nullable: true
+      required:
+      - id
+      - displayName
+      - email
+    BootstrapRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 80
+    Rubric:
+      type: object
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+        area:
+          type: string
+          enum:
+          - PROMPT
+          - EVIDENCE
+          - DOCUMENT
+          - DEFENSE
+        title:
+          type: string
+        description:
+          type: string
+      required:
+      - code
+      - area
+      - title
+      - description
+    Task:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id001
+        taskCode:
+          type: string
+        versionNo:
+          type: integer
+          minimum: 1
+        title:
+          type: string
+        descriptionMarkdown:
+          type: string
+        status:
+          type: string
+          enum:
+          - PUBLISHED
+          - ARCHIVED
+        rubrics:
+          type: array
+          items:
+            $ref: '#/components/schemas/Rubric'
+      required:
+      - id
+      - taskCode
+      - versionNo
+      - title
+      - descriptionMarkdown
+      - status
+      - rubrics
+    TaskList:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Task'
+      required:
+      - items
+    MaterialSummary:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id001
+        title: &id002
+          type: string
+        type: &id003
+          type: string
+          enum:
+          - ARCHITECTURE
+          - LOG
+          - METRIC
+          - DEPLOYMENT
+          - EXTERNAL_SERVICE
+          - CUSTOMER_NOTE
+        sortOrder: &id004
+          type: integer
+          minimum: 1
+      required:
+      - id
+      - title
+      - type
+      - sortOrder
+    Material:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id001
+        title: *id002
+        type: *id003
+        sortOrder: *id004
+        contentMarkdown:
+          type: string
+        contentHash: &id005
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        lines:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              number:
+                type: integer
+                minimum: 1
+              text:
+                type: string
+            required:
+            - number
+            - text
+      required:
+      - id
+      - title
+      - type
+      - sortOrder
+      - contentMarkdown
+      - contentHash
+      - lines
+    Session:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id001
+        taskId: *id001
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - COMPLETED
+          - ABANDONED
+        currentStep:
+          type: string
+          enum:
+          - WRITING
+          - CHALLENGE
+          - FEEDBACK
+          - FOLLOW_UP
+          - CONDITION_CHANGE
+          - FINAL_REVIEW
+          - DONE
+        mode:
+          type: string
+          enum:
+          - PRACTICE
+        conditionReleasedAt:
+          type: string
+          format: date-time
+          nullable: true
+        allowedActions:
+          type: array
+          items:
+            type: string
+            enum:
+            - READ_MATERIALS
+            - WRITE_DRAFT
+            - SEND_MESSAGE
+            - SNAPSHOT_INITIAL
+            - START_CHALLENGE
+            - EDIT_CHALLENGE
+            - SUBMIT_CHALLENGE
+            - REQUEST_INITIAL_EVALUATION
+            - READ_INITIAL_REPORT
+            - START_FOLLOW_UPS
+            - ANSWER_FOLLOW_UPS
+            - REVEAL_CONDITION
+            - SNAPSHOT_FINAL
+            - ANSWER_CONDITION
+            - REQUEST_FINAL_EVALUATION
+            - READ_FINAL_REPORT
+            - RETRY_EVALUATION
+      required:
+      - id
+      - taskId
+      - status
+      - currentStep
+      - mode
+      - conditionReleasedAt
+      - allowedActions
+    Draft:
+      type: object
+      additionalProperties: false
+      properties:
+        markdown:
+          type: string
+        lockVersion:
+          type: integer
+          minimum: 0
+        contentHash: *id005
+      required:
+      - markdown
+      - lockVersion
+      - contentHash
+    SessionCreateRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        taskId: *id001
+      required:
+      - taskId
+    Workspace:
+      type: object
+      additionalProperties: false
+      properties:
+        session:
+          $ref: '#/components/schemas/Session'
+        task:
+          $ref: '#/components/schemas/Task'
+        materials:
+          type: array
+          items:
+            $ref: '#/components/schemas/MaterialSummary'
+        draft:
+          $ref: '#/components/schemas/Draft'
+        challengeRunId:
+          type: string
+          format: uuid
+          nullable: true
+        initialReportId:
+          type: string
+          format: uuid
+          nullable: true
+        finalReportId:
+          type: string
+          format: uuid
+          nullable: true
+        activeEvaluationId:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - session
+      - task
+      - materials
+      - draft
+      - challengeRunId
+      - initialReportId
+      - finalReportId
+      - activeEvaluationId
+    DraftSaveRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        markdown:
+          type: string
+          maxLength: 20000
+        expectedLockVersion:
+          type: integer
+          minimum: 0
+      required:
+      - markdown
+      - expectedLockVersion
+    DocumentCreateRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        checkpoint:
+          type: string
+          enum:
+          - INITIAL
+          - FINAL
+        expectedDraftLockVersion:
+          type: integer
+          minimum: 0
+        expectedContentHash: *id005
+      required:
+      - checkpoint
+      - expectedDraftLockVersion
+      - expectedContentHash
+    DocumentVersion:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id001
+        sessionId: *id001
+        versionNo:
+          type: integer
+          minimum: 1
+        checkpoint:
+          type: string
+          enum:
+          - INITIAL
+          - REVISION
+          - FINAL
+        contentMarkdown:
+          type: string
+        contentHash: *id005
+        sourceDraftLockVersion:
+          type: integer
+          minimum: 0
+        sealedAt: &id006
+          type: string
+          format: date-time
+        createdAt: *id006
+      required:
+      - id
+      - sessionId
+      - versionNo
+      - checkpoint
+      - contentMarkdown
+      - contentHash
+      - sourceDraftLockVersion
+      - sealedAt
+      - createdAt
+    DocumentList:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentVersion'
+      required:
+      - items
+    Message:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id001
+        seqNo:
+          type: integer
+          minimum: 1
+        role:
+          type: string
+          enum:
+          - USER
+          - ASSISTANT
+        contentText:
+          type: string
+        status:
+          type: string
+          enum:
+          - STREAMING
+          - COMPLETED
+          - FAILED
+          - CANCELLED
+        replyToMessageId:
+          type: string
+          format: uuid
+          nullable: true
+        createdAt: *id006
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - id
+      - seqNo
+      - role
+      - contentText
+      - status
+      - replyToMessageId
+      - createdAt
+      - completedAt
+    MessageList:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+        nextAfterSeq:
+          type: integer
+          minimum: 0
+          nullable: true
+      required:
+      - items
+      - nextAfterSeq
+    ChatRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        clientMessageKey: *id001
+        contentText:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        includeCurrentDraft:
+          type: boolean
+          default: false
+      required:
+      - clientMessageKey
+      - contentText
+    ChatStart:
+      type: object
+      additionalProperties: false
+      properties:
+        userMessageId: *id001
+        assistantMessageId: *id001
+      required:
+      - userMessageId
+      - assistantMessageId
+    ChatDelta:
+      type: object
+      additionalProperties: false
+      properties:
+        assistantMessageId: *id001
+        delta:
+          type: string
+      required:
+      - assistantMessageId
+      - delta
+    ChatDone:
+      type: object
+      additionalProperties: false
+      properties:
+        message:
+          $ref: '#/components/schemas/Message'
+      required:
+      - message
+    NoticeRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        noticeVersion:
+          type: string
+          enum:
+          - challenge-notice-v1
+        acknowledged:
+          type: boolean
+          enum:
+          - true
+      required:
+      - noticeVersion
+      - acknowledged
+    ChallengeStatement:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id001
+        statementKey:
+          type: string
+        order:
+          type: integer
+          minimum: 1
+        text:
+          type: string
+      required:
+      - id
+      - statementKey
+      - order
+      - text
+    EvidenceInput:
+      type: object
+      additionalProperties: false
+      properties:
+        materialId: *id001
+        lineStart:
+          type: integer
+          minimum: 1
+        lineEnd:
+          type: integer
+          minimum: 1
+        relation:
+          type: string
+          enum:
+          - SUPPORTS
+          - CONTRADICTS
+          - CONTEXT
+        userNote:
+          type: string
+          maxLength: 2000
+      required:
+      - materialId
+      - lineStart
+      - lineEnd
+      - relation
+    EvidenceLink:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id001
+        materialId: *id001
+        lineStart:
+          type: integer
+          minimum: 1
+        lineEnd:
+          type: integer
+          minimum: 1
+        quotedText:
+          type: string
+        relation:
+          type: string
+          enum:
+          - SUPPORTS
+          - CONTRADICTS
+          - CONTEXT
+        origin:
+          type: string
+          enum:
+          - USER
+          - AI
+        reviewStatus:
+          type: string
+          enum:
+          - PROPOSED
+          - ACCEPTED
+          - REJECTED
+        userNote:
+          type: string
+          nullable: true
+      required:
+      - id
+      - materialId
+      - lineStart
+      - lineEnd
+      - quotedText
+      - relation
+      - origin
+      - reviewStatus
+      - userNote
+    ReviewInput:
+      type: object
+      additionalProperties: false
+      properties:
+        statementId: *id001
+        decision:
+          type: string
+          enum:
+          - KEEP
+          - CORRECT
+          - INSUFFICIENT_EVIDENCE
+        reasonText:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        replacementText:
+          type: string
+          minLength: 1
+          maxLength: 4000
+          nullable: true
+        evidence:
+          type: array
+          items:
+            $ref: '#/components/schemas/EvidenceInput'
+          maxItems: 6
+      required:
+      - statementId
+      - decision
+      - reasonText
+      - replacementText
+      - evidence
+    Review:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id001
+        statementId: *id001
+        decision:
+          type: string
+          enum:
+          - KEEP
+          - CORRECT
+          - INSUFFICIENT_EVIDENCE
+        reasonText:
+          type: string
+        replacementText:
+          type: string
+          nullable: true
+        evidence:
+          type: array
+          items:
+            $ref: '#/components/schemas/EvidenceLink'
+      required:
+      - id
+      - statementId
+      - decision
+      - reasonText
+      - replacementText
+      - evidence
+    ChallengeRun:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id001
+        sessionId: *id001
+        title:
+          type: string
+        instructionsMarkdown:
+          type: string
+        noticeVersion:
+          type: string
+        status:
+          type: string
+          enum:
+          - IN_PROGRESS
+          - SUBMITTED
+        lockVersion:
+          type: integer
+          minimum: 0
+        statements:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChallengeStatement'
+        reviews:
+          type: array
+          items:
+            $ref: '#/components/schemas/Review'
+        submittedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - id
+      - sessionId
+      - title
+      - instructionsMarkdown
+      - noticeVersion
+      - status
+      - lockVersion
+      - statements
+      - reviews
+      - submittedAt
+    ReviewSaveRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        expectedLockVersion:
+          type: integer
+          minimum: 0
+        reviews:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReviewInput'
+          maxItems: 20
+      required:
+      - expectedLockVersion
+      - reviews
+    ChallengeSubmitRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        expectedLockVersion:
+          type: integer
+          minimum: 0
+      required:
+      - expectedLockVersion
+    EvaluationRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        phase:
+          type: string
+          enum:
+          - INITIAL
+          - FINAL
+        documentVersionId: *id001
+      required:
+      - phase
+      - documentVersionId
+    Evaluation:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id001
+        sessionId: *id001
+        phase:
+          type: string
+          enum:
+          - INITIAL
+          - FINAL
+        status:
+          type: string
+          enum:
+          - QUEUED
+          - RUNNING
+          - SUCCEEDED
+          - FAILED
+        reportId:
+          type: string
+          format: uuid
+          nullable: true
+        errorCode:
+          type: string
+          nullable: true
+        retryable:
+          type: boolean
+        pollAfterMs:
+          type: integer
+          minimum: 1000
+        createdAt: *id006
+      required:
+      - id
+      - sessionId
+      - phase
+      - status
+      - reportId
+      - errorCode
+      - retryable
+      - pollAfterMs
+      - createdAt
+    SourceRef:
+      type: object
+      additionalProperties: false
+      properties:
+        materialId: *id001
+        lineStart:
+          type: integer
+          minimum: 1
+        lineEnd:
+          type: integer
+          minimum: 1
+        quotedText:
+          type: string
+      required:
+      - materialId
+      - lineStart
+      - lineEnd
+      - quotedText
+    Observation:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id001
+        kind:
+          type: string
+          enum:
+          - SOURCE_CHECK
+          - FAULT_REPAIR
+          - COUNTEREVIDENCE
+          - CHANGE_RESPONSE
+          - EXPLANATION
+          - PROMPT_REVISION
+          - SELF_REPORT
+        polarity:
+          type: string
+          enum:
+          - SUPPORT
+          - CONTRADICT
+        method:
+          type: string
+          enum:
+          - RULE
+          - LLM
+        subjectType:
+          type: string
+          enum:
+          - CHAT_MESSAGE
+          - CLAIM
+          - FAULT_ATTEMPT
+          - DEFENSE_ANSWER
+          - SESSION_EVENT
+          - DOCUMENT_VERSION
+        subjectId: *id001
+        excerpt:
+          type: string
+          nullable: true
+        explanation:
+          type: string
+        source:
+          allOf:
+          - $ref: '#/components/schemas/SourceRef'
+          nullable: true
+      required:
+      - id
+      - kind
+      - polarity
+      - method
+      - subjectType
+      - subjectId
+      - excerpt
+      - explanation
+      - source
+    EvidenceState:
+      type: string
+      enum:
+      - SUFFICIENT
+      - PARTIAL
+      - NEEDS_REVIEW
+      - NOT_OBSERVED
+    Dimension:
+      type: object
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+        title:
+          type: string
+        state:
+          $ref: '#/components/schemas/EvidenceState'
+        rationale:
+          type: string
+        gap:
+          type: string
+          nullable: true
+        nextAction:
+          type: string
+          nullable: true
+        confidenceLevel:
+          type: string
+          enum:
+          - LOW
+          - MEDIUM
+          - HIGH
+          nullable: true
+        evidence:
+          type: array
+          items:
+            $ref: '#/components/schemas/Observation'
+      required:
+      - code
+      - title
+      - state
+      - rationale
+      - gap
+      - nextAction
+      - confidenceLevel
+      - evidence
+    Area:
+      type: object
+      additionalProperties: false
+      properties:
+        area:
+          type: string
+          enum:
+          - PROMPT
+          - EVIDENCE
+          - DOCUMENT
+          - DEFENSE
+        dimensions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Dimension'
+          minItems: 1
+      required:
+      - area
+      - dimensions
+    FaultResult:
+      type: object
+      additionalProperties: false
+      properties:
+        statementId: *id001
+        reviewId:
+          type: string
+          format: uuid
+          nullable: true
+        detectionResult:
+          type: string
+          enum:
+          - DETECTED
+          - MISSED
+          - FALSE_POSITIVE
+          - VALID_KEEP
+          - UNREVIEWED
+          - REVIEW_REQUIRED
+        evidenceResult:
+          type: string
+          enum:
+          - SUPPORTED
+          - INSUFFICIENT
+          - NOT_OBSERVED
+          - REVIEW_REQUIRED
+        repairResult:
+          type: string
+          enum:
+          - VALID
+          - INVALID
+          - NOT_APPLICABLE
+          - NOT_OBSERVED
+          - REVIEW_REQUIRED
+        recheckResult:
+          type: string
+          enum:
+          - OBSERVED
+          - NOT_OBSERVED
+          - REVIEW_REQUIRED
+        feedback:
+          type: string
+      required:
+      - statementId
+      - reviewId
+      - detectionResult
+      - evidenceResult
+      - repairResult
+      - recheckResult
+      - feedback
+    Comparison:
+      type: object
+      additionalProperties: false
+      properties:
+        initialEvaluationId: *id001
+        finalEvaluationId: *id001
+        dimensions:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              code:
+                type: string
+              beforeState:
+                $ref: '#/components/schemas/EvidenceState'
+              afterState:
+                $ref: '#/components/schemas/EvidenceState'
+              change:
+                type: string
+                enum:
+                - CHANGED
+                - UNCHANGED
+                - NEWLY_OBSERVED
+            required:
+            - code
+            - beforeState
+            - afterState
+            - change
+        note:
+          type: string
+      required:
+      - initialEvaluationId
+      - finalEvaluationId
+      - dimensions
+      - note
+    Report:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id001
+        sessionId: *id001
+        evaluationId: *id001
+        phase:
+          type: string
+          enum:
+          - INITIAL
+          - FINAL
+        documentVersionId: *id001
+        sample:
+          type: boolean
+          description: 개발용 fixture는 true. 실제 성공 평가로 발행한 리포트는 false.
+        summary:
+          type: string
+        strengths:
+          type: array
+          items:
+            type: string
+        improvements:
+          type: array
+          items:
+            type: string
+        areas:
+          type: array
+          items:
+            $ref: '#/components/schemas/Area'
+          minItems: 4
+          maxItems: 4
+        faultSummary:
+          type: object
+          additionalProperties: false
+          properties:
+            statements:
+              type: array
+              items:
+                $ref: '#/components/schemas/FaultResult'
+            note:
+              type: string
+          required:
+          - statements
+          - note
+        comparison:
+          allOf:
+          - $ref: '#/components/schemas/Comparison'
+          nullable: true
+        nextPracticeText:
+          type: string
+          nullable: true
+        createdAt: *id006
+      required:
+      - id
+      - sessionId
+      - evaluationId
+      - phase
+      - documentVersionId
+      - sample
+      - summary
+      - strengths
+      - improvements
+      - areas
+      - faultSummary
+      - comparison
+      - nextPracticeText
+      - createdAt
+    Question:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id001
+        sequenceNo:
+          type: integer
+          minimum: 1
+          maximum: 3
+        kind:
+          type: string
+          enum:
+          - FOLLOW_UP
+          - CONDITION_CHANGE
+        questionText:
+          type: string
+        generationMode:
+          type: string
+          enum:
+          - PERSONALIZED
+          - TEMPLATE
+        answer:
+          type: string
+          nullable: true
+        answerDocumentVersionId:
+          type: string
+          format: uuid
+          nullable: true
+        revealedAt: *id006
+      required:
+      - id
+      - sequenceNo
+      - kind
+      - questionText
+      - generationMode
+      - answer
+      - answerDocumentVersionId
+      - revealedAt
+    FollowUps:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Question'
+          minItems: 2
+          maxItems: 2
+      required:
+      - items
+    AnswerRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        answerText:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        documentVersionId:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - answerText
+    Answer:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id001
+        questionId: *id001
+        answerText:
+          type: string
+        documentVersionId:
+          type: string
+          format: uuid
+          nullable: true
+        submittedAt: *id006
+      required:
+      - id
+      - questionId
+      - answerText
+      - documentVersionId
+      - submittedAt
+    ConditionReveal:
+      type: object
+      additionalProperties: false
+      properties:
+        question:
+          $ref: '#/components/schemas/Question'
+        material:
+          $ref: '#/components/schemas/Material'
+        session:
+          $ref: '#/components/schemas/Session'
+      required:
+      - question
+      - material
+      - session
+    EventRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        eventKey: *id001
+        eventType:
+          type: string
+          enum:
+          - MATERIAL_OPENED
+        materialId: *id001
+        clientOccurredAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - eventKey
+      - eventType
+      - materialId
+    EventReceipt:
+      type: object
+      additionalProperties: false
+      properties:
+        eventKey: *id001
+        accepted:
+          type: boolean
+        recordedAt: *id006
+      required:
+      - eventKey
+      - accepted
+      - recordedAt

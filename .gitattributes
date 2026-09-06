@@ -1,0 +1,5 @@
+* text=auto eol=lf
+*.jar binary
+gradlew.bat text eol=crlf
+# Preserve intentional Markdown hard breaks in the checksummed source document.
+docs/sources/ERD.md whitespace=-blank-at-eol

@@ -1,0 +1,60 @@
+import { spawn } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { parseEnv } from 'node:util';
+import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
+
+const root = fileURLToPath(new URL('../', import.meta.url));
+const webRequire = createRequire(new URL('../apps/web/package.json', import.meta.url));
+let local = {};
+try { local = parseEnv(readFileSync(new URL('../.env', import.meta.url), 'utf8')); }
+catch (error) { if (error.code !== 'ENOENT') throw error; }
+const env = { ...local, ...process.env };
+const children = new Set();
+let stopping = false;
+function stop(code) {
+  if (stopping) return;
+  stopping = true;
+  for (const child of children) {
+    try { process.kill(-child.pid, 'SIGTERM'); } catch (e) { if (e.code !== 'ESRCH') throw e; }
+  }
+  const timer = setTimeout(() => {
+    for (const child of children) {
+      try { process.kill(-child.pid, 'SIGKILL'); } catch (e) { if (e.code !== 'ESRCH') throw e; }
+    }
+  }, 8000);
+  timer.unref();
+  process.exitCode = code;
+}
+function run(command, args, cwd = root, childEnv = env) {
+  const child = spawn(command, args, { cwd, env: childEnv, stdio: 'inherit', detached: true });
+  children.add(child);
+  child.on('error', () => { children.delete(child); console.error(`Cannot start ${command}`); stop(1); });
+  child.on('exit', (code, signal) => {
+    if (!stopping) stop(code ?? (signal ? 1 : 0));
+    children.delete(child);
+  });
+}
+process.on('SIGINT', () => stop(130));
+process.on('SIGTERM', () => stop(143));
+function web(production = false) {
+  // Only the explicitly public value from .env is passed to Next.js.
+  const webEnv = { ...process.env, NEXT_PUBLIC_API_BASE_URL: env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080/api/v1' };
+  run(process.execPath, [webRequire.resolve('next/dist/bin/next'), production ? 'start' : 'dev', '--hostname', '127.0.0.1', '--port', env.WEB_PORT ?? '3000'], `${root}apps/web`, webEnv);
+}
+function api(production = false) {
+  const apiEnv = { ...env, SERVER_PORT: env.API_PORT ?? '8080' };
+  if (production) run('java', ['-jar', 'build/libs/doezip-api.jar'], `${root}apps/api`, apiEnv);
+  else run('./gradlew', ['--no-daemon', 'bootRun'], `${root}apps/api`, apiEnv);
+}
+switch (process.argv[2]) {
+  case 'dev': web(); api(); break;
+  case 'dev:web': web(); break;
+  case 'dev:api': api(); break;
+  case 'start:web': web(true); break;
+  case 'build:web': run('npm', ['run', 'build', '-w', 'apps/web'], root, { ...process.env, NEXT_PUBLIC_API_BASE_URL: env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080/api/v1' }); break;
+  case 'start:api': api(true); break;
+  case 'db:up': run('docker', ['compose', '--env-file', '.env', '-f', 'compose.local.yml', 'up', '-d', '--wait', 'db']); break;
+  case 'check:api': run('./gradlew', ['--no-daemon', 'test', 'build'], `${root}apps/api`); break;
+  default: throw new Error('Unknown command');
+}

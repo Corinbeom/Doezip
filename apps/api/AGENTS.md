@@ -1,0 +1,12 @@
+# API
+- 수정 전 루트 AGENTS.md와 docs/F00_ENVIRONMENT.md 확인.
+- 기능별 패키지에 controller/service/repository/dto/entity 배치. 빈 도메인 골격 대량 생성 금지.
+- Controller·업무 규칙·데이터 접근 책임 분리. Entity를 HTTP 응답으로 반환하지 않는다.
+- 소유권·단계·입력을 서버에서 검증. 외부 호출 대기 중 DB 트랜잭션 유지 금지.
+- 스키마 변경은 Flyway, JPA ddl-auto=validate. 적용한 migration 수정 금지.
+- 문서·평가 스냅샷과 비공개 정답 경계를 유지. fixtures/private는 서버 전용.
+- 불필요한 Generic CRUD·CQRS·별도 AI 서버 금지.
+- GET /actuator/health만 공개. 그 외 기본 차단. 인증 미구현을 permitAll로 우회하지 않는다.
+- 루트에서 npm run dev:api, npm run check:api. Java 21과 Docker가 필요하다.
+- 앱 디렉터리에서 ./gradlew test build 실행 가능. bootRun 환경은 루트 실행기가 .env를 명시적으로 전달.
+- Testcontainers PostgreSQL 검사를 H2나 성공 mock으로 대체하지 않는다.

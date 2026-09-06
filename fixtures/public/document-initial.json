@@ -1,0 +1,11 @@
+{
+  "id": "c1e8c630-593a-54aa-b72c-fa174018c5ab",
+  "sessionId": "bcffc14b-e973-5937-9cbd-f30f8be4f667",
+  "versionNo": 1,
+  "checkpoint": "INITIAL",
+  "contentMarkdown": "# 장애 분석\n12:04 이후 결제 시간초과가 증가했다.\n외부 결제사 지연이 원인일 수 있다.\n현재 자료만으로 직접 원인을 확정할 수 없다.",
+  "contentHash": "85d07065f759bfa48c3235008a39cd76e56dd1ba6ef25e22cf6e39ce016c9eec",
+  "sourceDraftLockVersion": 1,
+  "sealedAt": "2026-09-06T03:00:00Z",
+  "createdAt": "2026-09-06T03:00:00Z"
+}

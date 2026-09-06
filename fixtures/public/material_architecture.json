@@ -1,0 +1,22 @@
+{
+  "id": "3b8fe405-b26d-5c0d-a08a-c8b7a9a7cf88",
+  "title": "서비스 구조",
+  "type": "ARCHITECTURE",
+  "sortOrder": 1,
+  "contentMarkdown": "브라우저 → 결제 API → 외부 결제사\n결제 API는 주문 DB에서 주문 상태를 조회한다.\n외부 결제사 승인 후 주문 상태를 갱신한다.",
+  "contentHash": "288ed896b41196a6e275753f3fa6c8bbc449fe92485b290e2cd4dbd42b90bd76",
+  "lines": [
+    {
+      "number": 1,
+      "text": "브라우저 → 결제 API → 외부 결제사"
+    },
+    {
+      "number": 2,
+      "text": "결제 API는 주문 DB에서 주문 상태를 조회한다."
+    },
+    {
+      "number": 3,
+      "text": "외부 결제사 승인 후 주문 상태를 갱신한다."
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+@import "tailwindcss";
+/* Temporary technical verification page; no approved product theme. */
+body { font-family: system-ui, sans-serif; margin: 2rem; }
+button { border: 1px solid currentColor; padding: .5rem 1rem; cursor: pointer; }
+button:disabled { cursor: wait; }
