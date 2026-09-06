@@ -12,7 +12,8 @@ AI 활용 역량 훈련 서비스. 2인이 약 2주 동안 기능별로 화면·
 - 공유 브랜치 강제 push·임의 히스토리 재작성 금지. 동시 Codex는 별도 clone/worktree 사용.
 - 공통 UI·계약·의존성·DB 변경은 PR에 영향 범위와 리뷰 대상을 표시한다.
 - 커밋은 관련 파일만 명시적으로 stage하고 diff·비밀값·검증 결과를 확인한다. 기존 변경 보존.
-- 현재 작업 feature/F00-dev-environment는 로컬 커밋까지만 허용. push·PR·merge 금지.
+- 커밋·push·PR·merge는 사용자가 요청한 범위에서 수행한다. 준비 요청만으로 원격 변경을 실행하지 않는다.
+- 팀의 작업 절차와 GitHub 설정 체크리스트는 CONTRIBUTING.md를 따른다.
 
 ## 변경 전
 - web 수정 전 apps/web/AGENTS.md, api 수정 전 apps/api/AGENTS.md를 읽는다. 풀스택은 둘 다 확인.

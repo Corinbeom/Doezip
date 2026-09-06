@@ -26,7 +26,7 @@ Java 21.0.2, Docker Desktop 4.40.0 / Engine 28.0.4, PostgreSQL 17.11.
 | 원본 자료 보존 | 성공 | source-checksums.json의 기획안·ERD SHA-256 일치 |
 | GitHub Actions | 미실행 | 동일 npm run check 워크플로만 작성, push하지 않음 |
 | 두 번째 팀원 PC / Linux CI | 미실행 | 해당 환경의 실행 결과를 대신 주장하지 않음 |
-| GitHub 브랜치 보호 | 미적용 | F00_ENVIRONMENT.md 체크리스트만 작성 |
+| GitHub 브랜치 보호 | 미적용 | [기여 가이드](../CONTRIBUTING.md)에 체크리스트만 작성 |
 
 최종 전체 `npm run check`는 종료 코드 0으로 완료했다. 마지막 실행의 API 검사는 변경이 없어 Gradle UP-TO-DATE였으며, 앞선 실제 실행에서 5개 테스트가 성공하고 skip이 0임을 확인했다. 테스트 보고서와 캡처는
 `apps/api/build/reports/tests/test`, `playwright-report`, `test-results`에 있으며 Git에서 제외한다.

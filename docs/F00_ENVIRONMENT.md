@@ -1,8 +1,8 @@
 # F00 개발 환경 범위
 
-2026-09-06 사용자 지시가 이전 전체 초기 구축 범위를 대체한다.
-이번 산출물은 Next.js → Spring Boot Actuator → PostgreSQL 실행 환경, 공통 규칙, 계약 타입 생성,
-테스트·CI와 로컬 커밋이다. 전체 MVP 기반 기능 완료를 의미하지 않는다.
+F00의 범위는 개발 환경 구축이다.
+산출물은 Next.js → Spring Boot Actuator → PostgreSQL 실행 환경, 공통 규칙, 계약 타입 생성,
+테스트·CI다. 전체 MVP 기반 기능 완료를 의미하지 않는다.
 
 ## 구현 경계
 - 제품 API는 contracts/openapi.yaml을 보존하며 아직 구현하지 않았다. 선언만으로 성공 응답을 만들지 않는다.
@@ -11,7 +11,7 @@
 - Flyway가 활성화되어 있지만 도메인 migration은 없다. JPA validate가 빈 Entity 집합을 확인하는 것은 ERD 검증이 아니다.
 - 전체 22개 테이블 migration, 제약 검사·seed 변환/검수는 후속 F00b/F00c 작업.
 - 로그인·채팅·검산·평가 워커·되묻기·리포트·Spring AI/Gemini·OAuth 계정·클라우드 배포는 미구현.
-- 디자인은 Lovable 시안 검토 중. docs/design/README.md에 승인 자료를 보관할 위치만 정의한다.
+- 디자인은 시안 검토 중. docs/design/README.md에 승인 자료를 보관할 위치만 정의한다.
 
 ## 버전 근거
 Node 24.20.0, Java 21, Next 16.3.4, Spring Boot 3.5.16, Gradle 8.14.4, PostgreSQL 17.11.
@@ -37,12 +37,6 @@ npm run dev는 DB를 시작하지 않는다. 자신이 생성한 프로세스 �
 Compose 볼륨은 검증·종료 중 보존한다. Testcontainers가 만드는 테스트 전용 DB만 자동 폐기한다.
 테스트 서버가 기본 포트를 사용하므로 dev를 종료한 뒤 npm run check를 실행한다.
 
-## GitHub 설정 체크리스트 (미적용)
-- [ ] main/develop 보호 규칙 또는 ruleset 적용, 직접 push 제한.
-- [ ] PR 승인 1명, 오래된 승인 무효화, 대화 해결 요구.
-- [ ] 필수 상태 검사 environment 통과 요구.
-- [ ] 강제 push와 브랜치 삭제 제한.
-- [ ] feature → develop squash merge, develop → main merge commit 운용 확인.
-- [ ] main 변경을 develop에 동기화.
+## 저장소 운영
 
-이 작업은 GitHub 설정·push·PR 생성·merge를 수행하지 않는다.
+브랜치·리뷰 규칙과 아직 적용하지 않은 GitHub 설정은 [기여 가이드](../CONTRIBUTING.md)를 따른다.

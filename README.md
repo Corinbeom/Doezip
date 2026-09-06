@@ -1,9 +1,10 @@
 # Doezip
 
-AI 활용 역량 훈련 서비스. 현재는 **F00 개발 환경 구축** 단계다.
-제품 UI·로그인·AI·전체 ERD·seed는 아직 구현하지 않았다. 디자인은 별도 Lovable 시안 검토 중이다.
+AI 활용 역량 훈련 서비스.
+현재 저장소에는 Next.js 웹, Spring Boot API, PostgreSQL 연결을 확인하는 개발 환경이 구성되어 있다.
+제품 기능의 구현 범위와 진행 상태는 [개발 계획](docs/FEATURE_BACKLOG.md)을 참고한다.
 
-## 팀원이 clone 후 실행
+## 로컬 실행
 
 Node **24.20.0** (`.nvmrc` / `.node-version`), JDK **21**, 실행 중인 Docker Desktop 또는 Docker Engine + Compose v2,
 Git이 필요하다. 아래 명령은 macOS/Linux/WSL 셸 기준이다. Windows는 WSL에서 실행한다.
@@ -11,7 +12,7 @@ Git이 필요하다. 아래 명령은 macOS/Linux/WSL 셸 기준이다. Windows�
 ```bash
 git clone https://github.com/Corinbeom/Doezip.git
 cd Doezip
-# 이 브랜치가 원격에 공유된 후 사용 가능. 이번 작업에서는 push하지 않는다.
+# 현재 개발 환경 브랜치가 원격에 공유된 후 checkout한다.
 git switch feature/F00-dev-environment
 # nvm을 사용하는 경우
 nvm install
@@ -80,16 +81,13 @@ DB를 멈출 때는 `docker compose --env-file .env -f compose.local.yml stop db
   templates는 참고 예시이며 실제 앱 설정은 루트와 apps/api 아래에 있다.
 - `.github/workflows/ci.yml`: 로컬과 같은 `npm run check`. PR(main/develop), push(main/develop/feature/**).
 
-## 협업·남은 작업
+## 문서
 
-`main ← develop ← feature/*`. 기능 브랜치에서 화면·API·DB·테스트를 함께 작업한다.
-상대방 1명 승인과 CI 후 develop에 squash merge. develop → main은 배포 검증 후 merge commit.
-main 결과는 develop에 동기화하며 squash한 기능 브랜치는 재사용하지 않는다.
-Codex 동시 작업은 별도 clone/worktree를 사용한다. 상세 규칙은 [AGENTS.md](AGENTS.md).
-
-GitHub 보호 규칙은 [설정 체크리스트](docs/F00_ENVIRONMENT.md)에만 기록했으며 적용하지 않았다.
-이번 작업은 로컬 커밋까지만 수행한다. 원격 공유는 팀의 별도 push 이후 가능하다.
-
-후속 작업: ERD 22개 테이블·제약 Flyway migration, fixture 검수와 과제 seed,
-승인된 Lovable 디자인 검토·이식, 로그인과 제품 기능, Spring AI/Gemini 실제 연동.
-이 환경을 전체 MVP·최종 디자인·전체 DB 구현 완료로 표현하지 않는다.
+| 문서 | 내용 |
+|---|---|
+| [기여 가이드](CONTRIBUTING.md) | 브랜치·리뷰·커밋 규칙, 저장소 설정 |
+| [Codex 작업 지침](AGENTS.md) | 에이전트 작업 규칙과 스택별 지침 |
+| [개발 계획](docs/FEATURE_BACKLOG.md) | 현재 구현 상태와 후속 작업 |
+| [API 계약](docs/API_CONTRACT.md) | 제품 API와 운영 health 구분 |
+| [디자인 자료](docs/design/README.md) | 승인 상태와 자료 관리 기준 |
+| [환경 범위](docs/F00_ENVIRONMENT.md) | 기술 구성과 환경변수 전달 |
