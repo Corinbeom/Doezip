@@ -1,0 +1,330 @@
+{
+  "id": "9a36e7f9-d466-5284-99d4-fa50df514fb0",
+  "sessionId": "bcffc14b-e973-5937-9cbd-f30f8be4f667",
+  "evaluationId": "eb0aeecf-5e51-52f9-9aba-13ead1f741d6",
+  "phase": "FINAL",
+  "documentVersionId": "d3d8b118-a393-5df4-bce6-36a70d312b9b",
+  "sample": true,
+  "summary": "개발용 샘플 리포트입니다. 실제 LLM 평가나 교육 효과 측정 결과가 아닙니다.",
+  "strengths": [
+    "원본 자료로 수치 불일치를 확인하는 UI 예시"
+  ],
+  "improvements": [
+    "대안 가설을 배제한 이유를 보충하는 UI 예시"
+  ],
+  "areas": [
+    {
+      "area": "PROMPT",
+      "dimensions": [
+        {
+          "code": "prompt.context",
+          "title": "목표·맥락 전달",
+          "state": "PARTIAL",
+          "rationale": "개발용 상태 예시입니다. 실제 판정 기준은 검수 후 평가 엔진에서 적용합니다.",
+          "gap": "추가 확인할 근거가 있습니다.",
+          "nextAction": "결론의 근거와 한계를 구체적으로 연결해보세요.",
+          "confidenceLevel": "MEDIUM",
+          "evidence": [
+            {
+              "id": "b4ac255a-3bca-5496-a176-1a2f45136f8d",
+              "kind": "EXPLANATION",
+              "polarity": "SUPPORT",
+              "method": "LLM",
+              "subjectType": "DOCUMENT_VERSION",
+              "subjectId": "d3d8b118-a393-5df4-bce6-36a70d312b9b",
+              "excerpt": "단일 원인을 확정할 수 없으며 요청 재시도 횟수와 커넥션 풀 지표를 추가 계측한다.",
+              "explanation": "레이아웃·근거 링크 연결용 가상 관찰입니다. 실제 학습자 평가가 아닙니다.",
+              "source": null
+            }
+          ]
+        },
+        {
+          "code": "prompt.iteration",
+          "title": "질문 보완",
+          "state": "PARTIAL",
+          "rationale": "개발용 상태 예시입니다. 실제 판정 기준은 검수 후 평가 엔진에서 적용합니다.",
+          "gap": "추가 확인할 근거가 있습니다.",
+          "nextAction": "결론의 근거와 한계를 구체적으로 연결해보세요.",
+          "confidenceLevel": "MEDIUM",
+          "evidence": [
+            {
+              "id": "da422051-7b8f-5120-aee8-40f6a26d177f",
+              "kind": "EXPLANATION",
+              "polarity": "SUPPORT",
+              "method": "LLM",
+              "subjectType": "DOCUMENT_VERSION",
+              "subjectId": "d3d8b118-a393-5df4-bce6-36a70d312b9b",
+              "excerpt": "단일 원인을 확정할 수 없으며 요청 재시도 횟수와 커넥션 풀 지표를 추가 계측한다.",
+              "explanation": "레이아웃·근거 링크 연결용 가상 관찰입니다. 실제 학습자 평가가 아닙니다.",
+              "source": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "area": "EVIDENCE",
+      "dimensions": [
+        {
+          "code": "evidence.source_check",
+          "title": "원본 대조",
+          "state": "SUFFICIENT",
+          "rationale": "개발용 상태 예시입니다. 실제 판정 기준은 검수 후 평가 엔진에서 적용합니다.",
+          "gap": null,
+          "nextAction": null,
+          "confidenceLevel": "MEDIUM",
+          "evidence": [
+            {
+              "id": "8e55a75a-860a-5e82-81f5-41e080ce75e3",
+              "kind": "SOURCE_CHECK",
+              "polarity": "SUPPORT",
+              "method": "LLM",
+              "subjectType": "FAULT_ATTEMPT",
+              "subjectId": "f7529bf4-d9d8-5d98-b0b7-07e74638e750",
+              "excerpt": "같은 관찰 구간의 DB 지표에는 약 20%라고 기록되어 있습니다.",
+              "explanation": "레이아웃·근거 링크 연결용 가상 관찰입니다. 실제 학습자 평가가 아닙니다.",
+              "source": {
+                "materialId": "f8cb80f9-215b-56b4-8a25-fc4b73f624a5",
+                "lineStart": 2,
+                "lineEnd": 2,
+                "quotedText": "DB CPU 사용률은 약 20%였다."
+              }
+            }
+          ]
+        },
+        {
+          "code": "evidence.calibration",
+          "title": "신뢰 수준 판단",
+          "state": "SUFFICIENT",
+          "rationale": "개발용 상태 예시입니다. 실제 판정 기준은 검수 후 평가 엔진에서 적용합니다.",
+          "gap": null,
+          "nextAction": null,
+          "confidenceLevel": "MEDIUM",
+          "evidence": [
+            {
+              "id": "fce2b2e9-9f2c-526c-a6e2-a501dd418f70",
+              "kind": "SOURCE_CHECK",
+              "polarity": "SUPPORT",
+              "method": "LLM",
+              "subjectType": "FAULT_ATTEMPT",
+              "subjectId": "f7529bf4-d9d8-5d98-b0b7-07e74638e750",
+              "excerpt": "같은 관찰 구간의 DB 지표에는 약 20%라고 기록되어 있습니다.",
+              "explanation": "레이아웃·근거 링크 연결용 가상 관찰입니다. 실제 학습자 평가가 아닙니다.",
+              "source": {
+                "materialId": "f8cb80f9-215b-56b4-8a25-fc4b73f624a5",
+                "lineStart": 2,
+                "lineEnd": 2,
+                "quotedText": "DB CPU 사용률은 약 20%였다."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "area": "DOCUMENT",
+      "dimensions": [
+        {
+          "code": "document.grounding",
+          "title": "문서의 근거",
+          "state": "SUFFICIENT",
+          "rationale": "개발용 상태 예시입니다. 실제 판정 기준은 검수 후 평가 엔진에서 적용합니다.",
+          "gap": null,
+          "nextAction": null,
+          "confidenceLevel": "MEDIUM",
+          "evidence": [
+            {
+              "id": "28cfac9d-2e76-5c1b-9cee-8cbc916cb72e",
+              "kind": "EXPLANATION",
+              "polarity": "SUPPORT",
+              "method": "LLM",
+              "subjectType": "DOCUMENT_VERSION",
+              "subjectId": "d3d8b118-a393-5df4-bce6-36a70d312b9b",
+              "excerpt": "단일 원인을 확정할 수 없으며 요청 재시도 횟수와 커넥션 풀 지표를 추가 계측한다.",
+              "explanation": "레이아웃·근거 링크 연결용 가상 관찰입니다. 실제 학습자 평가가 아닙니다.",
+              "source": null
+            }
+          ]
+        },
+        {
+          "code": "document.uncertainty",
+          "title": "불확실성 표현",
+          "state": "SUFFICIENT",
+          "rationale": "개발용 상태 예시입니다. 실제 판정 기준은 검수 후 평가 엔진에서 적용합니다.",
+          "gap": null,
+          "nextAction": null,
+          "confidenceLevel": "MEDIUM",
+          "evidence": [
+            {
+              "id": "4f476969-ddbc-590e-92c0-b699cdbf68ee",
+              "kind": "EXPLANATION",
+              "polarity": "SUPPORT",
+              "method": "LLM",
+              "subjectType": "DOCUMENT_VERSION",
+              "subjectId": "d3d8b118-a393-5df4-bce6-36a70d312b9b",
+              "excerpt": "단일 원인을 확정할 수 없으며 요청 재시도 횟수와 커넥션 풀 지표를 추가 계측한다.",
+              "explanation": "레이아웃·근거 링크 연결용 가상 관찰입니다. 실제 학습자 평가가 아닙니다.",
+              "source": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "area": "DEFENSE",
+      "dimensions": [
+        {
+          "code": "defense.explanation",
+          "title": "판단 이유 설명",
+          "state": "PARTIAL",
+          "rationale": "개발용 상태 예시입니다. 실제 판정 기준은 검수 후 평가 엔진에서 적용합니다.",
+          "gap": "추가 확인할 근거가 있습니다.",
+          "nextAction": "결론의 근거와 한계를 구체적으로 연결해보세요.",
+          "confidenceLevel": "MEDIUM",
+          "evidence": [
+            {
+              "id": "25b7454f-0ba9-5ad9-9f75-11c0db2a04ba",
+              "kind": "CHANGE_RESPONSE",
+              "polarity": "SUPPORT",
+              "method": "LLM",
+              "subjectType": "DOCUMENT_VERSION",
+              "subjectId": "d3d8b118-a393-5df4-bce6-36a70d312b9b",
+              "excerpt": "단일 원인을 확정할 수 없으며 요청 재시도 횟수와 커넥션 풀 지표를 추가 계측한다.",
+              "explanation": "레이아웃·근거 링크 연결용 가상 관찰입니다. 실제 학습자 평가가 아닙니다.",
+              "source": null
+            }
+          ]
+        },
+        {
+          "code": "defense.revision",
+          "title": "새 정보 반영",
+          "state": "SUFFICIENT",
+          "rationale": "개발용 상태 예시입니다. 실제 판정 기준은 검수 후 평가 엔진에서 적용합니다.",
+          "gap": null,
+          "nextAction": null,
+          "confidenceLevel": "MEDIUM",
+          "evidence": [
+            {
+              "id": "bd8f7011-729b-5812-a2a2-9676f46e1ffb",
+              "kind": "CHANGE_RESPONSE",
+              "polarity": "SUPPORT",
+              "method": "LLM",
+              "subjectType": "DOCUMENT_VERSION",
+              "subjectId": "d3d8b118-a393-5df4-bce6-36a70d312b9b",
+              "excerpt": "단일 원인을 확정할 수 없으며 요청 재시도 횟수와 커넥션 풀 지표를 추가 계측한다.",
+              "explanation": "레이아웃·근거 링크 연결용 가상 관찰입니다. 실제 학습자 평가가 아닙니다.",
+              "source": null
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "faultSummary": {
+    "statements": [
+      {
+        "statementId": "b4d28170-f695-52fa-8e2d-7a9df0d00f4f",
+        "reviewId": "4baf7161-0baf-518d-a7ef-5e8fa1026e52",
+        "detectionResult": "VALID_KEEP",
+        "evidenceResult": "SUPPORTED",
+        "repairResult": "NOT_APPLICABLE",
+        "recheckResult": "NOT_OBSERVED",
+        "feedback": "개발용 검토 결과 예시. 정답 키 원문을 복사하지 않습니다."
+      },
+      {
+        "statementId": "7b3d975f-c0b9-5f80-8d20-aeb39ddb84b3",
+        "reviewId": "f7529bf4-d9d8-5d98-b0b7-07e74638e750",
+        "detectionResult": "DETECTED",
+        "evidenceResult": "SUPPORTED",
+        "repairResult": "VALID",
+        "recheckResult": "NOT_OBSERVED",
+        "feedback": "개발용 검토 결과 예시. 정답 키 원문을 복사하지 않습니다."
+      },
+      {
+        "statementId": "5a8dd1df-a0e0-52d5-9fd6-c1ed07c7e367",
+        "reviewId": "f01517a6-e21d-5bf2-bb1f-42c2d174de62",
+        "detectionResult": "DETECTED",
+        "evidenceResult": "SUPPORTED",
+        "repairResult": "VALID",
+        "recheckResult": "NOT_OBSERVED",
+        "feedback": "개발용 검토 결과 예시. 정답 키 원문을 복사하지 않습니다."
+      },
+      {
+        "statementId": "c2cc36a3-50f2-548c-9eb0-23891588486a",
+        "reviewId": null,
+        "detectionResult": "UNREVIEWED",
+        "evidenceResult": "NOT_OBSERVED",
+        "repairResult": "NOT_OBSERVED",
+        "recheckResult": "NOT_OBSERVED",
+        "feedback": "개발용 검토 결과 예시. 정답 키 원문을 복사하지 않습니다."
+      },
+      {
+        "statementId": "f14f5fad-b988-5de1-90c8-e7e0d0602849",
+        "reviewId": null,
+        "detectionResult": "UNREVIEWED",
+        "evidenceResult": "NOT_OBSERVED",
+        "repairResult": "NOT_OBSERVED",
+        "recheckResult": "NOT_OBSERVED",
+        "feedback": "개발용 검토 결과 예시. 정답 키 원문을 복사하지 않습니다."
+      }
+    ],
+    "note": "INITIAL과 FINAL의 검산 입력이 동일합니다."
+  },
+  "comparison": {
+    "initialEvaluationId": "691afe1b-c395-52aa-b2ae-17624fe6e28d",
+    "finalEvaluationId": "eb0aeecf-5e51-52f9-9aba-13ead1f741d6",
+    "dimensions": [
+      {
+        "code": "prompt.context",
+        "beforeState": "PARTIAL",
+        "afterState": "PARTIAL",
+        "change": "UNCHANGED"
+      },
+      {
+        "code": "prompt.iteration",
+        "beforeState": "NEEDS_REVIEW",
+        "afterState": "PARTIAL",
+        "change": "CHANGED"
+      },
+      {
+        "code": "evidence.source_check",
+        "beforeState": "SUFFICIENT",
+        "afterState": "SUFFICIENT",
+        "change": "UNCHANGED"
+      },
+      {
+        "code": "evidence.calibration",
+        "beforeState": "SUFFICIENT",
+        "afterState": "SUFFICIENT",
+        "change": "UNCHANGED"
+      },
+      {
+        "code": "document.grounding",
+        "beforeState": "PARTIAL",
+        "afterState": "SUFFICIENT",
+        "change": "CHANGED"
+      },
+      {
+        "code": "document.uncertainty",
+        "beforeState": "PARTIAL",
+        "afterState": "SUFFICIENT",
+        "change": "CHANGED"
+      },
+      {
+        "code": "defense.explanation",
+        "beforeState": "NOT_OBSERVED",
+        "afterState": "PARTIAL",
+        "change": "NEWLY_OBSERVED"
+      },
+      {
+        "code": "defense.revision",
+        "beforeState": "NOT_OBSERVED",
+        "afterState": "SUFFICIENT",
+        "change": "NEWLY_OBSERVED"
+      }
+    ],
+    "note": "조건과 입력이 달라진 두 시점의 관찰 비교입니다. 동일 검산 응답은 새 개선으로 계산하지 않습니다."
+  },
+  "nextPracticeText": "다음 문서에서도 관찰·추론·미확인을 구분해보세요.",
+  "createdAt": "2026-09-06T03:00:00Z"
+}

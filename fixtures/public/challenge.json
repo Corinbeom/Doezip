@@ -1,0 +1,43 @@
+{
+  "id": "70be0b73-3573-5f29-a550-eb038ab5debb",
+  "sessionId": "bcffc14b-e973-5937-9cbd-f30f8be4f667",
+  "title": "AI 보고서 검토 훈련",
+  "instructionsMarkdown": "이 훈련용 초안에는 검증이 필요한 내용이 포함될 수 있습니다. 원본 자료와 대조하고, 유지·수정·근거 부족 판단을 근거와 함께 남겨주세요. 사용자 보고서는 변경하지 않습니다.",
+  "noticeVersion": "challenge-notice-v1",
+  "status": "IN_PROGRESS",
+  "lockVersion": 0,
+  "statements": [
+    {
+      "id": "b4d28170-f695-52fa-8e2d-7a9df0d00f4f",
+      "statementKey": "S01",
+      "order": 1,
+      "text": "12:04 이후 결제 요청의 시간초과가 증가했다."
+    },
+    {
+      "id": "7b3d975f-c0b9-5f80-8d20-aeb39ddb84b3",
+      "statementKey": "S02",
+      "order": 2,
+      "text": "DB CPU 사용률은 92%까지 증가했다."
+    },
+    {
+      "id": "5a8dd1df-a0e0-52d5-9fd6-c1ed07c7e367",
+      "statementKey": "S03",
+      "order": 3,
+      "text": "DB 커넥션 풀 고갈이 장애의 직접 원인으로 확정됐다."
+    },
+    {
+      "id": "c2cc36a3-50f2-548c-9eb0-23891588486a",
+      "statementKey": "S04",
+      "order": 4,
+      "text": "12:04 이후 외부 결제사 응답 지연이 관찰됐다."
+    },
+    {
+      "id": "f14f5fad-b988-5de1-90c8-e7e0d0602849",
+      "statementKey": "S05",
+      "order": 5,
+      "text": "현재 자료만으로 모든 원인과 영향 경로를 확정하기는 어렵다."
+    }
+  ],
+  "reviews": [],
+  "submittedAt": null
+}

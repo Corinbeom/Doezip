@@ -1,0 +1,48 @@
+{
+  "question": {
+    "id": "ca8467f5-9780-58d1-99ab-1ffc71cc3daa",
+    "sequenceNo": 3,
+    "kind": "CONDITION_CHANGE",
+    "questionText": "추가 배포 기록을 반영해 가설 우선순위와 대응 방안을 수정하세요. 원인이 확정된 것과 가능성이 높아진 것을 구분하세요.",
+    "generationMode": "TEMPLATE",
+    "answer": null,
+    "answerDocumentVersionId": null,
+    "revealedAt": "2026-09-06T03:00:00Z"
+  },
+  "material": {
+    "id": "68e52211-0ed2-5744-907f-b1d3254e829e",
+    "title": "추가 배포 상세",
+    "type": "DEPLOYMENT",
+    "sortOrder": 6,
+    "contentMarkdown": "12:01에 결제 API 배포가 있었다.\nHTTP Client 재시도 횟수를 1회에서 3회로 변경했다.\n재시도와 외부 결제사 지연의 영향은 추가 계측으로 확인해야 한다.",
+    "contentHash": "dd1c70260243bbfb0d8e033b91506ed95b7dd88a7dc174a22a5feffc29aa051f",
+    "lines": [
+      {
+        "number": 1,
+        "text": "12:01에 결제 API 배포가 있었다."
+      },
+      {
+        "number": 2,
+        "text": "HTTP Client 재시도 횟수를 1회에서 3회로 변경했다."
+      },
+      {
+        "number": 3,
+        "text": "재시도와 외부 결제사 지연의 영향은 추가 계측으로 확인해야 한다."
+      }
+    ]
+  },
+  "session": {
+    "id": "bcffc14b-e973-5937-9cbd-f30f8be4f667",
+    "taskId": "e7a983ca-69bc-5677-a238-303cfb02d9d0",
+    "status": "ACTIVE",
+    "currentStep": "CONDITION_CHANGE",
+    "mode": "PRACTICE",
+    "conditionReleasedAt": "2026-09-06T03:00:00Z",
+    "allowedActions": [
+      "READ_MATERIALS",
+      "WRITE_DRAFT",
+      "SEND_MESSAGE",
+      "SNAPSHOT_FINAL"
+    ]
+  }
+}

@@ -1,0 +1,18 @@
+services:
+  db:
+    image: postgres:17.11
+    ports:
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env}
+      POSTGRES_USER: ${DATABASE_USERNAME:?Set DATABASE_USERNAME in .env}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?Set DATABASE_PASSWORD in .env}
+    volumes:
+      - doezip_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 3s
+      retries: 12
+volumes:
+  doezip_pg:

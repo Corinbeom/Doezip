@@ -1,0 +1,11 @@
+{
+  "id": "691afe1b-c395-52aa-b2ae-17624fe6e28d",
+  "sessionId": "bcffc14b-e973-5937-9cbd-f30f8be4f667",
+  "phase": "INITIAL",
+  "status": "SUCCEEDED",
+  "reportId": "f680f948-65a8-58a4-a005-81dcd13aa76a",
+  "errorCode": null,
+  "retryable": false,
+  "pollAfterMs": 2000,
+  "createdAt": "2026-09-06T03:00:00Z"
+}
