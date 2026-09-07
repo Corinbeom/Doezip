@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#255846">
+  <title>되짚 — AI의 답을, 근거로 되짚다</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="fixes.css">
+  <script src="app.js" defer></script>
+  <script src="views.js" defer></script>
+  <script src="controller.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">본문으로 바로가기</a>
+  <div class="preview-strip"><span class="preview-dot"></span>승인 전 디자인 시안 v0.1 <span class="preview-divider">/</span> 가상 과제로 경험하는 학습 흐름 <span class="preview-detail">· 실제 AI 평가가 아닙니다</span></div>
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="#explore" class="brand" aria-label="되짚 홈"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M8 10a10 10 0 1 1-2 11" stroke="currentColor" stroke-width="3.8" stroke-linecap="round"/><path d="M8 3v8h8" stroke="currentColor" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="17" r="3" fill="currentColor"/></svg><span>되짚<span class="brand-en">doezip</span></span></a>
+      <nav class="main-nav" aria-label="주 메뉴"><a href="#explore" data-nav="explore">문제 탐색</a><a href="#learning" data-nav="learning">내 학습</a></nav>
+      <div class="header-right"><button class="quiet guide-button" data-action="guide">이용 가이드 <span aria-hidden="true">↗</span></button><span class="avatar" aria-label="학습자">나</span></div>
+    </div>
+  </header>
+  <main id="main" tabindex="-1"></main>
+  <footer class="site-footer"><a href="#explore" class="footer-wordmark">되짚</a><span>AI의 답을, 근거로 되짚다.</span><span class="footer-note">함께 생각하고, 스스로 판단하는 연습.</span></footer>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <div id="modal-root"></div>
+</body>
+</html>
