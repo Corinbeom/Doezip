@@ -1,0 +1,54 @@
+# Move/adapt into the actual Spring project. Not a complete application.
+server:
+  port: 8080
+spring:
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    hikari:
+      maximum-pool-size: 8
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${AUTH_ISSUER}
+          jwk-set-uri: ${AUTH_JWKS_URI}
+  ai:
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY}
+        chat:
+          options:
+            model: ${AI_CHAT_MODEL:gemini-2.5-flash}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+# Every app.* property below is proposed custom configuration.
+# You MUST implement @ConfigurationProperties + consuming logic; it is not automatic.
+app:
+  security:
+    expected-audience: ${AUTH_EXPECTED_AUDIENCE:authenticated}
+    allowed-jws-algorithm: ES256
+    allowed-origin: ${CORS_ALLOWED_ORIGIN:http://localhost:3000}
+  ai:
+    evaluation-model: ${AI_EVALUATION_MODEL:gemini-2.5-flash}
+  evaluation:
+    concurrency: 1
+    poll-interval-ms: 2000
+    lease-seconds: 180
+    heartbeat-seconds: 20
+    model-timeout-seconds: 60
+    max-automatic-attempts: 3
+    max-total-attempts: 4

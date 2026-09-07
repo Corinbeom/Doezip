@@ -1,0 +1,11 @@
+{
+  "id": "d3d8b118-a393-5df4-bce6-36a70d312b9b",
+  "sessionId": "bcffc14b-e973-5937-9cbd-f30f8be4f667",
+  "versionNo": 2,
+  "checkpoint": "FINAL",
+  "contentMarkdown": "# 장애 분석\n12:04 이후 결제 시간초과가 증가했다. DB CPU는 약 20%였다.\n외부 결제사 지연과 12:01 배포의 재시도 증가가 영향을 주었을 가능성이 있다.\n단일 원인을 확정할 수 없으며 요청 재시도 횟수와 커넥션 풀 지표를 추가 계측한다.\n재시도 정책 원복 여부는 영향 범위를 확인한 뒤 판단하고 오류율 변화를 관찰한다.",
+  "contentHash": "c1e0259b26930bb29fd9848ccb179edde854d59155d95217c6ab17907747e8e3",
+  "sourceDraftLockVersion": 2,
+  "sealedAt": "2026-09-06T03:00:00Z",
+  "createdAt": "2026-09-06T03:00:00Z"
+}

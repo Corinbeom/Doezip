@@ -1,0 +1,11 @@
+# Web
+- 수정 전 루트 AGENTS.md와 docs/F00_ENVIRONMENT.md 확인.
+- src/app은 라우팅·레이아웃 중심. 기능은 src/features, 공통 API·UI는 src/shared.
+- 서버 데이터는 TanStack Query, 편집 상태는 우선 React 상태.
+- API 오류·인증 처리는 src/shared/api로 모은다. 인증 제품 흐름은 아직 미구현.
+- 브라우저에서 DB·LLM 직접 호출 금지. private fixture import·public 배치 금지.
+- 제품 디자인은 미승인. 최종 색상·레이아웃·디자인 시스템을 임의로 확정하지 않는다.
+- 승인된 디자인 자료·컴포넌트를 기준으로 후속 구현. shadcn/ui 테마·제품 컴포넌트 생성은 그때 수행.
+- generated/api-types.ts는 contracts/openapi.yaml에서 생성. 수동 수정 금지.
+- 루트에서 npm run dev:web, npm run api:generate, npm run check:web.
+- lint/typecheck/unit/build를 검사하며 실제 API smoke는 npm run test:e2e (DB 시작·빌드 필요).

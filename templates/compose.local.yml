@@ -1,0 +1,19 @@
+# Local PostgreSQL only. Does not create or run the application.
+services:
+  db:
+    image: postgres:17
+    ports:
+      - "127.0.0.1:5432:5432"
+    environment:
+      POSTGRES_DB: doezip
+      POSTGRES_USER: doezip
+      POSTGRES_PASSWORD: doezip_local_only
+    volumes:
+      - doezip_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U doezip -d doezip"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+volumes:
+  doezip_pg:

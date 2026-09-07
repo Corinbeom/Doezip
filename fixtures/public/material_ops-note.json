@@ -1,0 +1,22 @@
+{
+  "id": "ddef5bfa-39cf-541e-a0fc-abad759a0b91",
+  "title": "운영·고객 문의 메모",
+  "type": "CUSTOMER_NOTE",
+  "sortOrder": 5,
+  "contentMarkdown": "고객은 12:04 이후 결제 완료 화면이 늦게 나타난다고 문의했다.\n현재 자료만으로 전체 장애 원인을 단일 원인으로 확정할 수 없다.\n배포 관련 상세 기록은 아직 전달되지 않았다.",
+  "contentHash": "28792bd3d0efdab1902edf920d2eba8914092b55aae2c79d6fc6610c616ccfe4",
+  "lines": [
+    {
+      "number": 1,
+      "text": "고객은 12:04 이후 결제 완료 화면이 늦게 나타난다고 문의했다."
+    },
+    {
+      "number": 2,
+      "text": "현재 자료만으로 전체 장애 원인을 단일 원인으로 확정할 수 없다."
+    },
+    {
+      "number": 3,
+      "text": "배포 관련 상세 기록은 아직 전달되지 않았다."
+    }
+  ]
+}

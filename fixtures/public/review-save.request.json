@@ -1,0 +1,50 @@
+{
+  "expectedLockVersion": 0,
+  "reviews": [
+    {
+      "statementId": "b4d28170-f695-52fa-8e2d-7a9df0d00f4f",
+      "decision": "KEEP",
+      "reasonText": "오류 로그에서 같은 시각의 시간초과 증가를 확인했습니다.",
+      "replacementText": null,
+      "evidence": [
+        {
+          "materialId": "3d88358b-9fe2-5db7-b2a1-6a3cc9617417",
+          "lineStart": 3,
+          "lineEnd": 3,
+          "relation": "SUPPORTS",
+          "userNote": "오류 로그에서 같은 시각의 시간초과 증가를 확인했습니다."
+        }
+      ]
+    },
+    {
+      "statementId": "7b3d975f-c0b9-5f80-8d20-aeb39ddb84b3",
+      "decision": "CORRECT",
+      "reasonText": "같은 관찰 구간의 DB 지표에는 약 20%라고 기록되어 있습니다.",
+      "replacementText": "DB CPU 사용률은 약 20%였다.",
+      "evidence": [
+        {
+          "materialId": "f8cb80f9-215b-56b4-8a25-fc4b73f624a5",
+          "lineStart": 2,
+          "lineEnd": 2,
+          "relation": "CONTRADICTS",
+          "userNote": "같은 관찰 구간의 DB 지표에는 약 20%라고 기록되어 있습니다."
+        }
+      ]
+    },
+    {
+      "statementId": "5a8dd1df-a0e0-52d5-9fd6-c1ed07c7e367",
+      "decision": "INSUFFICIENT_EVIDENCE",
+      "reasonText": "커넥션 풀 사용률이 제공되지 않아 원인을 확정할 수 없습니다.",
+      "replacementText": "현재 자료만으로 DB 커넥션 풀 고갈을 확정할 수 없으며 관련 지표 확인이 필요하다.",
+      "evidence": [
+        {
+          "materialId": "f8cb80f9-215b-56b4-8a25-fc4b73f624a5",
+          "lineStart": 3,
+          "lineEnd": 3,
+          "relation": "CONTRADICTS",
+          "userNote": "커넥션 풀 사용률이 제공되지 않아 원인을 확정할 수 없습니다."
+        }
+      ]
+    }
+  ]
+}

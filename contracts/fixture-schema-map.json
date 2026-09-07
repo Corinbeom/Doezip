@@ -1,0 +1,23 @@
+{
+  "tasks.json": "TaskList",
+  "task.json": "Task",
+  "workspace.json": "Workspace",
+  "challenge.json": "ChallengeRun",
+  "challenge-saved.json": "ChallengeRun",
+  "review-save.request.json": "ReviewSaveRequest",
+  "document-initial.json": "DocumentVersion",
+  "document-final.json": "DocumentVersion",
+  "follow-ups.json": "FollowUps",
+  "condition-revealed.json": "ConditionReveal",
+  "report-initial.json": "Report",
+  "report-final.json": "Report",
+  "evaluation-initial.json": "Evaluation",
+  "evaluation-final.json": "Evaluation",
+  "user.json": "User",
+  "material_architecture.json": "Material",
+  "material_api-log.json": "Material",
+  "material_db-metrics.json": "Material",
+  "material_provider-latency.json": "Material",
+  "material_ops-note.json": "Material",
+  "bootstrap.request.json": "BootstrapRequest"
+}
