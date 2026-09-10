@@ -13,7 +13,7 @@ F00의 범위는 개발 환경 구축이다.
 - Flyway가 활성화되어 있지만 도메인 migration은 없다. JPA validate가 빈 Entity 집합을 확인하는 것은 ERD 검증이 아니다.
 - 전체 22개 테이블 migration, 제약 검사·seed 변환/검수는 후속 F00b/F00c 작업.
 - 로그인·채팅·검산·평가 워커·되묻기·리포트·Spring AI/Gemini·OAuth 계정·클라우드 배포는 미구현.
-- 디자인은 시안 검토 중. docs/design/README.md에 승인 자료를 보관할 위치만 정의한다.
+- F00 당시 디자인은 시안 검토 중이었다. 2026-09-10 사용자 승인 이후 현재 기준·이식 상태는 docs/design/README.md를 따른다.
 
 ## 버전 근거
 Node 24.20.0, Java 21, Next 16.3.4, Spring Boot 3.5.16, Gradle 8.14.4, PostgreSQL 17.11.

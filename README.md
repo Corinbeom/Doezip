@@ -77,7 +77,7 @@ DB를 멈출 때는 `docker compose --env-file .env -f compose.local.yml stop db
 - `DB_PORT` 변경 시 `DATABASE_URL`, `API_PORT` 변경 시 `NEXT_PUBLIC_API_BASE_URL`,
   `WEB_PORT` 변경 시 `CORS_ALLOWED_ORIGIN`도 맞춘다. 공개 URL 변경 후 production build를 다시 한다.
 - `apps/web/src/app`: 라우팅, `src/features/environment`: 임시 연결 확인 화면, `src/features/tasks`: 과제 조회.
-- `apps/web/src/shared/api`: 공통 fetch·오류·Query Provider. `shared/ui`: 승인 디자인 이후 사용할 위치.
+- `apps/web/src/shared/api`: 공통 fetch·오류·Query Provider. `shared/ui`: 승인 디자인의 공통 화면 구성·스타일.
 - `apps/web/src/generated/api-types.ts`: 생성 타입. **손으로 수정하지 않는다.**
 - `apps/api`: Spring MVC·JPA·Validation·Security·Actuator·Flyway. DB 상세 비공개, health·과제 조회 GET 외 기본 차단.
 - `apps/api/src/main/resources/db/migration`: 과제·루브릭 두 테이블. `db/local`: 로컬 조회용 seed.
@@ -98,3 +98,5 @@ DB를 멈출 때는 `docker compose --env-file .env -f compose.local.yml stop db
 | [환경 범위](docs/F00_ENVIRONMENT.md) | 기술 구성과 환경변수 전달 |
 
 과제 조회의 범위와 검증 기록은 [F02a 작업 기록](docs/F02A_TASK_BROWSE.md)을 참고한다.
+
+과제 조회 화면은 승인된 학습 플랫폼 v0.1 디자인을 기준으로 구현한다. [적용 범위와 검증](docs/design/TASK_DESIGN_VALIDATION.md)을 참고한다.

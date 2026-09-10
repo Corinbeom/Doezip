@@ -4,8 +4,8 @@
 - 서버 데이터는 TanStack Query, 편집 상태는 우선 React 상태.
 - API 오류·인증 처리는 src/shared/api로 모은다. 인증 제품 흐름은 아직 미구현.
 - 브라우저에서 DB·LLM 직접 호출 금지. private fixture import·public 배치 금지.
-- 제품 디자인은 미승인. 최종 색상·레이아웃·디자인 시스템을 임의로 확정하지 않는다.
-- 승인된 디자인 자료·컴포넌트를 기준으로 후속 구현. shadcn/ui 테마·제품 컴포넌트 생성은 그때 수행.
+- 2026-09-10 사용자가 학습 플랫폼 시안 v0.1을 제품 디자인 기준으로 승인했다. docs/design/README.md의 고정 원본·토큰·화면 규칙을 따른다.
+- 승인 시안의 레이아웃·색상·공통 컴포넌트를 재사용한다. mock·localStorage·가상 AI를 제품 동작으로 옮기지 않는다. 구현하지 않은 기능에 동작하는 것처럼 보이는 버튼을 만들지 않는다.
 - generated/api-types.ts는 contracts/openapi.yaml에서 생성. 수동 수정 금지.
 - 루트에서 npm run dev:web, npm run api:generate, npm run check:web.
 - lint/typecheck/unit/build를 검사하며 실제 API smoke는 npm run test:e2e (DB 시작·빌드 필요).
