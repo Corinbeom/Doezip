@@ -31,8 +31,9 @@ function run(command, args, cwd = root, childEnv = env) {
   children.add(child);
   child.on('error', () => { children.delete(child); console.error(`Cannot start ${command}`); stop(1); });
   child.on('exit', (code, signal) => {
-    if (!stopping) stop(code ?? (signal ? 1 : 0));
+    // Remove the reaped child before signalling any still-running siblings.
     children.delete(child);
+    if (!stopping) stop(code ?? (signal ? 1 : 0));
   });
 }
 process.on('SIGINT', () => stop(130));
