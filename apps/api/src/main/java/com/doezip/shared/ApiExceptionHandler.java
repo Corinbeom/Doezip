@@ -11,9 +11,13 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class ApiExceptionHandler {
-    @ExceptionHandler({MethodArgumentNotValidException.class, HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})
+    @ExceptionHandler({com.doezip.user.service.InvalidProfileException.class, MethodArgumentNotValidException.class, HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})
     ResponseEntity<ApiError> invalidInput(Exception exception, HttpServletRequest request) {
         return ResponseEntity.badRequest().body(new ApiError("INVALID_INPUT", "입력 형식을 확인하세요.", RequestIdFilter.id(request)));
+    }
+    @ExceptionHandler(com.doezip.user.service.UserNotFoundException.class)
+    ResponseEntity<ApiError> userNotFound(HttpServletRequest request) {
+        return ResponseEntity.status(404).body(new ApiError("USER_NOT_FOUND", "사용자를 찾을 수 없습니다.", RequestIdFilter.id(request)));
     }
     @ExceptionHandler(TaskNotFoundException.class)
     ResponseEntity<ApiError> taskNotFound(HttpServletRequest request) {
