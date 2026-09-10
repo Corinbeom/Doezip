@@ -1,0 +1,4 @@
+# Local-only browse sample; never enable this profile against a production database.
+spring:
+  flyway:
+    locations: classpath:db/migration,classpath:db/local
