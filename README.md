@@ -1,7 +1,7 @@
 # Doezip
 
 AI 활용 역량 훈련 서비스.
-현재 저장소에는 Next.js 웹, Spring Boot API, PostgreSQL 연결을 확인하는 개발 환경이 구성되어 있다.
+현재 저장소에는 Next.js 웹, Spring Boot API, PostgreSQL 개발 환경과 과제 목록·상세 조회 기능이 구성되어 있다.
 제품 기능의 구현 범위와 진행 상태는 [개발 계획](docs/FEATURE_BACKLOG.md)을 참고한다.
 
 ## 로컬 실행
@@ -12,8 +12,8 @@ Git이 필요하다. 아래 명령은 macOS/Linux/WSL 셸 기준이다. Windows�
 ```bash
 git clone https://github.com/Corinbeom/Doezip.git
 cd Doezip
-# 현재 개발 환경 브랜치가 원격에 공유된 후 checkout한다.
-git switch feature/F00-dev-environment
+# 통합된 개발 환경을 checkout한다.
+git switch develop
 # nvm을 사용하는 경우
 nvm install
 nvm use
@@ -26,7 +26,8 @@ npm run dev
 현재 로컬 checkout에서는 `npm install`부터 실행한다. CI와 lockfile 그대로 재설치할 때는 `npm ci`를 쓴다.
 웹 http://localhost:3000 에서 API와 PostgreSQL 연결 상태를 확인한다.
 API 운영 health: http://localhost:8080/actuator/health (`UP`: 200 / DB 장애 `DOWN`: 503, 상세 비공개).
-계약상의 `/api/v1` 제품 API는 아직 미구현이며 차단된다.
+웹 http://localhost:3000/tasks 에서 로컬 조회용 가상 과제의 설명과 공개 루브릭을 확인한다.
+제품 API는 GET `/api/v1/tasks`, GET `/api/v1/tasks/{taskId}`만 구현했다. 다른 제품 경로는 차단된다.
 
 `npm run dev`는 웹과 API만 함께 실행한다. **DB 시작은 별도**이며 먼저 `npm run db:up`을 실행한다.
 Ctrl+C는 이 실행기가 시작한 프로세스만 종료한다. DB와 영속 볼륨은 유지한다.
@@ -68,15 +69,19 @@ DB를 멈출 때는 `docker compose --env-file .env -f compose.local.yml stop db
 ## 설정·구조
 
 - `.env.example` → 로컬 `.env`. 실제 `.env`는 Git 제외. 루트 실행기가 명시적으로 파싱한다.
+- 기존 `.env` 사용자는 `SPRING_PROFILES_ACTIVE=local`을 추가해야 조회용 가상 과제가 생성된다.
+  `local`은 전용 개발 DB에서만 사용한다. 기본 프로필에는 샘플이 없으며 새 DB는 빈 목록을 반환한다.
+  이미 local seed를 적용한 DB는 프로필을 바꿔도 데이터가 없어지지 않으므로 운영 DB로 재사용하지 않는다.
 - 웹 공개 설정은 `NEXT_PUBLIC_API_BASE_URL`뿐이다. 서버 비밀번호·AI 키는 넣지 않는다.
 - 기본 포트는 web 3000 / api 8080 / PG 5432이며 로컬에 바인딩한다.
 - `DB_PORT` 변경 시 `DATABASE_URL`, `API_PORT` 변경 시 `NEXT_PUBLIC_API_BASE_URL`,
   `WEB_PORT` 변경 시 `CORS_ALLOWED_ORIGIN`도 맞춘다. 공개 URL 변경 후 production build를 다시 한다.
-- `apps/web/src/app`: 라우팅, `src/features/environment`: 임시 연결 확인 화면.
+- `apps/web/src/app`: 라우팅, `src/features/environment`: 임시 연결 확인 화면, `src/features/tasks`: 과제 조회.
 - `apps/web/src/shared/api`: 공통 fetch·오류·Query Provider. `shared/ui`: 승인 디자인 이후 사용할 위치.
 - `apps/web/src/generated/api-types.ts`: 생성 타입. **손으로 수정하지 않는다.**
-- `apps/api`: Spring MVC·JPA·Validation·Security·Actuator·Flyway. DB 상세 비공개, health GET 외 기본 차단.
-- `apps/api/src/main/resources/db/migration`: 경로만 준비. 전체 ERD migration·seed는 후속 작업.
+- `apps/api`: Spring MVC·JPA·Validation·Security·Actuator·Flyway. DB 상세 비공개, health·과제 조회 GET 외 기본 차단.
+- `apps/api/src/main/resources/db/migration`: 과제·루브릭 두 테이블. `db/local`: 로컬 조회용 seed.
+  전체 ERD migration·학습 과제 패키지 seed는 후속 작업.
 - `contracts`, `docs`, `fixtures`, `templates`: 기존 기준 자료 보존. fixture는 웹에 import·배포하지 않는다.
   templates는 참고 예시이며 실제 앱 설정은 루트와 apps/api 아래에 있다.
 - `.github/workflows/ci.yml`: 로컬과 같은 `npm run check`. PR(main/develop), push(main/develop/feature/**).
@@ -91,3 +96,5 @@ DB를 멈출 때는 `docker compose --env-file .env -f compose.local.yml stop db
 | [API 계약](docs/API_CONTRACT.md) | 제품 API와 운영 health 구분 |
 | [디자인 자료](docs/design/README.md) | 승인 상태와 자료 관리 기준 |
 | [환경 범위](docs/F00_ENVIRONMENT.md) | 기술 구성과 환경변수 전달 |
+
+과제 조회의 범위와 검증 기록은 [F02a 작업 기록](docs/F02A_TASK_BROWSE.md)을 참고한다.
