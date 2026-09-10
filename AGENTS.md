@@ -1,7 +1,7 @@
 # Doezip 협업 규칙
 
 AI 활용 역량 훈련 서비스. 현재 1인 개발로 진행하며 기능별로 화면·API·DB·테스트까지 함께 구현·검증한다.
-F00 실행 환경은 구축됐다. 이후 기능은 docs/FEATURE_BACKLOG.md의 현재 실행 순서를 따른다. 디자인은 학습 플랫폼 v0.1을 기준으로 승인됐으며 화면별 이식 상태는 docs/design/README.md에서 관리한다. 로그인·채팅·검산·평가·리포트·AI 호출,
+F00 실행 환경은 구축됐다. 이후 기능은 docs/FEATURE_BACKLOG.md의 현재 실행 순서를 따른다. 디자인은 학습 플랫폼 v0.1을 기준으로 승인됐으며 화면별 이식 상태는 docs/design/README.md에서 관리한다. 로그인은 구현·검증 상태를 docs/F01_AUTH_VALIDATION.md에서 확인한다. 채팅·검산·평가·리포트·AI 호출,
 전체 22개 테이블 migration과 seed는 후속 작업이며 완료로 표시하지 않는다.
 
 ## Git

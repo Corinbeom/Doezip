@@ -38,9 +38,20 @@ function run(command, args, cwd = root, childEnv = env) {
 }
 process.on('SIGINT', () => stop(130));
 process.on('SIGTERM', () => stop(143));
+function publicWebEnv() {
+  const key = env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? '';
+  if (key && !key.startsWith('sb_publishable_')) {
+    throw new Error('Use a Supabase publishable key for the public web setting; secret keys are not supported.');
+  }
+  return { ...process.env,
+    NEXT_PUBLIC_API_BASE_URL: env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080/api/v1',
+    NEXT_PUBLIC_SUPABASE_URL: env.NEXT_PUBLIC_SUPABASE_URL ?? '',
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? '',
+  };
+}
 function web(production = false) {
-  // Only the explicitly public value from .env is passed to Next.js.
-  const webEnv = { ...process.env, NEXT_PUBLIC_API_BASE_URL: env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080/api/v1' };
+  // Only these explicit public values from .env are passed to Next.js.
+  const webEnv = publicWebEnv();
   run(process.execPath, [webRequire.resolve('next/dist/bin/next'), production ? 'start' : 'dev', '--hostname', '127.0.0.1', '--port', env.WEB_PORT ?? '3000'], `${root}apps/web`, webEnv);
 }
 function api(production = false) {
@@ -53,7 +64,7 @@ switch (process.argv[2]) {
   case 'dev:web': web(); break;
   case 'dev:api': api(); break;
   case 'start:web': web(true); break;
-  case 'build:web': run('npm', ['run', 'build', '-w', 'apps/web'], root, { ...process.env, NEXT_PUBLIC_API_BASE_URL: env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080/api/v1' }); break;
+  case 'build:web': run('npm', ['run', 'build', '-w', 'apps/web'], root, publicWebEnv()); break;
   case 'start:api': api(true); break;
   case 'db:up': run('docker', ['compose', '--env-file', '.env', '-f', 'compose.local.yml', 'up', '-d', '--wait', 'db']); break;
   case 'check:api': run('./gradlew', ['--no-daemon', 'test', 'build'], `${root}apps/api`); break;

@@ -1,0 +1,13 @@
+.card { max-width: 480px; margin: 72px auto 110px; padding: 40px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); text-align: center; }
+.card h1 { font-size: 26px; font-weight: 750; letter-spacing: -1px; margin: 10px 0 16px; }
+.card p { color: var(--muted); margin-bottom: 24px; }
+.card .eyebrow { color: var(--green); font-size: 12px; font-weight: 700; letter-spacing: .08em; }
+.primary { display: block; width: 100%; border: 0; border-radius: 10px; padding: 14px 18px; background: var(--green); color: #fff; font: inherit; font-weight: 650; cursor: pointer; }
+.primary:hover:not(:disabled) { background: var(--green-hover); }
+.primary:disabled { opacity: .5; cursor: not-allowed; }
+.back { display: inline-block; margin-top: 22px; color: var(--green); text-decoration: underline !important; }
+.card .notice { padding: 14px; background: var(--sage); border-radius: 10px; color: var(--ink); font-size: 14px; }
+.control { margin-left: auto; display: flex; align-items: center; gap: 12px; white-space: nowrap; font-size: 13px; }
+.control a, .control button { padding: 7px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--green); cursor: pointer; font: inherit; }
+.user { max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+@media(max-width: 640px) { .card { margin: 32px 16px 60px; padding: 28px 20px; } .card h1 { font-size: 23px; } .user { display: none; } .control { font-size: 12px; } }

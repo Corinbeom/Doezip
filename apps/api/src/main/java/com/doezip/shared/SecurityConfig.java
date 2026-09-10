@@ -26,17 +26,30 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/actuator/health", cors);
         source.registerCorsConfiguration("/api/v1/tasks", cors);
         source.registerCorsConfiguration("/api/v1/tasks/*", cors);
-        return http.cors(c -> c.configurationSource(source))
+        CorsConfiguration me = new CorsConfiguration(cors);
+        me.setAllowedHeaders(List.of("Accept", "Content-Type", "Authorization"));
+        source.registerCorsConfiguration("/api/v1/me", me);
+        CorsConfiguration bootstrap = new CorsConfiguration(me);
+        bootstrap.setAllowedMethods(List.of("POST"));
+        source.registerCorsConfiguration("/api/v1/me/bootstrap", bootstrap);
+        org.springframework.security.web.AuthenticationEntryPoint unauthorized = (request, response, exception) -> {
+            response.setStatus(401); response.setContentType("application/json");
+            response.setHeader("WWW-Authenticate", "Bearer");
+            response.setHeader("Cache-Control", "no-store");
+            mapper.writeValue(response.getOutputStream(), new ApiError("UNAUTHORIZED", "인증이 필요합니다.", RequestIdFilter.id(request)));
+        };
+        return http.csrf(c -> c.ignoringRequestMatchers(org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/me/bootstrap")))
+            .oauth2ResourceServer(c -> c.jwt(jwt -> {}).authenticationEntryPoint(unauthorized))
+            .cors(c -> c.configurationSource(source))
             .sessionManagement(c -> c.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .formLogin(AbstractHttpConfigurer::disable).httpBasic(AbstractHttpConfigurer::disable)
             .requestCache(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(c -> c.requestMatchers(HttpMethod.GET, "/actuator/health", "/api/v1/tasks", "/api/v1/tasks/*").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/me").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/v1/me/bootstrap").authenticated()
                 .anyRequest().denyAll())
             .exceptionHandling(c -> c
-                .authenticationEntryPoint((request, response, exception) -> {
-                    response.setStatus(401); response.setContentType("application/json");
-                    mapper.writeValue(response.getOutputStream(), new ApiError("UNAUTHORIZED", "인증이 필요합니다.", RequestIdFilter.id(request)));
-                })
+                .authenticationEntryPoint(unauthorized)
                 .accessDeniedHandler((request, response, exception) -> {
                     response.setStatus(403); response.setContentType("application/json");
                     mapper.writeValue(response.getOutputStream(), new ApiError("FORBIDDEN", "접근할 수 없습니다.", RequestIdFilter.id(request)));
