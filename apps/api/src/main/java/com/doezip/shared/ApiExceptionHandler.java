@@ -1,4 +1,8 @@
 package com.doezip.shared;
+import org.springframework.dao.DataAccessException;
+import org.springframework.transaction.CannotCreateTransactionException;
+import com.doezip.task.service.TaskNotFoundException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -7,9 +11,17 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class ApiExceptionHandler {
-    @ExceptionHandler({MethodArgumentNotValidException.class, HttpMessageNotReadableException.class})
+    @ExceptionHandler({MethodArgumentNotValidException.class, HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})
     ResponseEntity<ApiError> invalidInput(Exception exception, HttpServletRequest request) {
         return ResponseEntity.badRequest().body(new ApiError("INVALID_INPUT", "입력 형식을 확인하세요.", RequestIdFilter.id(request)));
+    }
+    @ExceptionHandler(TaskNotFoundException.class)
+    ResponseEntity<ApiError> taskNotFound(HttpServletRequest request) {
+        return ResponseEntity.status(404).body(new ApiError("TASK_NOT_FOUND", "과제를 찾을 수 없습니다.", RequestIdFilter.id(request)));
+    }
+    @ExceptionHandler({DataAccessException.class, CannotCreateTransactionException.class})
+    ResponseEntity<ApiError> databaseUnavailable(HttpServletRequest request) {
+        return ResponseEntity.status(503).body(new ApiError("SERVICE_UNAVAILABLE", "잠시 후 다시 시도하세요.", RequestIdFilter.id(request)));
     }
     @ExceptionHandler(Exception.class)
     ResponseEntity<ApiError> unexpected(Exception exception, HttpServletRequest request) {

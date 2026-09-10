@@ -1,13 +1,13 @@
 # Doezip 협업 규칙
 
-AI 활용 역량 훈련 서비스. 2인이 약 2주 동안 기능별로 화면·API·DB·테스트를 함께 소유한다.
-현재 F00은 실행 환경만 구축한다. 제품 디자인·로그인·채팅·검산·평가·리포트·AI 호출,
+AI 활용 역량 훈련 서비스. 현재 1인 개발로 진행하며 기능별로 화면·API·DB·테스트까지 함께 구현·검증한다.
+F00 실행 환경은 구축됐다. 이후 기능은 docs/FEATURE_BACKLOG.md의 현재 실행 순서를 따른다. 제품 디자인·로그인·채팅·검산·평가·리포트·AI 호출,
 전체 22개 테이블 migration과 seed는 후속 작업이며 완료로 표시하지 않는다.
 
 ## Git
 - main은 배포 기준, develop은 통합 기준이다. 두 브랜치에서 직접 기능 개발 금지.
 - feature/*는 develop에서 분기하며 PR 대상은 develop. 같은 기능의 web/api는 같은 브랜치.
-- 상대방 1명 리뷰·승인과 CI 통과 후 squash merge. squash한 기능 브랜치는 재사용하지 않는다.
+- 1인 개발 중에는 작성자의 diff 검토·실제 동작 확인과 CI 통과 후 squash merge. Codex 검토는 보조이며 작성자의 확인을 대신하지 않는다. squash한 기능 브랜치는 재사용하지 않는다.
 - develop → main은 배포 검증 후 merge commit. main 반영 결과는 develop에도 동기화.
 - 공유 브랜치 강제 push·임의 히스토리 재작성 금지. 동시 Codex는 별도 clone/worktree 사용.
 - 공통 UI·계약·의존성·DB 변경은 PR에 영향 범위와 리뷰 대상을 표시한다.
