@@ -6,7 +6,7 @@
 - 스키마 변경은 Flyway, JPA ddl-auto=validate. 적용한 migration 수정 금지.
 - 문서·평가 스냅샷과 비공개 정답 경계를 유지. fixtures/private는 서버 전용.
 - 불필요한 Generic CRUD·CQRS·별도 AI 서버 금지.
-- GET /actuator/health만 공개. 그 외 기본 차단. 인증 미구현을 permitAll로 우회하지 않는다.
+- GET /actuator/health와 /api/v1/tasks, /api/v1/tasks/{taskId}만 공개. 그 외 기본 차단. 인증 미구현을 permitAll로 우회하지 않는다.
 - 루트에서 npm run dev:api, npm run check:api. Java 21과 Docker가 필요하다.
 - 앱 디렉터리에서 ./gradlew test build 실행 가능. bootRun 환경은 루트 실행기가 .env를 명시적으로 전달.
 - Testcontainers PostgreSQL 검사를 H2나 성공 mock으로 대체하지 않는다.
