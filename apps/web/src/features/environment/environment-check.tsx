@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getHealth } from './health';
 export function EnvironmentCheck() {
   const health = useQuery({ queryKey: ['operational-health'], queryFn: ({ signal }) => getHealth(signal) });
-  return <main>
+  return <main className="technical-page">
     <Link href="/tasks">과제 목록 보기</Link>
     <h1>개발 환경 확인</h1>
     <p>기술 연결 확인용 임시 화면입니다. 최종 제품 UI가 아닙니다.</p>
