@@ -36,11 +36,11 @@ class EnvironmentIntegrationTest {
     @Autowired DataSource dataSource;
     @Autowired ObjectMapper mapper;
 
-    @Test @Order(1) void connectsToPostgresWithTaskCatalogOnly() throws Exception {
+    @Test @Order(1) void connectsToPostgresWithTaskCatalogAndUsers() throws Exception {
         try (var connection = dataSource.getConnection(); var statement = connection.createStatement()) {
             assertThat(connection.getMetaData().getDatabaseProductName()).isEqualTo("PostgreSQL");
             try (var rows = statement.executeQuery("select count(*) from information_schema.tables where table_schema='public' and table_name <> 'flyway_schema_history'")) {
-                rows.next(); assertThat(rows.getInt(1)).isEqualTo(2);
+                rows.next(); assertThat(rows.getInt(1)).isEqualTo(3);
             }
         }
     }
