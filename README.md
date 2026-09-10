@@ -12,8 +12,8 @@ Git이 필요하다. 아래 명령은 macOS/Linux/WSL 셸 기준이다. Windows�
 ```bash
 git clone https://github.com/Corinbeom/Doezip.git
 cd Doezip
-# 현재 개발 환경 브랜치가 원격에 공유된 후 checkout한다.
-git switch feature/F00-dev-environment
+# 통합된 개발 환경을 checkout한다.
+git switch develop
 # nvm을 사용하는 경우
 nvm install
 nvm use
