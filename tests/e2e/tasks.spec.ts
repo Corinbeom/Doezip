@@ -77,7 +77,7 @@ for (const width of [1440, 390, 320]) {
     const title = page.getByRole('heading', { name: sampleTitle, exact: true });
     await expect(title).toBeVisible();
     // A missing stylesheet previously made all headings indistinguishable from body text.
-    expect(await title.evaluate(element => parseFloat(getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(28);
+    await expect.poll(() => title.evaluate(element => parseFloat(getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(28);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await expect(page.getByRole('button', { name: /이 문제 시작하기|학습 시작/ })).toHaveCount(0);
     await page.screenshot({ path: testInfo.outputPath(`task-detail-${width}.png`), fullPage: true });
