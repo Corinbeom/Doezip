@@ -1,4 +1,4 @@
-> **F00 범위 정정 (2026-09-06):** 최신 사용자 지시에 따라 이번 작업은 [개발 환경 구축](F00_ENVIRONMENT.md)만 수행한다. 기존 전체 MVP·ERD·seed·AI·배포 계획은 후속 작업이다. 현재 실행 명령은 [루트 README](../README.md)를 따른다.
+> **F00 당시 범위 (2026-09-06, 과거 기록):** 해당 작업은 [개발 환경 구축](F00_ENVIRONMENT.md)만 수행한다. 기존 전체 MVP·ERD·seed·AI·배포 계획은 후속 작업이다. 현재 실행 명령은 [루트 README](../README.md)를 따른다.
 
 # 결정 기록 — 원문 유지 / 구현 구체화 / 범위 조정
 
@@ -53,3 +53,10 @@
 
 - ADR-23 (사용자 확정): main ← develop ← feature/* 및 이번 F00 범위는 루트 AGENTS.md와 F00_ENVIRONMENT.md를 따른다. 전체 ERD·seed·AI·디자인 이식은 후속 작업이다.
 - ADR-24 (형식 수정): 표준 OpenAPI 3.0 validator가 BootstrapRequest의 required: []를 거부하여 빈 선언을 제거했다. displayName은 기존처럼 선택 입력이며 제품 API 의미는 바꾸지 않는다. 빈 bootstrap 요청 fixture와 공개 fixture schema 검증으로 확인한다.
+
+## 1인 개발 전환 (2026-09-10)
+
+- ADR-25 (사용자 확정): 1인 개발로 전환한다. ADR-16의 A/B 분담과 상호 승인 필수 규칙은 현재 적용하지 않는다. 기능별 풀스택 소유는 유지하며 작성자의 diff 검토·실제 동작 확인과 CI 통과를 병합 기준으로 삼는다. GitHub 설정 자체는 이번 문서 변경으로 적용되지 않는다.
+- 실행 순서는 FEATURE_BACKLOG.md의 현재 실행 순서를 따른다. 기존 2인·2주 추정은 참고 기록이며 새 일정의 약속이 아니다. 과제 조회부터 작은 단위로 구현하며 전체 MVP 범위를 완료한 것으로 표시하지 않는다.
+
+- ADR-26 (F02a 구현): 기존 공개 GET tasks 계약으로 과제 조회를 구현한다. ERD의 tasks·rubric_dimensions만 우선 적용하고, 별도 local 프로필의 조회용 가상 데이터는 실제 학습용 과제 발행과 구분한다. 원본 과제 패키지의 정답·자료 검수와 나머지 migration은 후속 작업이다.

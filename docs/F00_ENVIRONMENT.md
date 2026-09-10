@@ -1,5 +1,7 @@
 # F00 개발 환경 범위
 
+이 문서는 F00 당시 범위 기록이다. 이후 과제 조회 구현은 [F02a 작업 기록](F02A_TASK_BROWSE.md)을 따른다.
+
 F00의 범위는 개발 환경 구축이다.
 산출물은 Next.js → Spring Boot Actuator → PostgreSQL 실행 환경, 공통 규칙, 계약 타입 생성,
 테스트·CI다. 전체 MVP 기반 기능 완료를 의미하지 않는다.
