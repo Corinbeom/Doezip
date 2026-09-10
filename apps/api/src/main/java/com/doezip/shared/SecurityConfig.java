@@ -24,11 +24,13 @@ public class SecurityConfig {
         cors.setAllowCredentials(false);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/actuator/health", cors);
+        source.registerCorsConfiguration("/api/v1/tasks", cors);
+        source.registerCorsConfiguration("/api/v1/tasks/*", cors);
         return http.cors(c -> c.configurationSource(source))
             .sessionManagement(c -> c.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .formLogin(AbstractHttpConfigurer::disable).httpBasic(AbstractHttpConfigurer::disable)
             .requestCache(AbstractHttpConfigurer::disable)
-            .authorizeHttpRequests(c -> c.requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
+            .authorizeHttpRequests(c -> c.requestMatchers(HttpMethod.GET, "/actuator/health", "/api/v1/tasks", "/api/v1/tasks/*").permitAll()
                 .anyRequest().denyAll())
             .exceptionHandling(c -> c
                 .authenticationEntryPoint((request, response, exception) -> {

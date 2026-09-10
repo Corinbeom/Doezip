@@ -1,9 +1,11 @@
+> **F02a 구현 상태 (2026-09-10):** 공개 GET `/tasks`, GET `/tasks/{taskId}`를 구현했다. 나머지 제품 경로는 미구현·기본 차단이다. [범위와 검증](F02A_TASK_BROWSE.md)을 참고한다.
+
 # API 계약 — 화면·상태·데이터 연결
 
 **버전:** 1.0.0 · **상태:** 구현 제안. 실행 중인 서버의 자동 추출 결과가 아니다.
 기계 판독 명세는 [OpenAPI](../contracts/openapi.yaml), 원본 컬럼은 [ERD](sources/ERD.md)를 따른다.
 
-F00에서는 아래 제품 API를 구현하지 않는다. 별도 운영 경로 `GET /actuator/health`만 공개하며,
+F00 당시에는 제품 API 없이 운영 경로 `GET /actuator/health`만 공개했다. 현재 F02a 과제 조회 GET이 추가됐으며, health는
 실제 PostgreSQL 연결이 정상이면 `200 {"status":"UP"}`, 장애면 `503 {"status":"DOWN"}`을 반환한다.
 운영 health 응답은 제품 DTO·오류 계약과 구분하고 내부 컴포넌트·DB 연결 정보는 노출하지 않는다.
 프론트 제품 타입은 루트 `npm run api:generate`로 기존 OpenAPI에서 생성한다.
