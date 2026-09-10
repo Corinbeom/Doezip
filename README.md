@@ -27,7 +27,9 @@ npm run dev
 웹 http://localhost:3000 에서 API와 PostgreSQL 연결 상태를 확인한다.
 API 운영 health: http://localhost:8080/actuator/health (`UP`: 200 / DB 장애 `DOWN`: 503, 상세 비공개).
 웹 http://localhost:3000/tasks 에서 로컬 조회용 가상 과제의 설명과 공개 루브릭을 확인한다.
-제품 API는 GET `/api/v1/tasks`, GET `/api/v1/tasks/{taskId}`만 구현했다. 다른 제품 경로는 차단된다.
+공개 과제 조회 외에 인증된 사용자 연결 POST `/api/v1/me/bootstrap`, 조회 GET `/api/v1/me`를 제공한다. 그 외 제품 경로는 차단된다.
+
+Google 로그인 설정은 [인증 설정](docs/AUTH_SETUP.md)을 따른다. 설정이 없으면 `/login`에서 안내를 표시하고 로그인 버튼을 비활성화한다. 최초 Google 로그인은 사용자 확인 및 DB 연결 확인을 마쳤으며, 세부 검증 상태는 F01 기록을 따른다.
 
 `npm run dev`는 웹과 API만 함께 실행한다. **DB 시작은 별도**이며 먼저 `npm run db:up`을 실행한다.
 Ctrl+C는 이 실행기가 시작한 프로세스만 종료한다. DB와 영속 볼륨은 유지한다.
@@ -72,15 +74,15 @@ DB를 멈출 때는 `docker compose --env-file .env -f compose.local.yml stop db
 - 기존 `.env` 사용자는 `SPRING_PROFILES_ACTIVE=local`을 추가해야 조회용 가상 과제가 생성된다.
   `local`은 전용 개발 DB에서만 사용한다. 기본 프로필에는 샘플이 없으며 새 DB는 빈 목록을 반환한다.
   이미 local seed를 적용한 DB는 프로필을 바꿔도 데이터가 없어지지 않으므로 운영 DB로 재사용하지 않는다.
-- 웹 공개 설정은 `NEXT_PUBLIC_API_BASE_URL`뿐이다. 서버 비밀번호·AI 키는 넣지 않는다.
+- 웹 공개 설정은 `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`다. Supabase publishable 키만 사용하며 서버 비밀번호·Google Client Secret·Supabase secret 키·AI 키는 넣지 않는다.
 - 기본 포트는 web 3000 / api 8080 / PG 5432이며 로컬에 바인딩한다.
 - `DB_PORT` 변경 시 `DATABASE_URL`, `API_PORT` 변경 시 `NEXT_PUBLIC_API_BASE_URL`,
   `WEB_PORT` 변경 시 `CORS_ALLOWED_ORIGIN`도 맞춘다. 공개 URL 변경 후 production build를 다시 한다.
 - `apps/web/src/app`: 라우팅, `src/features/environment`: 임시 연결 확인 화면, `src/features/tasks`: 과제 조회.
 - `apps/web/src/shared/api`: 공통 fetch·오류·Query Provider. `shared/ui`: 승인 디자인의 공통 화면 구성·스타일.
 - `apps/web/src/generated/api-types.ts`: 생성 타입. **손으로 수정하지 않는다.**
-- `apps/api`: Spring MVC·JPA·Validation·Security·Actuator·Flyway. DB 상세 비공개, health·과제 조회 GET 외 기본 차단.
-- `apps/api/src/main/resources/db/migration`: 과제·루브릭 두 테이블. `db/local`: 로컬 조회용 seed.
+- `apps/api`: Spring MVC·JPA·Validation·Security·Actuator·Flyway. DB 상세 비공개. health·과제 조회 GET은 공개, me 경로는 JWT 인증, 나머지는 기본 차단.
+- `apps/api/src/main/resources/db/migration`: 과제·루브릭·사용자 세 테이블. `db/local`: 로컬 조회용 seed.
   전체 ERD migration·학습 과제 패키지 seed는 후속 작업.
 - `contracts`, `docs`, `fixtures`, `templates`: 기존 기준 자료 보존. fixture는 웹에 import·배포하지 않는다.
   templates는 참고 예시이며 실제 앱 설정은 루트와 apps/api 아래에 있다.
@@ -100,3 +102,5 @@ DB를 멈출 때는 `docker compose --env-file .env -f compose.local.yml stop db
 과제 조회의 범위와 검증 기록은 [F02a 작업 기록](docs/F02A_TASK_BROWSE.md)을 참고한다.
 
 과제 조회 화면은 승인된 학습 플랫폼 v0.1 디자인을 기준으로 구현한다. [적용 범위와 검증](docs/design/TASK_DESIGN_VALIDATION.md)을 참고한다.
+
+로그인 구현 범위와 검증 기록: [F01 인증](docs/F01_AUTH_VALIDATION.md).
