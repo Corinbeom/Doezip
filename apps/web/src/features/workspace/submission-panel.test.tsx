@@ -3,6 +3,7 @@ import { afterEach,beforeEach,expect,it,vi } from 'vitest';
 import { QueryClient,QueryClientProvider } from '@tanstack/react-query';
 import { SubmissionPanel } from './submission-panel';
 import { getDocuments,submitInitial,type DocumentVersion } from './api';
+vi.mock('@/features/challenge/challenge-panel',()=>({ChallengePanel:()=>null}));
 vi.mock('./api',()=>({getDocuments:vi.fn(),submitInitial:vi.fn()}));
 const draft={markdown:'saved content',lockVersion:3,contentHash:'a'.repeat(64)};
 const document:DocumentVersion={id:'doc',sessionId:'session',versionNo:1,checkpoint:'INITIAL',contentMarkdown:'<script>bad()</script>',contentHash:draft.contentHash,sourceDraftLockVersion:3,sealedAt:'2026-09-11T00:00:00Z',createdAt:'2026-09-11T00:00:00Z'};
