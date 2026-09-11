@@ -1,4 +1,4 @@
-> **현재 구현 상태 (2026-09-11):** F02a 공개 과제 조회, F01 me/bootstrap, F02b 세션 생성·workspace·공개 자료·draft 저장을 구현한다. 제출·평가 등 나머지 제품 경로는 기본 차단이다. [F02b 범위와 검증](F02B_REPORT_DRAFT.md)을 참고한다.
+> **현재 구현 상태 (2026-09-11):** F02a 공개 과제 조회, F01 me/bootstrap, F02b 세션 생성·workspace·공개 자료·draft 저장을 구현한다. F02c INITIAL 제출·제출본 조회도 구현한다. FINAL·검산·평가 등 나머지 제품 경로는 기본 차단이다. [F02b 범위와 검증](F02B_REPORT_DRAFT.md)을 참고한다.
 
 # API 계약 — 화면·상태·데이터 연결
 
@@ -248,3 +248,13 @@ unknown field, 다른 과제 자료, 숨긴 자료, KEEP+replacement, 빈 이유
 원문 기획의 학습 순서와 원본 ERD의 관계·상태는 유지했다.
 HTTP 경로, DTO, bootstrap 액션, SSE 프레임, input 상한, 재전송 정책, 동일 화면 buffer 교체 방식은
 2인 구현을 위해 이 패키지에서 새로 제안한 계약이다. 변경 시 OpenAPI와 fixture도 같이 바꾼다.
+
+### F02c 구현 범위 (2026-09-11)
+
+POST/GET `/api/v1/sessions/{sessionId}/document-versions`를 구현했다. 인증과 소유권 검사가 필요하다.
+INITIAL만 생성하며 FINAL/REVISION과 평가 시작은 구현하지 않았다. 생성 성공과 동일 입력 재전송은 기존 계약대로 201이다.
+소유자 세션 행 잠금 안에서 버전·해시를 검사한 뒤 저장과 WRITING → CHALLENGE 전환을 함께 커밋한다.
+다른 입력의 중복 INITIAL은 DOCUMENT_ALREADY_SUBMITTED(409), 버전/해시 불일치는 각각
+DRAFT_VERSION_CONFLICT/DRAFT_CONTENT_CONFLICT(409), 빈 본문(Unicode 공백만 포함)은 EMPTY_DOCUMENT(422)다.
+최초 제출 이후 status는 ACTIVE이며 initialReportId는 평가 리포트가 없으므로 null이다.
+제출본은 사용자 작성 보고서이고 검산 초안·비공개 정답과는 별개다. 응답은 no-store이며 수정 API는 없다.
