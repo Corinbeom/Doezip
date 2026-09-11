@@ -12,3 +12,5 @@
 - 인증 설정은 docs/AUTH_SETUP.md. Supabase publishable 키만 공개하고 실제 Google 검증과 SDK 경계 테스트를 구분한다.
 - 보고서 편집 버퍼는 React 상태로 유지하고 localStorage에 저장하지 않는다. 자동 저장은 1초 debounce·직렬 요청·CAS이며 409에서 자동 덮어쓰기하지 않는다.
 - 작업 공간 재진입은 최신 서버 응답으로 시작하고, 계정 변경·로그아웃 시 편집기와 진행 중 요청을 정리한다. F02b 검증은 docs/F02B_REPORT_DRAFT.md를 따른다.
+
+- 최초 제출은 현재 편집 내용의 저장 성공 후 서버가 반환한 lockVersion/contentHash를 사용한다. 제출 결과가 불명확하면 같은 입력으로 재시도하거나 제출 이력을 조회한다. 제출본은 HTML을 실행하지 않는 읽기 전용 텍스트로 표시한다.

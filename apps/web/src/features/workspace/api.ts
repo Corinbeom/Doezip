@@ -15,3 +15,16 @@ export const createSession = (taskId:string, signal?:AbortSignal) => authenticat
 export const getWorkspace = (id:string, signal?:AbortSignal) => authenticatedFetch(`/sessions/${id}/workspace`,workspaceSchema,{signal});
 export const getMaterial = (id:string, materialId:string, signal?:AbortSignal) => authenticatedFetch(`/sessions/${id}/materials/${materialId}`,materialSchema,{signal});
 export const saveDraft = (id:string, markdown:string, expectedLockVersion:number, signal?:AbortSignal) => authenticatedFetch(`/sessions/${id}/draft`,draftSchema,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({markdown,expectedLockVersion}),signal});
+
+export type DocumentVersion = components['schemas']['DocumentVersion'];
+const documentSchema: z.ZodType<DocumentVersion> = z.strictObject({
+  id:z.uuid(), sessionId:z.uuid(), versionNo:z.number().int().positive(), checkpoint:z.enum(['INITIAL','REVISION','FINAL']),
+  contentMarkdown:z.string(), contentHash:z.string().regex(/^[0-9a-f]{64}$/), sourceDraftLockVersion:z.number().int().nonnegative(),
+  sealedAt:z.iso.datetime({offset:true}), createdAt:z.iso.datetime({offset:true}),
+});
+const documentsSchema = z.strictObject({items:z.array(documentSchema)});
+export const getDocuments = (id:string,signal?:AbortSignal) => authenticatedFetch(`/sessions/${id}/document-versions`,documentsSchema,{signal});
+export const submitInitial = (id:string,draft:Draft,signal?:AbortSignal) => {
+  const body:components['schemas']['DocumentCreateRequest']={checkpoint:'INITIAL',expectedDraftLockVersion:draft.lockVersion,expectedContentHash:draft.contentHash};
+  return authenticatedFetch(`/sessions/${id}/document-versions`,documentSchema,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal});
+};
