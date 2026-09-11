@@ -14,3 +14,5 @@
 
 - 초안 저장은 소유한 learning_sessions 행 잠금 안에서 ACTIVE/WRITING 상태와 expectedLockVersion을 함께 검사한다. 단계 변경도 같은 행을 잠가야 한다.
 - 자료는 task와 공개 단계로 필터링한다. 조건 공개 전 CONDITION_CHANGE 제목·본문을 응답에 넣지 않는다. 초안은 LF 정규화·Unicode 20,000자 제한·UTF-8 SHA-256을 사용한다.
+
+- POST/GET /api/v1/sessions/{id}/document-versions는 인증·소유권 검사 후 처리한다. INITIAL 제출은 draft와 같은 세션 행 잠금에서 CAS·중복 확인·봉인·CHALLENGE 전환을 원자적으로 처리한다. 동일 입력 재시도는 기존 제출본을 반환하며 수정 API를 추가하지 않는다.
