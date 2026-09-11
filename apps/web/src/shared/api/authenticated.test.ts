@@ -1,9 +1,10 @@
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { authenticatedFetch, connectUser, onAuthenticationInvalidated } from './authenticated';
 const { session } = vi.hoisted(() => ({ session: vi.fn() }));
 vi.mock('@/shared/auth/session', () => ({ getAuthClient: () => ({ auth: { getSession: session } }) }));
-afterEach(() => { vi.unstubAllGlobals(); vi.clearAllMocks(); });
+beforeEach(() => vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:8080/api/v1'));
+afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.clearAllMocks(); });
 it('gets the current token for each API request and invalidates a rejected login without retry', async () => {
   session.mockResolvedValue({ data: { session: { access_token: 'sdk-token' } }, error: null });
   const fetcher = vi.fn().mockResolvedValue(new Response('{}', { status: 401 })); vi.stubGlobal('fetch', fetcher);
