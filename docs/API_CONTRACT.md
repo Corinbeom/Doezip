@@ -1,4 +1,4 @@
-> **현재 구현 상태 (2026-09-11):** F02a 공개 과제 조회, F01 me/bootstrap, F02b 세션 생성·workspace·공개 자료·draft 저장을 구현한다. F02c INITIAL 제출·제출본 조회도 구현한다. FINAL·검산·평가 등 나머지 제품 경로는 기본 차단이다. [F02b 범위와 검증](F02B_REPORT_DRAFT.md)을 참고한다.
+> **현재 구현 상태 (2026-09-11):** F02a 공개 과제 조회, F01 me/bootstrap, F02b 세션 생성·workspace·공개 자료·draft 저장을 구현한다. F02c INITIAL 제출·제출본 조회도 구현한다. F04a 검산 시작·조회도 구현한다. FINAL·검토 저장/제출·평가 등 나머지 제품 경로는 기본 차단이다. [F02b 범위와 검증](F02B_REPORT_DRAFT.md)을 참고한다.
 
 # API 계약 — 화면·상태·데이터 연결
 
@@ -258,3 +258,13 @@ INITIAL만 생성하며 FINAL/REVISION과 평가 시작은 구현하지 않았�
 DRAFT_VERSION_CONFLICT/DRAFT_CONTENT_CONFLICT(409), 빈 본문(Unicode 공백만 포함)은 EMPTY_DOCUMENT(422)다.
 최초 제출 이후 status는 ACTIVE이며 initialReportId는 평가 리포트가 없으므로 null이다.
 제출본은 사용자 작성 보고서이고 검산 초안·비공개 정답과는 별개다. 응답은 no-store이며 수정 API는 없다.
+
+### F04a 검산 시작·조회
+
+POST `/api/v1/sessions/{id}/challenge`, GET `/api/v1/challenge-runs/{id}`를 구현했다.
+`challenge-notice-v1`과 acknowledged=true를 엄격히 검사한다. 사용자 소유 세션에 최초 제출본이 있고
+ACTIVE/CHALLENGE 상태여야 새 run을 배정한다. 세션 행 잠금과 UNIQUE(session_id)로 중복 시작을 막고
+같은 요청에는 기존 run을 반환한다. GET은 소유자만 가능하고 응답은 no-store다.
+안내 확인 전 workspace에는 초안 본문·제목·템플릿 ID를 넣지 않는다. 확인 후 run ID와 공개 문장만 제공한다.
+variant_code·오류 키·정답·오류 개수는 응답에서 제외한다. 초안 준비 실패/해시 불일치는 CHALLENGE_UNAVAILABLE(503)이며 run을 저장하지 않는다.
+F04a에는 검토 저장 API가 없으므로 reviews는 실제로 비어 있고 submittedAt은 null이다. 검토 저장·제출은 후속 구현이다.
