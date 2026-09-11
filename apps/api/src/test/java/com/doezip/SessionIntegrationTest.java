@@ -70,7 +70,7 @@ class SessionIntegrationTest {
     @Autowired JwtDecoder decoder;
     @Autowired CurrentUser currentUser;
     @BeforeEach void setup() throws Exception {
-        database.update("DELETE FROM document_versions"); database.update("DELETE FROM learning_sessions"); database.update("DELETE FROM materials");
+        database.update("DELETE FROM challenge_runs"); database.update("DELETE FROM challenge_statements"); database.update("DELETE FROM challenge_templates"); database.update("DELETE FROM document_versions"); database.update("DELETE FROM learning_sessions"); database.update("DELETE FROM materials");
         database.update("DELETE FROM rubric_dimensions"); database.update("DELETE FROM tasks"); database.update("DELETE FROM users");
         database.update("INSERT INTO tasks(id,task_code,title,description_markdown,status,published_at) VALUES (?,'test-writing','Test','Public task','PUBLISHED',now())", taskId);
         alice=token("alice",c->{}); bob=token("bob",c->{});bootstrap(alice,"{}");bootstrap(bob,"{}");
@@ -324,6 +324,111 @@ class SessionIntegrationTest {
       assertThat(http.exchange("/api/v1/sessions/id/document-versions",HttpMethod.OPTIONS,new HttpEntity<>(headers),String.class).getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
       headers.setAccessControlRequestMethod(HttpMethod.POST);headers.setOrigin("https://attacker.invalid");
       assertThat(http.exchange("/api/v1/sessions/id/document-versions",HttpMethod.OPTIONS,new HttpEntity<>(headers),String.class).getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    UUID template(UUID task,String hashOverride) {
+      UUID id=UUID.randomUUID();String text="첫 번째 문장을 자료와 비교한다.\n두 번째 문장을 검토한다.";
+      String hash=hashOverride==null?com.doezip.session.service.SessionService.hash(text):hashOverride;
+      database.update("INSERT INTO challenge_templates(id,task_id,variant_code,title,instructions_markdown,content_hash) VALUES (?,?,'PRIVATE_VARIANT_NEVER_SEND','별도 검토 초안','사실과 다를 수 있습니다.',?)",id,task,hash);
+      int order=0;for(String line:text.split("\n")) database.update("INSERT INTO challenge_statements(id,challenge_template_id,statement_key,sort_order,content_text) VALUES (?,?,?,?,?)",UUID.randomUUID(),id,"S"+(++order),order,line);
+      return id;
+    }
+    String submittedSession() throws Exception {
+      String id=start();String hash=json(save(id,alice,"USER_ORIGINAL_REPORT",0)).get("contentHash").asText();
+      assertThat(submit(id,alice,1,hash,"INITIAL").getStatusCode()).isEqualTo(HttpStatus.CREATED);return id;
+    }
+    ResponseEntity<String> beginChallenge(String id,String jwt) {
+      return request(path(id)+"/challenge",HttpMethod.POST,jwt,"{\"noticeVersion\":\"challenge-notice-v1\",\"acknowledged\":true}");
+    }
+    @Test void challengeConsentAssignsSeparateContentAndRestoresWithoutPrivateMetadata() throws Exception {
+      UUID template=template(taskId,null);String id=submittedSession();
+      var before=request(path(id)+"/workspace",HttpMethod.GET,alice,null);
+      assertThat(before.getBody()).doesNotContain("첫 번째 문장","별도 검토 초안",template.toString(),"PRIVATE_VARIANT");
+      assertThat(json(before).get("challengeRunId").isNull()).isTrue();assertThat(json(before).get("session").get("allowedActions").toString()).contains("START_CHALLENGE");
+      var original=json(request(path(id)+"/document-versions",HttpMethod.GET,alice,null));
+      var response=beginChallenge(id,alice);assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+      var run=json(response);assertThat(run.get("statements")).hasSize(2);assertThat(run.get("reviews")).isEmpty();
+      assertThat(run.get("status").asText()).isEqualTo("IN_PROGRESS");assertThat(run.get("lockVersion").asLong()).isZero();assertThat(run.get("submittedAt").isNull()).isTrue();
+      List<String> responseFields=new ArrayList<>();run.fieldNames().forEachRemaining(responseFields::add);
+      assertThat(responseFields).containsExactlyInAnyOrder("id","sessionId","title","instructionsMarkdown","noticeVersion","status","lockVersion","statements","reviews","submittedAt");
+      assertThat(response.getBody()).doesNotContain("PRIVATE_VARIANT",template.toString(),"faultTemplateId","correctAnswer","isFault","USER_ORIGINAL_REPORT");
+      assertThat(response.getHeaders().getCacheControl()).contains("no-store");
+      String runId=run.get("id").asText();
+      assertThat(json(request("/api/v1/challenge-runs/"+runId,HttpMethod.GET,alice,null))).isEqualTo(run);
+      assertThat(json(beginChallenge(id,alice))).isEqualTo(run);
+      assertThat(json(request(path(id)+"/workspace",HttpMethod.GET,alice,null)).get("challengeRunId").asText()).isEqualTo(runId);
+      assertThat(json(request(path(id)+"/document-versions",HttpMethod.GET,alice,null))).isEqualTo(original);
+      assertThat(json(request(path(id)+"/workspace",HttpMethod.GET,alice,null)).get("draft")).isEqualTo(json(before).get("draft"));
+      assertThat(database.queryForObject("SELECT count(*) FROM challenge_runs WHERE session_id=? AND notice_acknowledged_at IS NOT NULL",Integer.class,UUID.fromString(id))).isEqualTo(1);
+      database.update("UPDATE learning_sessions SET current_step='FEEDBACK' WHERE id=?",UUID.fromString(id));
+      assertThat(json(beginChallenge(id,alice))).isEqualTo(run);
+    }
+    @Test void challengeRequiresStrictVersionedAcknowledgement() throws Exception {
+      template(taskId,null);String id=submittedSession();
+      for(String body:List.of("{}","null","[]","{\"noticeVersion\":\"challenge-notice-v1\",\"acknowledged\":false}",
+          "{\"noticeVersion\":\"challenge-notice-v1\",\"acknowledged\":\"true\"}",
+          "{\"noticeVersion\":\"old-version\",\"acknowledged\":true}",
+          "{\"noticeVersion\":\"challenge-notice-v1\",\"acknowledged\":true,\"templateId\":\"forged\"}"))
+        assertError(request(path(id)+"/challenge",HttpMethod.POST,alice,body),HttpStatus.BAD_REQUEST,"INVALID_INPUT");
+      assertThat(database.queryForObject("SELECT count(*) FROM challenge_runs",Integer.class)).isZero();
+    }
+    @Test void challengeRequiresSealedInitialAndProperPhase() throws Exception {
+      template(taskId,null);String id=start();
+      assertError(beginChallenge(id,alice),HttpStatus.CONFLICT,"INVALID_SESSION_STATE");
+      database.update("UPDATE learning_sessions SET current_step='CHALLENGE' WHERE id=?",UUID.fromString(id));
+      assertError(beginChallenge(id,alice),HttpStatus.CONFLICT,"INVALID_SESSION_STATE");
+      String sealed=submittedSession();
+      for(String step:List.of("WRITING","FEEDBACK","FOLLOW_UP","CONDITION_CHANGE","FINAL_REVIEW","DONE")){
+        database.update("UPDATE learning_sessions SET current_step=? WHERE id=?",step,UUID.fromString(sealed));
+        assertError(beginChallenge(sealed,alice),HttpStatus.CONFLICT,"INVALID_SESSION_STATE");
+      }
+      database.update("UPDATE learning_sessions SET current_step='CHALLENGE',status='ABANDONED' WHERE id=?",UUID.fromString(sealed));
+      assertError(beginChallenge(sealed,alice),HttpStatus.CONFLICT,"INVALID_SESSION_STATE");
+      assertThat(database.queryForObject("SELECT count(*) FROM challenge_runs",Integer.class)).isZero();
+    }
+    @Test void challengeOwnerAndDefaultDenyApplyToAllEntryPoints() throws Exception {
+      template(taskId,null);String id=submittedSession();
+      assertError(beginChallenge(id,bob),HttpStatus.NOT_FOUND,"SESSION_NOT_FOUND");
+      assertError(beginChallenge(id,null),HttpStatus.UNAUTHORIZED,"UNAUTHORIZED");
+      String runId=json(beginChallenge(id,alice)).get("id").asText();
+      assertError(request("/api/v1/challenge-runs/"+runId,HttpMethod.GET,bob,null),HttpStatus.NOT_FOUND,"CHALLENGE_NOT_FOUND");
+      assertError(request("/api/v1/challenge-runs/"+runId,HttpMethod.GET,null,null),HttpStatus.UNAUTHORIZED,"UNAUTHORIZED");
+      assertError(request("/api/v1/challenge-runs/"+UUID.randomUUID(),HttpMethod.GET,alice,null),HttpStatus.NOT_FOUND,"CHALLENGE_NOT_FOUND");
+      assertThat(request("/api/v1/challenge-runs/"+runId+"/reviews",HttpMethod.PUT,alice,"{}").getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+      assertThat(request("/api/v1/challenge-runs/"+runId+"/submit",HttpMethod.POST,alice,"{}").getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+      assertThat(request("/api/v1/challenge-templates",HttpMethod.GET,alice,null).getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+    @Test void challengeConcurrentStartsAssignOneRun() throws Exception {
+      template(taskId,null);String id=submittedSession();
+      try(var pool=Executors.newFixedThreadPool(2)){
+        var gate=new CountDownLatch(1);
+        var a=pool.submit(()->{gate.await();return beginChallenge(id,alice);});
+        var b=pool.submit(()->{gate.await();return beginChallenge(id,alice);});gate.countDown();
+        var first=a.get(20,TimeUnit.SECONDS);var second=b.get(20,TimeUnit.SECONDS);
+        assertThat(first.getStatusCode()).isEqualTo(HttpStatus.OK);assertThat(second.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(json(first)).isEqualTo(json(second));
+      }
+      assertThat(database.queryForObject("SELECT count(*) FROM challenge_runs WHERE session_id=?",Integer.class,UUID.fromString(id))).isEqualTo(1);
+    }
+    @Test void unavailableOrCorruptChallengeDoesNotRecordAStartedRun() throws Exception {
+      String id=submittedSession();assertError(beginChallenge(id,alice),HttpStatus.SERVICE_UNAVAILABLE,"CHALLENGE_UNAVAILABLE");
+      template(taskId,"0".repeat(64));assertError(beginChallenge(id,alice),HttpStatus.SERVICE_UNAVAILABLE,"CHALLENGE_UNAVAILABLE");
+      assertThat(database.queryForObject("SELECT count(*) FROM challenge_runs",Integer.class)).isZero();
+      assertThatThrownBy(()->database.update("UPDATE challenge_statements SET content_text='tampered'"))
+        .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
+    }
+    @Test void challengeCorsAndTaskForeignKeysAreRestricted() throws Exception {
+      UUID template=template(taskId,null);String id=submittedSession();
+      assertThatThrownBy(()->database.update("INSERT INTO challenge_runs(id,session_id,task_id,challenge_template_id,notice_version,notice_acknowledged_at) VALUES (?,?,?,?,'challenge-notice-v1',now())",UUID.randomUUID(),UUID.fromString(id),UUID.randomUUID(),template))
+        .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
+      HttpHeaders headers=new HttpHeaders();headers.setOrigin("http://localhost:3000");headers.setAccessControlRequestHeaders(List.of("authorization","content-type"));
+      for(var route:Map.of(path(id)+"/challenge",HttpMethod.POST,"/api/v1/challenge-runs/id",HttpMethod.GET).entrySet()){
+        headers.setAccessControlRequestMethod(route.getValue());
+        assertThat(http.exchange(route.getKey(),HttpMethod.OPTIONS,new HttpEntity<>(headers),String.class).getStatusCode()).isEqualTo(HttpStatus.OK);
+        headers.setOrigin("https://attacker.invalid");
+        assertThat(http.exchange(route.getKey(),HttpMethod.OPTIONS,new HttpEntity<>(headers),String.class).getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        headers.setOrigin("http://localhost:3000");
+      }
     }
 
 }

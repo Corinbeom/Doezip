@@ -68,3 +68,5 @@
 - ADR-29 (F02b, 2026-09-11): 보고서 draft는 기존 계약의 1초 debounce·직렬 저장·expectedLockVersion CAS를 따른다. ACTIVE/WRITING 및 버전 검사는 소유자 세션의 행 잠금 안에서 처리한다. 충돌에서 자동 덮어쓰기하지 않는다. 수행 세션과 공개 자료만 추가하며 제출본·평가 기능은 별도 구현한다.
 
 - ADR-30 (F02c, 2026-09-11): INITIAL 생성·봉인과 WRITING → CHALLENGE 전환은 동일 세션 행 잠금의 트랜잭션으로 처리한다. 같은 checkpoint/sourceDraftLockVersion/hash는 기존 제출본을 반환하며 다른 입력의 재제출은 409다. P0 sealed_at은 NOT NULL, DB UPDATE 트리거와 JPA Immutable로 본문 변경을 막는다. 빈 본문은 422이며 FINAL·검산 시작·평가 완료는 이번 범위가 아니다.
+
+- ADR-31 (F04a, 2026-09-11): 검산 시작은 notice v1 확인 후 최초 제출된 세션에 고정 초안을 배정한다. 세션 잠금·세션당 run 유일성·동일 과제 복합 FK를 적용한다. 검산 정답·검토 저장·평가는 이번 범위가 아니며 로컬 v3는 열람 검증용 가상 콘텐츠다. 템플릿 본문 해시를 검증하고 배정된 내용을 재작성하지 않는다.
