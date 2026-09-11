@@ -6,6 +6,7 @@ import { ApiError } from '@/shared/api/client';
 import { getTask, getTasks, type Task } from './api';
 import { LearningShell, Arrow } from '@/shared/ui/learning-shell';
 import styles from './tasks.module.css';
+import { StartSession } from '@/features/workspace/start-session';
 
 function Artwork() {
   return <div className={styles.artwork}><Image src="/design/task-evidence.svg" width={240} height={230} alt="" /></div>;
@@ -44,7 +45,7 @@ export function TaskListPage() {
         <div className={styles.step}><span>01</span><div><h3>문제를 고르고</h3><p>관심 있는 과제의 제목과<br />설명을 살펴보세요.</p></div></div>
         <div className={styles.step}><span>02</span><div><h3>상황을 이해하고</h3><p>풀어야 할 문제와 필요한<br />판단이 무엇인지 확인해요.</p></div></div>
         <div className={styles.step}><span>03</span><div><h3>기준을 확인해요</h3><p>공개된 평가 기준을 읽고<br />생각의 방향을 잡아보세요.</p></div></div>
-        <p className={styles.noteFoot}>현재는 과제와 평가 기준을 살펴볼 수 있어요. 보고서 작성과 AI 학습은 준비 중입니다.</p>
+        <p className={styles.noteFoot}>과제를 고르고 자료를 읽으며 보고서를 작성해 보세요. AI 학습은 준비 중입니다.</p>
       </aside></div>
     </section>
   </div></LearningShell>;
@@ -67,7 +68,7 @@ export function TaskDetailPage({ taskId }: { taskId: string }) {
           {task.data.rubrics.length === 0 ? <p className={styles.brief}>등록된 평가 기준이 없습니다.</p> : <ul className={styles.rubrics}>{task.data.rubrics.map((rubric, index) =>
             <li key={rubric.code}><span className={styles.rubricNumber} aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><div><h3>{rubric.title}</h3><p className={styles.preserve}>{rubric.description}</p></div></li>)}</ul>}
         </section>
-      </div><aside className={styles.detailAside}><p className={styles.eyebrow}>문제를 만나기 전에</p><h2>먼저, 충분히 살펴보세요.</h2><p className={styles.description}>과제의 상황과 평가 기준을 읽으며 어떤 근거로 판단할지 생각해 보세요.</p><div className={styles.availability}>지금은 과제와 평가 기준을 살펴볼 수 있어요. 보고서 작성과 제출은 준비 중입니다.</div><Link className={styles.secondaryButton} href="/tasks">다른 문제 살펴보기<Arrow /></Link></aside></div>
+      </div><aside className={styles.detailAside}><p className={styles.eyebrow}>문제를 만나기 전에</p><h2>먼저, 충분히 살펴보세요.</h2><p className={styles.description}>과제의 상황과 평가 기준을 읽으며 어떤 근거로 판단할지 생각해 보세요.</p><div className={styles.availability}>자료를 읽고 보고서를 작성할 수 있어요. 제출은 준비 중입니다.</div>{task.data.status === 'PUBLISHED' && <StartSession taskId={task.data.id} />}<Link className={styles.secondaryButton} href="/tasks">다른 문제 살펴보기<Arrow /></Link></aside></div>
     </>}
   </div></LearningShell>;
 }

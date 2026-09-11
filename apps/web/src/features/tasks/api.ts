@@ -4,7 +4,7 @@ import { apiFetch } from '@/shared/api/client';
 
 export type Task = components['schemas']['Task'];
 export type TaskList = components['schemas']['TaskList'];
-const taskSchema: z.ZodType<Task> = z.strictObject({
+export const taskSchema: z.ZodType<Task> = z.strictObject({
   id: z.uuid(), taskCode: z.string(), versionNo: z.number().int().min(1),
   title: z.string(), descriptionMarkdown: z.string(), status: z.enum(['PUBLISHED', 'ARCHIVED']),
   rubrics: z.array(z.strictObject({
