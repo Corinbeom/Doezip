@@ -66,3 +66,5 @@
 - ADR-28 (F01 구현, 2026-09-10): Supabase Google 인증을 브라우저 PKCE로 연결하고 Spring은 고정 issuer/audience 및 ES256·RS256 JWKS 서명을 검증한다. 사용자 매핑은 provider+sub이며 이메일로 합치지 않는다. 세션은 SDK의 브라우저 저장소에 저장하므로 XSS 방어가 필요하며 HttpOnly BFF 구조가 아니다. 로그아웃은 로컬 세션을 제거하고 기존 access JWT의 서버 수명은 만료까지 남는다. 설정 미완료 시 인증은 비활성화하고 실제 Google 성공 검증으로 표시하지 않는다. 자세한 설정과 검증 경계는 AUTH_SETUP.md와 F01_AUTH_VALIDATION.md를 따른다.
 
 - ADR-29 (F02b, 2026-09-11): 보고서 draft는 기존 계약의 1초 debounce·직렬 저장·expectedLockVersion CAS를 따른다. ACTIVE/WRITING 및 버전 검사는 소유자 세션의 행 잠금 안에서 처리한다. 충돌에서 자동 덮어쓰기하지 않는다. 수행 세션과 공개 자료만 추가하며 제출본·평가 기능은 별도 구현한다.
+
+- ADR-30 (F02c, 2026-09-11): INITIAL 생성·봉인과 WRITING → CHALLENGE 전환은 동일 세션 행 잠금의 트랜잭션으로 처리한다. 같은 checkpoint/sourceDraftLockVersion/hash는 기존 제출본을 반환하며 다른 입력의 재제출은 409다. P0 sealed_at은 NOT NULL, DB UPDATE 트리거와 JPA Immutable로 본문 변경을 막는다. 빈 본문은 422이며 FINAL·검산 시작·평가 완료는 이번 범위가 아니다.

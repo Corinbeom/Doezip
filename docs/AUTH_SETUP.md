@@ -39,7 +39,7 @@ JWT Signing Keys에서 비대칭 키 ES256 또는 RS256을 사용한다. 이 구
 
 ## 4. 로컬 환경변수
 
-실행할 checkout 루트의 `.env`에 설정한다. 현재 F02b 작업 공간은 `/Users/hwaseongcityboy/Desktop/doezip-worktrees/F02b-report-draft`다. 기존 `.env`를 덮어쓰지 말고 인증 항목만 채운다.
+실행할 checkout 루트의 `.env`에 설정한다. 현재 F02c 작업 공간은 `/Users/hwaseongcityboy/Desktop/doezip-worktrees/F02c-initial-submission`다. 기존 `.env`를 덮어쓰지 말고 인증 항목만 채운다.
 아래 예시의 `<project-ref>`와 공개 키를 실제 값으로 바꾼다.
 
 ```dotenv
