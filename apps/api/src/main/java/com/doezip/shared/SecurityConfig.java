@@ -32,21 +32,30 @@ public class SecurityConfig {
         CorsConfiguration bootstrap = new CorsConfiguration(me);
         bootstrap.setAllowedMethods(List.of("POST"));
         source.registerCorsConfiguration("/api/v1/me/bootstrap", bootstrap);
+        source.registerCorsConfiguration("/api/v1/sessions", bootstrap);
+        source.registerCorsConfiguration("/api/v1/sessions/*/workspace", me);
+        source.registerCorsConfiguration("/api/v1/sessions/*/materials/*", me);
+        CorsConfiguration draft = new CorsConfiguration(me);
+        draft.setAllowedMethods(List.of("PUT"));
+        source.registerCorsConfiguration("/api/v1/sessions/*/draft", draft);
         org.springframework.security.web.AuthenticationEntryPoint unauthorized = (request, response, exception) -> {
             response.setStatus(401); response.setContentType("application/json");
             response.setHeader("WWW-Authenticate", "Bearer");
             response.setHeader("Cache-Control", "no-store");
             mapper.writeValue(response.getOutputStream(), new ApiError("UNAUTHORIZED", "인증이 필요합니다.", RequestIdFilter.id(request)));
         };
-        return http.csrf(c -> c.ignoringRequestMatchers(org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/me/bootstrap")))
+        return http.csrf(c -> c.ignoringRequestMatchers(org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/me/bootstrap"),
+                org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/sessions"),
+                org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.PUT, "/api/v1/sessions/*/draft")))
             .oauth2ResourceServer(c -> c.jwt(jwt -> {}).authenticationEntryPoint(unauthorized))
             .cors(c -> c.configurationSource(source))
             .sessionManagement(c -> c.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .formLogin(AbstractHttpConfigurer::disable).httpBasic(AbstractHttpConfigurer::disable)
             .requestCache(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(c -> c.requestMatchers(HttpMethod.GET, "/actuator/health", "/api/v1/tasks", "/api/v1/tasks/*").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/me").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/v1/me/bootstrap").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/v1/me", "/api/v1/sessions/*/workspace", "/api/v1/sessions/*/materials/*").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/v1/me/bootstrap", "/api/v1/sessions").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/v1/sessions/*/draft").authenticated()
                 .anyRequest().denyAll())
             .exceptionHandling(c -> c
                 .authenticationEntryPoint(unauthorized)

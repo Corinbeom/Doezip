@@ -6,8 +6,10 @@ export class ApiError extends Error {
   constructor(public status: number, public code: string, message: string, public requestId?: string) { super(message); }
 }
 export async function apiFetch<T>(url: string, schema: z.ZodType<T>, options: RequestInit = {}): Promise<T> {
+  const timeout = AbortSignal.timeout(10000);
+  const signal = options.signal ? AbortSignal.any([options.signal, timeout]) : timeout;
   let response: Response;
-  try { response = await fetch(url, { ...options, signal: options.signal ?? AbortSignal.timeout(10000), cache: 'no-store' }); }
+  try { response = await fetch(url, { ...options, signal, cache: 'no-store' }); }
   catch { throw new ApiError(0, 'NETWORK_ERROR', 'API에 연결할 수 없습니다.'); }
   const body: unknown = await response.json().catch(() => null);
   if (!response.ok) {
