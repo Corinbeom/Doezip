@@ -44,6 +44,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [clearPrivate]);
   const logout = useCallback(async () => {
     clearPrivate(); subject.current = null;
+    // Unmount sensitive editors before awaiting the provider's logout request.
+    setState({ status: 'loading', user: null });
     try {
       const result = await getAuthClient()?.auth.signOut({ scope: 'local' });
       if (result?.error) throw new Error('LOGOUT_FAILED');
