@@ -29,7 +29,7 @@ public class SessionService {
   var summary=materials.findByTaskIdAndReleaseStageInOrderBySortOrderAscIdAsc(s.getTaskId(),stages(s)).stream()
     .map(m->new MaterialSummary(m.getId(),m.getTitle(),m.getType(),m.getSortOrder())).toList();
   return new Workspace(new Session(s.getId(),s.getTaskId(),s.getStatus(),s.getCurrentStep(),s.getMode(),s.getConditionReleasedAt(),
-   s.writable()?List.of("READ_MATERIALS","WRITE_DRAFT"):List.of("READ_MATERIALS")),taskService.get(s.getTaskId()),summary,
+   s.writable()?List.of("READ_MATERIALS","WRITE_DRAFT","SNAPSHOT_INITIAL"):List.of("READ_MATERIALS")),taskService.get(s.getTaskId()),summary,
    new Draft(s.getMarkdown(),s.getLockVersion(),hash(s.getMarkdown())),null,null,null,null);
  }
  public Material material(UUID userId,UUID id,UUID materialId){

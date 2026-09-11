@@ -9,6 +9,8 @@
 
 local profile은 개발 DB에서만 사용하고 local migration 이력이 있는 DB를 production으로 전환하지 않는다.
 전체 22개 테이블, 평가 스냅샷·채팅·이벤트·평가·보고서 스키마와 실제 과제 pack seed는 미구현이다.
-후속 migration은 V6 이상을 사용하며 이미 적용한 migration을 수정하지 않는다.
+후속 migration은 V8 이상을 사용하며 이미 적용한 migration을 수정하지 않는다.
 
 V6(local)은 개발용 과제의 옛 조회 전용 안내를 고치는 대신 새 v2를 추가한다. v1은 ARCHIVED로 보존하며 기존 세션의 본문·자료는 그대로다. 현재 로컬 seed는 두 버전 중 v2만 신규 시작할 수 있다.
+
+V7은 document_versions 1개 테이블을 추가한다. INITIAL은 세션당 한 번 생성하며 본문·해시·저장 버전과 봉인 시각을 보관한다. UPDATE는 DB 트리거로 거부한다. P0에서는 생성과 동시에 봉인하므로 sealed_at은 NOT NULL이다. 기존 V1~V6는 수정하지 않는다.
