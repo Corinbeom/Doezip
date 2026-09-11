@@ -27,7 +27,7 @@ npm run dev
 웹 http://localhost:3000 에서 API와 PostgreSQL 연결 상태를 확인한다.
 API 운영 health: http://localhost:8080/actuator/health (`UP`: 200 / DB 장애 `DOWN`: 503, 상세 비공개).
 웹 http://localhost:3000/tasks 에서 로컬 조회용 가상 과제의 설명과 공개 루브릭을 확인한다.
-공개 과제 조회 외에 인증된 사용자 연결 POST `/api/v1/me/bootstrap`, 조회 GET `/api/v1/me`를 제공한다. 그 외 제품 경로는 차단된다.
+공개 과제 조회 외에 인증된 사용자 연결 POST `/api/v1/me/bootstrap`, 조회 GET `/api/v1/me`를 제공한다. 과제 시작·공개 자료 열람·보고서 저장/복원 API도 제공한다. [F02b 범위](docs/F02B_REPORT_DRAFT.md)를 참고한다. 미구현 제품 경로는 차단된다.
 
 Google 로그인 설정은 [인증 설정](docs/AUTH_SETUP.md)을 따른다. 설정이 없으면 `/login`에서 안내를 표시하고 로그인 버튼을 비활성화한다. 최초 Google 로그인은 사용자 확인 및 DB 연결 확인을 마쳤으며, 세부 검증 상태는 F01 기록을 따른다.
 
@@ -82,7 +82,7 @@ DB를 멈출 때는 `docker compose --env-file .env -f compose.local.yml stop db
 - `apps/web/src/shared/api`: 공통 fetch·오류·Query Provider. `shared/ui`: 승인 디자인의 공통 화면 구성·스타일.
 - `apps/web/src/generated/api-types.ts`: 생성 타입. **손으로 수정하지 않는다.**
 - `apps/api`: Spring MVC·JPA·Validation·Security·Actuator·Flyway. DB 상세 비공개. health·과제 조회 GET은 공개, me 경로는 JWT 인증, 나머지는 기본 차단.
-- `apps/api/src/main/resources/db/migration`: 과제·루브릭·사용자 세 테이블. `db/local`: 로컬 조회용 seed.
+- `apps/api/src/main/resources/db/migration`: 과제·루브릭·사용자·학습 세션·자료 다섯 테이블. `db/local`: 로컬 조회용 seed.
   전체 ERD migration·학습 과제 패키지 seed는 후속 작업.
 - `contracts`, `docs`, `fixtures`, `templates`: 기존 기준 자료 보존. fixture는 웹에 import·배포하지 않는다.
   templates는 참고 예시이며 실제 앱 설정은 루트와 apps/api 아래에 있다.
@@ -104,3 +104,5 @@ DB를 멈출 때는 `docker compose --env-file .env -f compose.local.yml stop db
 과제 조회 화면은 승인된 학습 플랫폼 v0.1 디자인을 기준으로 구현한다. [적용 범위와 검증](docs/design/TASK_DESIGN_VALIDATION.md)을 참고한다.
 
 로그인 구현 범위와 검증 기록: [F01 인증](docs/F01_AUTH_VALIDATION.md).
+
+보고서 작성·자동 저장·복원과 인증 통합 검사: [F02b 기록](docs/F02B_REPORT_DRAFT.md). `npm run test:e2e`는 외부 OAuth 없이 검증하도록 테스트용 웹을 다시 빌드한다. 일반 실행은 `npm run dev`를 사용한다.

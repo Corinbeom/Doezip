@@ -17,7 +17,7 @@ export function getAuthClient() {
   });
 }
 export function safeReturnPath(value: string | null | undefined) {
-  return value && /^\/tasks(?:\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?$/i.test(value) ? value : '/tasks';
+  return value && /^\/(?:tasks|(?:tasks|sessions)\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i.test(value) ? value : '/tasks';
 }
 export const returnPathKey = 'doezip.auth.return';
 let callbackOperation: Promise<void> | undefined;

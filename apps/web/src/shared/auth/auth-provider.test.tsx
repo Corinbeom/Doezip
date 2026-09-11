@@ -43,3 +43,11 @@ it('reports logout failure instead of claiming the retained SDK session is signe
   await screen.findByText('connected:사용자A'); fireEvent.click(screen.getByRole('button', { name: 'logout' }));
   await screen.findByText('logout failed'); expect(screen.queryByText('anonymous:')).not.toBeInTheDocument();
 });
+it('hides private account content immediately while provider logout is pending', async () => {
+  getSession.mockResolvedValue({ data: { session: { user: { id: 'subject-a' } } } });
+  connect.mockResolvedValue({ id: 'user-a', displayName: '사용자A', email: null });
+  signOut.mockImplementation(() => new Promise(() => {})); mount();
+  await screen.findByText('connected:사용자A'); fireEvent.click(screen.getByRole('button', { name: 'logout' }));
+  expect(screen.queryByText('connected:사용자A')).not.toBeInTheDocument();
+  expect(screen.getByText('loading:')).toBeInTheDocument();
+});
