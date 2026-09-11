@@ -23,10 +23,11 @@ public class DocumentVersion {
     @Column(name = "created_at", nullable = false) private Instant createdAt;
 
     protected DocumentVersion() {}
-    public DocumentVersion(LearningSession session, String hash) {
+    public DocumentVersion(LearningSession session, String hash) { this(session, hash, Instant.now()); }
+    public DocumentVersion(LearningSession session, String hash, Instant timestamp) {
         id = UUID.randomUUID(); sessionId = session.getId(); versionNo = 1; checkpoint = "INITIAL";
         contentMarkdown = session.getMarkdown(); contentHash = hash;
-        sourceDraftLockVersion = session.getLockVersion(); sealedAt = Instant.now(); createdAt = sealedAt;
+        sourceDraftLockVersion = session.getLockVersion(); sealedAt = timestamp.truncatedTo(java.time.temporal.ChronoUnit.MICROS); createdAt = sealedAt;
     }
     public UUID getId() { return id; }
     public UUID getSessionId() { return sessionId; }
