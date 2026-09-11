@@ -4,6 +4,7 @@ import { ApiError } from '@/shared/api/client';
 import { getWorkspace, saveDraft, type Draft } from './api';
 export function useDraft(sessionId:string, initial:Draft) {
   const [text,setText]=useState(initial.markdown);
+  const [snapshot,setSnapshot]=useState(initial);
   const [saved,setSaved]=useState(initial.markdown);
   const [status,setStatus]=useState<'saved'|'dirty'|'saving'|'error'|'conflict'|'locked'|'reload-error'>('saved');
   const state=useRef({text:initial.markdown,saved:initial.markdown,version:initial.lockVersion,blocked:false,busy:false,alive:true});
@@ -14,7 +15,7 @@ export function useDraft(sessionId:string, initial:Draft) {
     const s=state.current;
     if(s.busy||s.blocked||s.text===s.saved||Array.from(s.text).length>20000)return;
     s.busy=true;setStatus('saving');const sent=s.text;const controller=new AbortController();request.current=controller;
-    try { const draft=await saveDraft(sessionId,sent,s.version,controller.signal);if(!s.alive)return;s.version=draft.lockVersion;s.saved=draft.markdown;setSaved(draft.markdown);setStatus(s.text===s.saved?'saved':'dirty'); }
+    try { const draft=await saveDraft(sessionId,sent,s.version,controller.signal);if(!s.alive)return;setSnapshot(draft);s.version=draft.lockVersion;s.saved=draft.markdown;setSaved(draft.markdown);setStatus(s.text===s.saved?'saved':'dirty'); }
     catch(error){if(!s.alive)return;s.blocked=true;setStatus(error instanceof ApiError&&error.status===409?(error.code==='INVALID_SESSION_STATE'?'locked':'conflict'):'error');}
     finally{s.busy=false;}
   },[sessionId]);
@@ -23,7 +24,7 @@ export function useDraft(sessionId:string, initial:Draft) {
   const reload=async()=>{
     if(!window.confirm('현재 작성한 내용을 버리고 서버의 저장본을 불러올까요?'))return;
     const s=state.current;if(s.busy)return;const confirmed=s.text;s.busy=true;const controller=new AbortController();request.current=controller;
-    try {const {draft}=await getWorkspace(sessionId,controller.signal);if(!s.alive||s.text!==confirmed)return;s.text=draft.markdown;s.saved=draft.markdown;setSaved(draft.markdown);s.version=draft.lockVersion;s.blocked=false;setText(draft.markdown);setStatus('saved');}
+    try {const {draft}=await getWorkspace(sessionId,controller.signal);if(!s.alive||s.text!==confirmed)return;s.text=draft.markdown;s.saved=draft.markdown;setSaved(draft.markdown);setSnapshot(draft);s.version=draft.lockVersion;s.blocked=false;setText(draft.markdown);setStatus('saved');}
     catch{if(s.alive)setStatus('reload-error');}finally{s.busy=false;}
   };
   const dirty=text!==saved;
@@ -34,5 +35,5 @@ export function useDraft(sessionId:string, initial:Draft) {
     window.addEventListener('beforeunload',unload);document.addEventListener('click',navigate,true);
     return()=>{window.removeEventListener('beforeunload',unload);document.removeEventListener('click',navigate,true);};
   },[dirty]);
-  return {text,change,status,save,retry,reload,dirty};
+  return {text,change,status,save,retry,reload,dirty,snapshot};
 }

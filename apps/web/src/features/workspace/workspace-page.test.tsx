@@ -4,7 +4,7 @@ import {QueryClient,QueryClientProvider} from '@tanstack/react-query';
 import {WorkspacePage} from './workspace-page';
 import {getMaterial,getWorkspace,type Workspace} from './api';
 import {useAuth} from '@/shared/auth/auth-provider';
-vi.mock('./api',()=>({getMaterial:vi.fn(),getWorkspace:vi.fn(),saveDraft:vi.fn()}));
+vi.mock('./api',()=>({getMaterial:vi.fn(),getWorkspace:vi.fn(),saveDraft:vi.fn(),getDocuments:vi.fn().mockResolvedValue({items:[]}),submitInitial:vi.fn()}));
 vi.mock('@/shared/auth/auth-provider',()=>({useAuth:vi.fn()}));
 vi.mock('@/features/auth/auth-control',()=>({AuthControl:()=>null}));
 const workspace:Workspace={session:{id:'session',taskId:'task',status:'ACTIVE',currentStep:'WRITING',mode:'PRACTICE',conditionReleasedAt:null,allowedActions:['READ_MATERIALS','WRITE_DRAFT']},task:{id:'task',taskCode:'task',versionNo:1,title:'자료로 판단하기',descriptionMarkdown:'설명',status:'PUBLISHED',rubrics:[]},materials:[],draft:{markdown:'saved report',lockVersion:1,contentHash:'hash'},challengeRunId:null,initialReportId:null,finalReportId:null,activeEvaluationId:null};
