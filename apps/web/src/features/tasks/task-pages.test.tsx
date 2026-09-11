@@ -4,6 +4,8 @@ import { QueryProvider } from '@/shared/api/query-provider';
 import { TaskDetailPage, TaskListPage } from './task-pages';
 import type { Task } from './api';
 
+vi.mock('next/navigation', async (importOriginal) => ({...await importOriginal<typeof import('next/navigation')>(), useRouter:()=>({push:vi.fn()})}));
+
 const task: Task = {
   id: '61111111-1111-4111-8111-111111111111', taskCode: 'test-task', versionNo: 1,
   title: '조회 테스트용 가상 과제', descriptionMarkdown: '공개된 과제 설명\n<script>unsafe()</script>', status: 'PUBLISHED',
@@ -79,7 +81,7 @@ it('keeps the approved exploration shell honest about available capabilities', a
   expect(screen.queryByText(/미승인/)).not.toBeInTheDocument();
   expect(screen.queryByRole('link', { name: '내 학습' })).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: /시작하기/ })).not.toBeInTheDocument();
-  expect(screen.getByText(/보고서 작성과 AI 학습은 준비 중/)).toBeInTheDocument();
+  expect(screen.getByText(/AI 학습은 준비 중/)).toBeInTheDocument();
 });
 
 it('renders missing rubrics without inventing evaluation criteria', async () => {
@@ -87,5 +89,5 @@ it('renders missing rubrics without inventing evaluation criteria', async () => 
   render(<QueryProvider><TaskDetailPage taskId={task.id} /></QueryProvider>);
   await screen.findByText('등록된 평가 기준이 없습니다.');
   expect(screen.queryByRole('heading', { name: '근거 확인' })).not.toBeInTheDocument();
-  expect(screen.getByText(/보고서 작성과 제출은 준비 중/)).toBeInTheDocument();
+  expect(screen.getByText(/제출은 준비 중/)).toBeInTheDocument();
 });

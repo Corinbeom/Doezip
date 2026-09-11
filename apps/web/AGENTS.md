@@ -10,3 +10,5 @@
 - 루트에서 npm run dev:web, npm run api:generate, npm run check:web.
 - lint/typecheck/unit/build를 검사하며 실제 API smoke는 npm run test:e2e (DB 시작·빌드 필요).
 - 인증 설정은 docs/AUTH_SETUP.md. Supabase publishable 키만 공개하고 실제 Google 검증과 SDK 경계 테스트를 구분한다.
+- 보고서 편집 버퍼는 React 상태로 유지하고 localStorage에 저장하지 않는다. 자동 저장은 1초 debounce·직렬 요청·CAS이며 409에서 자동 덮어쓰기하지 않는다.
+- 작업 공간 재진입은 최신 서버 응답으로 시작하고, 계정 변경·로그아웃 시 편집기와 진행 중 요청을 정리한다. F02b 검증은 docs/F02B_REPORT_DRAFT.md를 따른다.
