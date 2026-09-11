@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const sampleId = '61111111-1111-4111-8111-111111111112';
+const sampleId = '61111111-1111-4111-8111-111111111113';
 const sampleTitle = '개발용 예시: 결제 API 장애 원인 분석';
 
 test('real PostgreSQL task list opens detail and survives reload', async ({ page }, testInfo) => {

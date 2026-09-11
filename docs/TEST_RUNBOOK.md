@@ -163,3 +163,5 @@ DB 20%와 초안 92%, 근거 없는 원인 단정 두 사례를 원본 자료와
 현재 검사는 [F02b 기록](F02B_REPORT_DRAFT.md)을 따른다. `npm run check`는 테스트용 웹 설정을 사용하고 Playwright가 로컬 JWKS issuer·실제 API·웹을 실행한다. CI에서도 외부 Google 키 없이 실행한다. 타인 읽기/쓰기404, CAS409, 실패 초안 보존, 서버 저장본 복원, 모바일·안전한 텍스트 표시를 확인한다.
 
 F02c는 `tests/e2e/submission.spec.ts`와 SessionIntegrationTest에서 저장 후 제출·재조회, 실제 서버 저장 후 응답 유실 재시도, stale 버전·해시 차단, 동시 저장/제출 및 중복 제출, 소유권·DB UPDATE 차단·HTML 미실행을 검사한다. 실제 Google 계정 검증과 별개이며 [검증 기록](F02C_INITIAL_SUBMISSION.md)에 실행 결과를 남긴다.
+
+F04a 검산 시작/열람 검사는 `tests/e2e/challenge.spec.ts`와 SessionIntegrationTest에 있다. 안내 확인 전 미노출, 실제 배정·복원·응답 유실 재시도, 사용자 보고서 보존, 소유권, 동시 시작, 단계·해시 검사, 320px 화면을 확인한다. [F04a 실행 기록](F04A_CHALLENGE_START.md)을 참고한다.

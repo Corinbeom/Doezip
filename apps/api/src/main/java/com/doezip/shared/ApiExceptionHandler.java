@@ -29,7 +29,7 @@ public class ApiExceptionHandler {
     }
     @ExceptionHandler(com.doezip.session.service.SessionFailure.class)
     ResponseEntity<ApiError> sessionFailure(com.doezip.session.service.SessionFailure failure, HttpServletRequest request) {
-        String message = failure.status == 404 ? "요청한 자료를 찾을 수 없습니다." : failure.status == 409 ? "저장 상태가 변경되었습니다. 다시 확인하세요." : "입력 형식을 확인하세요.";
+        String message = failure.status == 503 ? "자료를 준비하지 못했습니다. 잠시 후 다시 시도하세요." : failure.status == 404 ? "요청한 자료를 찾을 수 없습니다." : failure.status == 409 ? "저장 상태가 변경되었습니다. 다시 확인하세요." : "입력 형식을 확인하세요.";
         return ResponseEntity.status(failure.status).body(new ApiError(failure.code, message, RequestIdFilter.id(request)));
     }
     @ExceptionHandler(Exception.class)
