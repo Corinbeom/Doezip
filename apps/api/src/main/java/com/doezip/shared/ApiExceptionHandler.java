@@ -27,6 +27,11 @@ public class ApiExceptionHandler {
     ResponseEntity<ApiError> databaseUnavailable(HttpServletRequest request) {
         return ResponseEntity.status(503).body(new ApiError("SERVICE_UNAVAILABLE", "잠시 후 다시 시도하세요.", RequestIdFilter.id(request)));
     }
+    @ExceptionHandler(com.doezip.session.service.SessionFailure.class)
+    ResponseEntity<ApiError> sessionFailure(com.doezip.session.service.SessionFailure failure, HttpServletRequest request) {
+        String message = failure.status == 404 ? "요청한 자료를 찾을 수 없습니다." : failure.status == 409 ? "저장 상태가 변경되었습니다. 다시 확인하세요." : "입력 형식을 확인하세요.";
+        return ResponseEntity.status(failure.status).body(new ApiError(failure.code, message, RequestIdFilter.id(request)));
+    }
     @ExceptionHandler(Exception.class)
     ResponseEntity<ApiError> unexpected(Exception exception, HttpServletRequest request) {
         return ResponseEntity.internalServerError().body(new ApiError("INTERNAL_ERROR", "요청 처리에 실패했습니다.", RequestIdFilter.id(request)));
