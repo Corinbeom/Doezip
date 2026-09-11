@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("local")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class TaskIntegrationTest {
-    static final String SAMPLE = "61111111-1111-4111-8111-111111111112";
+    static final String SAMPLE = "61111111-1111-4111-8111-111111111113";
     @Container static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17.11");
     @DynamicPropertySource static void database(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
@@ -36,10 +36,10 @@ class TaskIntegrationTest {
         flyway.migrate();
         assertThat(jdbc.queryForObject("select status from tasks where id='61111111-1111-4111-8111-111111111111'", String.class)).isEqualTo("ARCHIVED");
         assertThat(jdbc.queryForObject("select description_markdown from tasks where id='61111111-1111-4111-8111-111111111111'", String.class)).contains("현재는 조회만 가능");
-        assertThat(jdbc.queryForObject("select version_no from tasks where id=?::uuid", Integer.class, SAMPLE)).isEqualTo(2);
-        assertThat(jdbc.queryForObject("select count(*) from tasks", Integer.class)).isEqualTo(2);
-        assertThat(jdbc.queryForObject("select count(*) from rubric_dimensions", Integer.class)).isEqualTo(16);
-        assertThat(jdbc.queryForObject("select count(*) from materials", Integer.class)).isEqualTo(2);
+        assertThat(jdbc.queryForObject("select version_no from tasks where id=?::uuid", Integer.class, SAMPLE)).isEqualTo(3);
+        assertThat(jdbc.queryForObject("select count(*) from tasks", Integer.class)).isEqualTo(3);
+        assertThat(jdbc.queryForObject("select count(*) from rubric_dimensions", Integer.class)).isEqualTo(24);
+        assertThat(jdbc.queryForObject("select count(*) from materials", Integer.class)).isEqualTo(3);
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> jdbc.update(
             "insert into tasks (id, task_code, title, description_markdown, version_no) values (?, 'invalid', 'test', 'test', 0)",
             UUID.randomUUID())).isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);

@@ -1,4 +1,5 @@
 package com.doezip.session.service;
+import com.doezip.challenge.repository.*;
 import com.doezip.session.dto.SessionDtos.*;
 import com.doezip.session.entity.*;
 import com.doezip.session.repository.*;
@@ -12,9 +13,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 @Service @Transactional(readOnly=true)
 public class SessionService {
+ private final ChallengeRunRepository challenges;private final ChallengeTemplateRepository templates;private final DocumentRepository documents;
  private final SessionRepository sessions; private final MaterialRepository materials;
  private final TaskRepository tasks; private final TaskService taskService;
- public SessionService(SessionRepository sessions,MaterialRepository materials,TaskRepository tasks,TaskService taskService){
+ public SessionService(SessionRepository sessions,MaterialRepository materials,TaskRepository tasks,TaskService taskService,ChallengeRunRepository challenges,ChallengeTemplateRepository templates,DocumentRepository documents){
+  this.challenges=challenges;this.templates=templates;this.documents=documents;
   this.sessions=sessions;this.materials=materials;this.tasks=tasks;this.taskService=taskService;
  }
  @Transactional public Workspace create(UUID userId,Create request){
@@ -28,9 +31,14 @@ public class SessionService {
  private Workspace workspace(LearningSession s){
   var summary=materials.findByTaskIdAndReleaseStageInOrderBySortOrderAscIdAsc(s.getTaskId(),stages(s)).stream()
     .map(m->new MaterialSummary(m.getId(),m.getTitle(),m.getType(),m.getSortOrder())).toList();
+  var challenge=challenges.findBySessionId(s.getId());
+  List<String> actions=new ArrayList<>(List.of("READ_MATERIALS"));
+  if(s.writable())actions.addAll(List.of("WRITE_DRAFT","SNAPSHOT_INITIAL"));
+  if(challenge.isEmpty()&&s.getStatus().equals("ACTIVE")&&s.getCurrentStep().equals("CHALLENGE")
+    &&documents.findBySessionIdAndCheckpoint(s.getId(),"INITIAL").isPresent()&&templates.existsByTaskId(s.getTaskId()))actions.add("START_CHALLENGE");
   return new Workspace(new Session(s.getId(),s.getTaskId(),s.getStatus(),s.getCurrentStep(),s.getMode(),s.getConditionReleasedAt(),
-   s.writable()?List.of("READ_MATERIALS","WRITE_DRAFT","SNAPSHOT_INITIAL"):List.of("READ_MATERIALS")),taskService.get(s.getTaskId()),summary,
-   new Draft(s.getMarkdown(),s.getLockVersion(),hash(s.getMarkdown())),null,null,null,null);
+   actions),taskService.get(s.getTaskId()),summary,
+   new Draft(s.getMarkdown(),s.getLockVersion(),hash(s.getMarkdown())),challenge.map(c->c.getId()).orElse(null),null,null,null);
  }
  public Material material(UUID userId,UUID id,UUID materialId){
   var s=owned(userId,id);
