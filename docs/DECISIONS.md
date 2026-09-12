@@ -78,3 +78,8 @@
 
 ## ADR-33: F05a 평가 수명 주기와 실제 평가기 분리
 서버 입력 snapshot을 DB에서 불변으로 보존하고, 실제 scheduled worker가 claim/검증/실패 처리를 수행한다. 실제 평가기 미연결은 영구 실패 EVALUATOR_NOT_CONFIGURED로 알리며 가짜 성공 결과를 만들지 않는다. 초기 성공 발행은 F05b의 결과/리포트 원자 발행에 포함한다. 공개 workspace의 activeEvaluationId는 terminal 실패 복원에도 사용한다.
+
+## ADR-34: F05b 결과 원자 발행과 공개 투영
+- V12에서 결과·관찰·리포트를 추가한다. evaluation_evidence는 현재 존재하는 fault_attempt/document_version FK 중 정확히 하나만 가진다. 채팅·claim·defense/event FK는 해당 기능 migration에서 확장한다. 전체 ERD 구현으로 표시하지 않는다.
+- feedback_reports.public_report_json은 기존 Report 계약의 불변 공개 투영이다. 정규화 관찰과 동일 트랜잭션에서 작성하고 UPDATE를 차단해 조회마다 결과를 재조합하거나 일부 결과를 공개하지 않는다. 내부 snapshot·정답·lease를 이 JSON에 넣지 않는다.
+- 공개 루브릭의 코드/영역/제목 및 입력 참조를 결정적으로 검증한다. 검수된 정답 정책이 없는 현재 단계에서는 검토 성공을 확정하지 않는다. PROMPT/DEFENSE 입력 부재는 NOT_OBSERVED다. 실제 평가기는 F05c에서 연결하며 테스트 성공 발행을 일반 실행 경로로 노출하지 않는다.

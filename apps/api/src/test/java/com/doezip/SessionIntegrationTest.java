@@ -70,7 +70,7 @@ class SessionIntegrationTest {
     @Autowired JwtDecoder decoder;
     @Autowired CurrentUser currentUser;
     @BeforeEach void setup() throws Exception {
-        database.update("DELETE FROM evaluation_runs"); database.update("DELETE FROM evidence_links"); database.update("DELETE FROM fault_attempts"); database.update("DELETE FROM challenge_runs"); database.update("DELETE FROM challenge_statements"); database.update("DELETE FROM challenge_templates"); database.update("DELETE FROM document_versions"); database.update("DELETE FROM learning_sessions"); database.update("DELETE FROM materials");
+        database.update("DELETE FROM feedback_reports"); database.update("DELETE FROM evaluation_evidence"); database.update("DELETE FROM dimension_evaluations"); database.update("DELETE FROM evaluation_runs"); database.update("DELETE FROM evidence_links"); database.update("DELETE FROM fault_attempts"); database.update("DELETE FROM challenge_runs"); database.update("DELETE FROM challenge_statements"); database.update("DELETE FROM challenge_templates"); database.update("DELETE FROM document_versions"); database.update("DELETE FROM learning_sessions"); database.update("DELETE FROM materials");
         database.update("DELETE FROM rubric_dimensions"); database.update("DELETE FROM tasks"); database.update("DELETE FROM users");
         database.update("INSERT INTO tasks(id,task_code,title,description_markdown,status,published_at) VALUES (?,'test-writing','Test','Public task','PUBLISHED',now())", taskId);
         alice=token("alice",c->{}); bob=token("bob",c->{});bootstrap(alice,"{}");bootstrap(bob,"{}");
@@ -560,5 +560,114 @@ class SessionIntegrationTest {
       HttpHeaders headers=new HttpHeaders();headers.setOrigin("http://localhost:3000");headers.setAccessControlRequestMethod(HttpMethod.POST);headers.setAccessControlRequestHeaders(List.of("authorization","content-type","idempotency-key"));
       assertThat(http.exchange(path(sid)+"/evaluations",HttpMethod.OPTIONS,new HttpEntity<>(headers),String.class).getStatusCode()).isEqualTo(HttpStatus.OK);
       headers.setOrigin("https://attacker.invalid");assertThat(http.exchange(path(sid)+"/evaluations",HttpMethod.OPTIONS,new HttpEntity<>(headers),String.class).getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+    @Autowired com.doezip.evaluation.service.ResultPublisher resultPublisher;
+    @Autowired com.doezip.evaluation.service.ResultValidator resultValidator;
+    com.doezip.evaluation.repository.EvaluationRepository.Job resultJob() throws Exception {
+      for(String area:List.of("PROMPT","EVIDENCE","DOCUMENT","DEFENSE"))
+        database.update("INSERT INTO rubric_dimensions(id,task_id,code,area,title,public_description,criteria_json) VALUES (?,?,?,?,?,'Synthetic test criterion','{}')",UUID.randomUUID(),taskId,area.toLowerCase()+".test",area,area+" test");
+      String sid=evaluationSession();evaluate(sid,alice,UUID.randomUUID(),evaluationDocument(sid));
+      return evaluationJobs.claim().orElseThrow();
+    }
+    com.fasterxml.jackson.databind.node.ObjectNode resultDraft(com.doezip.evaluation.repository.EvaluationRepository.Job job) throws Exception {
+      var snapshot=mapper.readTree(job.snapshot());var result=mapper.createObjectNode();
+      result.put("summary","Synthetic publication test, not an AI evaluation");result.putArray("strengths");result.putArray("improvements");result.putNull("nextPracticeText");
+      var areas=result.putArray("areas");
+      for(var rubric:snapshot.get("task").get("rubrics")){
+        var area=areas.addObject();area.put("area",rubric.get("area").asText());var d=area.putArray("dimensions").addObject();
+        d.put("code",rubric.get("code").asText());d.put("title",rubric.get("title").asText());d.put("state","NOT_OBSERVED");d.put("rationale","No observation in this test");d.putNull("gap");d.putNull("nextAction");d.putNull("confidenceLevel");d.putArray("evidence");
+      }
+      var faults=result.putObject("faultSummary");faults.put("note","No approved answer policy connected");var statements=faults.putArray("statements");
+      for(var statement:snapshot.get("challenge").get("statements")){
+        var f=statements.addObject();f.put("statementId",statement.get("id").asText());f.putNull("reviewId");f.put("detectionResult","UNREVIEWED");f.put("evidenceResult","NOT_OBSERVED");f.put("repairResult","NOT_OBSERVED");f.put("recheckResult","NOT_OBSERVED");f.put("feedback","No review submitted");
+      }
+      return result;
+    }
+    com.fasterxml.jackson.databind.node.ObjectNode documentDimension(JsonNode draft){
+      for(var area:draft.get("areas"))if(area.get("area").asText().equals("DOCUMENT"))return (com.fasterxml.jackson.databind.node.ObjectNode)area.get("dimensions").get(0);
+      throw new AssertionError();
+    }
+    com.fasterxml.jackson.databind.node.ObjectNode addObservation(JsonNode draft,com.doezip.evaluation.repository.EvaluationRepository.Job job){
+      var d=documentDimension(draft);d.put("state","PARTIAL");
+      var e=((com.fasterxml.jackson.databind.node.ArrayNode)d.get("evidence")).addObject();e.put("id",UUID.randomUUID().toString());e.put("kind","SELF_REPORT");e.put("polarity","SUPPORT");e.put("method","RULE");e.put("subjectType","DOCUMENT_VERSION");e.put("subjectId",job.documentId().toString());e.put("excerpt","USER_ORIGINAL_REPORT");e.put("explanation","Synthetic exact text reference");
+      var source=e.putObject("source");source.put("materialId",initialId.toString());source.put("lineStart",1);source.put("lineEnd",2);source.put("quotedText","line one\nline two");return e;
+    }
+    void noPublishedResult(){
+      for(String table:List.of("feedback_reports","dimension_evaluations","evaluation_evidence"))assertThat(database.queryForObject("SELECT count(*) FROM "+table,Integer.class)).isZero();
+    }
+    @Test void validResultPublishesAtomicallyAndIsOwnerOnlyImmutable()throws Exception{
+      var job=resultJob();var draft=resultDraft(job);addObservation(draft,job);var report=resultPublisher.publish(job,draft,true);
+      String id=report.get("id").asText();var response=request("/api/v1/reports/"+id,HttpMethod.GET,alice,null);
+      assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);assertThat(response.getHeaders().getCacheControl()).contains("no-store");assertThat(json(response)).isEqualTo(report);
+      assertThat(response.getBody()).doesNotContain("input_snapshot_json","Never leak","variant_code","answer_key");
+      assertThat(json(response).get("sample").asBoolean()).isTrue();assertThat(draft.has("id")).isFalse();
+      var evaluation=json(request("/api/v1/evaluations/"+job.id(),HttpMethod.GET,alice,null));assertThat(evaluation.get("status").asText()).isEqualTo("SUCCEEDED");assertThat(evaluation.get("reportId").asText()).isEqualTo(id);
+      var workspace=json(request(path(job.sessionId().toString())+"/workspace",HttpMethod.GET,alice,null));assertThat(workspace.get("initialReportId").asText()).isEqualTo(id);assertThat(workspace.get("session").get("currentStep").asText()).isEqualTo("FEEDBACK");assertThat(workspace.get("session").get("allowedActions").toString()).contains("READ_INITIAL_REPORT").doesNotContain("REQUEST_INITIAL_EVALUATION");
+      assertError(request("/api/v1/reports/"+id,HttpMethod.GET,bob,null),HttpStatus.NOT_FOUND,"REPORT_NOT_FOUND");
+      assertThat(request("/api/v1/reports/"+id,HttpMethod.GET,null,null).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+      assertError(request("/api/v1/reports/"+UUID.randomUUID(),HttpMethod.GET,alice,null),HttpStatus.NOT_FOUND,"REPORT_NOT_FOUND");
+      assertThatThrownBy(()->resultPublisher.publish(job,draft,true)).isInstanceOf(com.doezip.evaluation.service.InvalidEvaluationResult.class);
+      assertThat(database.queryForObject("SELECT count(*) FROM feedback_reports",Integer.class)).isEqualTo(1);
+      for(String table:List.of("feedback_reports","dimension_evaluations","evaluation_evidence"))assertThatThrownBy(()->database.update("UPDATE "+table+" SET created_at=now()" )).isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
+    }
+    @Test void resultRejectsInventedSubjectsQuotesHiddenSourcesAndExtraFields()throws Exception{
+      var job=resultJob();var base=resultDraft(job);addObservation(base,job);var snapshot=mapper.readTree(job.snapshot());
+      List<java.util.function.Consumer<com.fasterxml.jackson.databind.node.ObjectNode>> corruptions=List.of(
+        d->((com.fasterxml.jackson.databind.node.ObjectNode)documentDimension(d).get("evidence").get(0)).put("subjectId",UUID.randomUUID().toString()),
+        d->((com.fasterxml.jackson.databind.node.ObjectNode)documentDimension(d).get("evidence").get(0)).put("excerpt","invented quotation"),
+        d->((com.fasterxml.jackson.databind.node.ObjectNode)documentDimension(d).get("evidence").get(0).get("source")).put("materialId",hiddenId.toString()),
+        d->((com.fasterxml.jackson.databind.node.ObjectNode)documentDimension(d).get("evidence").get(0).get("source")).put("quotedText","wrong quote"),
+        d->((com.fasterxml.jackson.databind.node.ObjectNode)documentDimension(d).get("evidence").get(0).get("source")).put("lineEnd",99),
+        d->documentDimension(d).put("title","Invented rubric"),
+        d->documentDimension(d).put("code","invented.code"),
+        d->d.put("privateAnswer","must not pass through"),
+        d->d.put("summary","\u0000"),
+        d->((com.fasterxml.jackson.databind.node.ObjectNode)d.get("faultSummary").get("statements").get(0)).put("detectionResult","VALID_KEEP"),
+        d->((com.fasterxml.jackson.databind.node.ObjectNode)d.get("areas").get(0).get("dimensions").get(0)).put("state","SUFFICIENT")
+      );
+      for(var corruption:corruptions){var invalid=base.deepCopy();corruption.accept(invalid);assertThatThrownBy(()->resultValidator.validate(invalid,snapshot)).isInstanceOf(com.doezip.evaluation.service.InvalidEvaluationResult.class);}
+      var invalid=base.deepCopy();documentDimension(invalid).put("code","missing");assertThatThrownBy(()->resultPublisher.publish(job,invalid,true)).isInstanceOf(com.doezip.evaluation.service.InvalidEvaluationResult.class);noPublishedResult();assertThat(evaluationJobs.find(job.id()).orElseThrow().status()).isEqualTo("RUNNING");
+    }
+    @Test void expiredAndReclaimedWorkersCannotPublish()throws Exception{
+      var job=resultJob();var draft=resultDraft(job);database.update("UPDATE evaluation_runs SET lease_expires_at=now()-interval '1 second' WHERE id=?",job.id());
+      assertThatThrownBy(()->resultPublisher.publish(job,draft,true)).isInstanceOf(com.doezip.evaluation.service.InvalidEvaluationResult.class);noPublishedResult();
+      evaluationJobs.recoverExpired();database.update("UPDATE evaluation_runs SET next_attempt_at=now() WHERE id=?",job.id());var next=evaluationJobs.claim().orElseThrow();
+      assertThatThrownBy(()->resultPublisher.publish(job,draft,true)).isInstanceOf(com.doezip.evaluation.service.InvalidEvaluationResult.class);noPublishedResult();assertThat(resultPublisher.publish(next,draft,true).get("id").isTextual()).isTrue();
+    }
+    @Test void failedReportInsertRollsBackDimensionsEvidenceAndSession()throws Exception{
+      var job=resultJob();var draft=resultDraft(job);addObservation(draft,job);
+      database.execute("CREATE FUNCTION fail_report_for_test() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'test insert failure'; END; $$");
+      database.execute("CREATE TRIGGER fail_report_test BEFORE INSERT ON feedback_reports FOR EACH ROW EXECUTE FUNCTION fail_report_for_test()");
+      try{assertThatThrownBy(()->resultPublisher.publish(job,draft,true)).isInstanceOf(org.springframework.dao.DataAccessException.class);}
+      finally{database.execute("DROP TRIGGER fail_report_test ON feedback_reports");database.execute("DROP FUNCTION fail_report_for_test()");}
+      noPublishedResult();assertThat(evaluationJobs.find(job.id()).orElseThrow().status()).isEqualTo("RUNNING");assertThat(database.queryForObject("SELECT current_step FROM learning_sessions WHERE id=?",String.class,job.sessionId())).isEqualTo("CHALLENGE");
+    }
+    @Test void leaseExpiryDuringPublicationRollsBackAllRows()throws Exception{
+      var job=resultJob();var draft=resultDraft(job);addObservation(draft,job);
+      // Test-only DB trigger advances lease expiry after inserting result details, before final CAS.
+      database.execute("CREATE FUNCTION expire_result_lease_for_test() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN UPDATE evaluation_runs SET lease_expires_at=clock_timestamp()-interval '1 second' WHERE id=NEW.evaluation_run_id; RETURN NEW; END; $$");
+      database.execute("CREATE TRIGGER expire_result_test AFTER INSERT ON feedback_reports FOR EACH ROW EXECUTE FUNCTION expire_result_lease_for_test()");
+      try{assertThatThrownBy(()->resultPublisher.publish(job,draft,true)).isInstanceOf(com.doezip.evaluation.service.InvalidEvaluationResult.class);}
+      finally{database.execute("DROP TRIGGER expire_result_test ON feedback_reports");database.execute("DROP FUNCTION expire_result_lease_for_test()");}
+      noPublishedResult();assertThat(evaluationJobs.find(job.id()).orElseThrow().status()).isEqualTo("RUNNING");
+    }
+
+    @Test void reviewedStatementStillRequiresAnswerPolicyAndCorrectReviewReference()throws Exception{
+      var job=resultJob();var snapshot=mapper.readTree(job.snapshot());var draft=resultDraft(job);
+      var review=((com.fasterxml.jackson.databind.node.ArrayNode)snapshot.get("challenge").get("reviews")).addObject();String reviewId=UUID.randomUUID().toString();
+      review.put("id",reviewId);review.put("statementId",draft.get("faultSummary").get("statements").get(0).get("statementId").asText());review.put("reasonText","User reasoning");review.putNull("replacementText");
+      var fault=(com.fasterxml.jackson.databind.node.ObjectNode)draft.get("faultSummary").get("statements").get(0);fault.put("reviewId",reviewId);fault.put("detectionResult","REVIEW_REQUIRED");
+      assertThat(resultValidator.validate(draft,snapshot)).isEqualTo(draft);
+      fault.put("detectionResult","DETECTED");assertThatThrownBy(()->resultValidator.validate(draft,snapshot)).isInstanceOf(com.doezip.evaluation.service.InvalidEvaluationResult.class);
+      fault.put("detectionResult","REVIEW_REQUIRED");fault.put("reviewId",UUID.randomUUID().toString());assertThatThrownBy(()->resultValidator.validate(draft,snapshot)).isInstanceOf(com.doezip.evaluation.service.InvalidEvaluationResult.class);
+    }
+    @Test void concurrentPublishersProduceExactlyOneReport()throws Exception{
+      var job=resultJob();var draft=resultDraft(job);
+      var pool=java.util.concurrent.Executors.newFixedThreadPool(2);var gate=new java.util.concurrent.CountDownLatch(1);
+      try{
+        java.util.concurrent.Callable<Boolean> publish=()->{gate.await();try{resultPublisher.publish(job,draft,true);return true;}catch(com.doezip.evaluation.service.InvalidEvaluationResult rejected){return false;}};
+        var first=pool.submit(publish);var second=pool.submit(publish);gate.countDown();assertThat(List.of(first.get(15,java.util.concurrent.TimeUnit.SECONDS),second.get(15,java.util.concurrent.TimeUnit.SECONDS))).containsExactlyInAnyOrder(true,false);
+      }finally{pool.shutdownNow();}
+      assertThat(database.queryForObject("SELECT count(*) FROM feedback_reports",Integer.class)).isEqualTo(1);assertThat(database.queryForObject("SELECT count(*) FROM dimension_evaluations",Integer.class)).isEqualTo(4);
     }
 }

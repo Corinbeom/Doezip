@@ -22,3 +22,5 @@
 - 검토 PUT과 제출 POST는 session → run 잠금을 같은 순서로 사용한다. 제출 후 검토/인용 수정 금지. 인용은 같은 과제·공개 자료의 줄 범위에서 서버가 추출한다. 저장 요청은 전체 버퍼이며 CAS 충돌은 409다.
 
 - 평가는 서버 snapshot만 사용한다. request/retry는 session 잠금, worker는 SKIP LOCKED claim·token/만료 확인을 사용한다. 실제 평가기 없는 상태를 성공으로 표시하지 않는다. F05a 기록을 따른다.
+
+- 결과 발행은 ResultPublisher의 session → evaluation 잠금·최종 lease CAS 안에서 결과/관찰/리포트/세션을 원자 처리한다. 외부 후보는 ResultValidator를 통과해야 하며 실패를 성공으로 대체하지 않는다. F05B_EVALUATION_RESULTS.md의 정답 미확정·공개 투영 경계를 따른다.
