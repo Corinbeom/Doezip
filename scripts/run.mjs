@@ -43,7 +43,8 @@ function publicWebEnv() {
   if (key && !key.startsWith('sb_publishable_')) {
     throw new Error('Use a Supabase publishable key for the public web setting; secret keys are not supported.');
   }
-  return { ...process.env,
+  const inherited={...process.env};delete inherited.GEMINI_API_KEY;delete inherited.GOOGLE_API_KEY;
+  return { ...inherited,
     NEXT_PUBLIC_API_BASE_URL: env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080/api/v1',
     NEXT_PUBLIC_SUPABASE_URL: env.NEXT_PUBLIC_SUPABASE_URL ?? '',
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? '',
@@ -67,6 +68,6 @@ switch (process.argv[2]) {
   case 'build:web': run('npm', ['run', 'build', '-w', 'apps/web'], root, publicWebEnv()); break;
   case 'start:api': api(true); break;
   case 'db:up': run('docker', ['compose', '--env-file', '.env', '-f', 'compose.local.yml', 'up', '-d', '--wait', 'db']); break;
-  case 'check:api': run('./gradlew', ['--no-daemon', 'test', 'build'], `${root}apps/api`); break;
+  case 'check:api': run('./gradlew', ['--no-daemon', 'test', 'build'], `${root}apps/api`, {...env,AI_EVALUATION_ENABLED:'false',GEMINI_API_KEY:''}); break;
   default: throw new Error('Unknown command');
 }

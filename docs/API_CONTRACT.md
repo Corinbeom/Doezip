@@ -1,4 +1,4 @@
-> **현재 구현 상태 (2026-09-12):** F02a 공개 과제 조회, F01 me/bootstrap, F02b 세션 생성·workspace·공개 자료·draft 저장을 구현한다. F02c INITIAL 제출·제출본 조회도 구현한다. F04a 검산 시작·조회도 구현한다. F04b 검토 저장/제출도 구현한다. F05a INITIAL 평가 요청·조회·재시도도 구현한다. F05b는 성공 결과 GET /reports/{id} 조회와 기본 표시를 구현한다. 실제 평가기는 미연결이다. FINAL 등 나머지 제품 경로는 기본 차단이다. [F02b 범위와 검증](F02B_REPORT_DRAFT.md)을 참고한다.
+> **현재 구현 상태 (2026-09-12):** F02a 공개 과제 조회, F01 me/bootstrap, F02b 세션 생성·workspace·공개 자료·draft 저장을 구현한다. F02c INITIAL 제출·제출본 조회도 구현한다. F04a 검산 시작·조회도 구현한다. F04b 검토 저장/제출도 구현한다. F05a INITIAL 평가 요청·조회·재시도도 구현한다. F05b는 성공 결과 GET /reports/{id} 조회와 기본 표시를 구현한다. F05c는 설정된 Gemini 어댑터를 연결하며 실제 계정 호출 검증은 별도다. FINAL 등 나머지 제품 경로는 기본 차단이다. [F02b 범위와 검증](F02B_REPORT_DRAFT.md)을 참고한다.
 
 # API 계약 — 화면·상태·데이터 연결
 
@@ -272,3 +272,5 @@ F04a에는 검토 저장 API가 없으므로 reviews는 실제로 비어 있고 
 F05a 구현과 미구현 평가기 경계는 [F05a 기록](F05A_EVALUATION_LIFECYCLE.md)을 따른다. workspace.activeEvaluationId는 복원을 위해 terminal 상태를 포함한 최신 요청 ID를 제공한다.
 
 F05b GET /reports/{id}는 성공 평가의 소유자만 조회하며 no-store, 타인/없는 ID는 REPORT_NOT_FOUND(404)다. 공개 결과 스키마는 기존 계약을 사용한다. INITIAL 및 DOCUMENT_VERSION/FAULT_ATTEMPT 관찰만 발행하며 FINAL·기타 관찰 대상은 미지원이다. [결과 검증 경계](F05B_EVALUATION_RESULTS.md)를 따른다.
+
+F05c 오류/호출 설정은 [AI 설정](AI_SETUP.md)을 따른다. 공개 Evaluation/Report 계약은 유지하며 원문 제공자 오류나 키를 응답에 넣지 않는다.

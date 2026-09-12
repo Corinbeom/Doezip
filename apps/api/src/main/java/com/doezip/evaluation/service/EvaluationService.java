@@ -13,9 +13,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 @Service @Transactional(readOnly=true)
 public class EvaluationService {
+ private final com.doezip.evaluation.adapter.EvaluationSettings settings;
  private final EvaluationRepository jobs;private final SessionRepository sessions;private final DocumentRepository documents;
  private final ChallengeRunRepository challenges;private final ChallengeService challengeService;private final MaterialRepository materials;private final SessionService sessionService;private final TaskService tasks;private final ObjectMapper mapper;
- public EvaluationService(EvaluationRepository jobs,SessionRepository sessions,DocumentRepository documents,ChallengeRunRepository challenges,ChallengeService challengeService,MaterialRepository materials,SessionService sessionService,TaskService tasks,ObjectMapper mapper){this.jobs=jobs;this.sessions=sessions;this.documents=documents;this.challenges=challenges;this.challengeService=challengeService;this.materials=materials;this.sessionService=sessionService;this.tasks=tasks;this.mapper=mapper;}
+ public EvaluationService(EvaluationRepository jobs,SessionRepository sessions,DocumentRepository documents,ChallengeRunRepository challenges,ChallengeService challengeService,MaterialRepository materials,SessionService sessionService,TaskService tasks,ObjectMapper mapper,com.doezip.evaluation.adapter.EvaluationSettings settings){this.settings=settings;this.jobs=jobs;this.sessions=sessions;this.documents=documents;this.challenges=challenges;this.challengeService=challengeService;this.materials=materials;this.sessionService=sessionService;this.tasks=tasks;this.mapper=mapper;}
  public Evaluation get(UUID user,UUID id){var job=jobs.find(id).orElseThrow(EvaluationService::missing);sessions.findByIdAndUserId(job.sessionId(),user).orElseThrow(EvaluationService::missing);return job.view();}
  @Transactional public Evaluation request(UUID user,UUID sessionId,UUID key,Request input){
   if(input==null)throw SessionFailure.invalid();var session=sessions.lockOwned(sessionId,user).orElseThrow(SessionFailure::missing);
@@ -30,7 +31,7 @@ public class EvaluationService {
   var sources=materials.findByTaskIdAndReleaseStageInOrderBySortOrderAscIdAsc(session.getTaskId(),session.getConditionReleasedAt()==null?List.of("INITIAL"):List.of("INITIAL","CONDITION_CHANGE")).stream().map(m->sessionService.material(user,sessionId,m.getId())).toList();
   Map<String,Object> inputData=new TreeMap<>();inputData.put("schemaVersion",1);inputData.put("document",Map.of("id",document.getId(),"hash",document.getContentHash(),"markdown",document.getContentMarkdown()));
   inputData.put("challenge",challengeService.get(user,challenge.getId()));inputData.put("materials",sources);inputData.put("task",tasks.get(session.getTaskId()));
-  inputData.put("messages",List.of());inputData.put("defenseAnswers",List.of());inputData.put("eventCutoff",0);inputData.put("unimplementedInputs",List.of("chat","defense","events"));inputData.put("evaluatorVersion","lifecycle-v1");inputData.put("llmConfig",Map.of("provider","unconfigured"));
+  inputData.put("messages",List.of());inputData.put("defenseAnswers",List.of());inputData.put("eventCutoff",0);inputData.put("unimplementedInputs",List.of("chat","defense","events"));inputData.put("evaluatorVersion",settings.version());inputData.put("llmConfig",settings.frozenConfig());
   String snapshot=canonical(mapper.valueToTree(inputData));return jobs.insert(sessionId,session.getTaskId(),document.getId(),challenge.getId(),key,snapshot,SessionService.hash(snapshot)).view();
  }
  @Transactional public Evaluation retry(UUID user,UUID id){

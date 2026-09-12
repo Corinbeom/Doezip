@@ -23,3 +23,10 @@ it('retries only retryable failure on the same job',async()=>{
 it('aborts an in-flight request on unmount',async()=>{
  vi.mocked(requestEvaluation).mockImplementation(()=>new Promise(()=>{}));const {unmount}=mount();fireEvent.click(await screen.findByRole('button',{name:'평가 요청하기'}));await act(async()=>{});unmount();expect(vi.mocked(requestEvaluation).mock.calls[0][3]?.aborted).toBe(true);
 });
+
+it('explains invalid AI evidence without showing a successful report',async()=>{
+ vi.mocked(getWorkspace).mockResolvedValue({...workspace,activeEvaluationId:'eval'});vi.mocked(getEvaluation).mockResolvedValue({...evaluation,errorCode:'INVALID_EVALUATION_RESULT',retryable:true});mount();await screen.findByText(/AI 응답의 근거 또는 형식을 검증하지 못했습니다/);expect(screen.getByRole('button',{name:'평가 다시 시도'})).toBeVisible();expect(screen.queryByRole('heading',{name:'최초 평가 결과'})).not.toBeInTheDocument();
+});
+it('explains quota exhaustion without offering an unlimited retry',async()=>{
+ vi.mocked(getWorkspace).mockResolvedValue({...workspace,activeEvaluationId:'eval'});vi.mocked(getEvaluation).mockResolvedValue({...evaluation,errorCode:'EVALUATION_DAILY_LIMIT'});mount();await screen.findByText(/오늘의 AI 평가 호출 한도/);expect(screen.queryByRole('button',{name:'평가 다시 시도'})).not.toBeInTheDocument();
+});

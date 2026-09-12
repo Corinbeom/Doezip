@@ -70,7 +70,7 @@ class SessionIntegrationTest {
     @Autowired JwtDecoder decoder;
     @Autowired CurrentUser currentUser;
     @BeforeEach void setup() throws Exception {
-        database.update("DELETE FROM feedback_reports"); database.update("DELETE FROM evaluation_evidence"); database.update("DELETE FROM dimension_evaluations"); database.update("DELETE FROM evaluation_runs"); database.update("DELETE FROM evidence_links"); database.update("DELETE FROM fault_attempts"); database.update("DELETE FROM challenge_runs"); database.update("DELETE FROM challenge_statements"); database.update("DELETE FROM challenge_templates"); database.update("DELETE FROM document_versions"); database.update("DELETE FROM learning_sessions"); database.update("DELETE FROM materials");
+        database.update("DELETE FROM evaluation_call_budgets"); database.update("DELETE FROM feedback_reports"); database.update("DELETE FROM evaluation_evidence"); database.update("DELETE FROM dimension_evaluations"); database.update("DELETE FROM evaluation_runs"); database.update("DELETE FROM evidence_links"); database.update("DELETE FROM fault_attempts"); database.update("DELETE FROM challenge_runs"); database.update("DELETE FROM challenge_statements"); database.update("DELETE FROM challenge_templates"); database.update("DELETE FROM document_versions"); database.update("DELETE FROM learning_sessions"); database.update("DELETE FROM materials");
         database.update("DELETE FROM rubric_dimensions"); database.update("DELETE FROM tasks"); database.update("DELETE FROM users");
         database.update("INSERT INTO tasks(id,task_code,title,description_markdown,status,published_at) VALUES (?,'test-writing','Test','Public task','PUBLISHED',now())", taskId);
         alice=token("alice",c->{}); bob=token("bob",c->{});bootstrap(alice,"{}");bootstrap(bob,"{}");
@@ -623,7 +623,7 @@ class SessionIntegrationTest {
         d->d.put("privateAnswer","must not pass through"),
         d->d.put("summary","\u0000"),
         d->((com.fasterxml.jackson.databind.node.ObjectNode)d.get("faultSummary").get("statements").get(0)).put("detectionResult","VALID_KEEP"),
-        d->((com.fasterxml.jackson.databind.node.ObjectNode)d.get("areas").get(0).get("dimensions").get(0)).put("state","SUFFICIENT")
+        d->d.get("areas").forEach(a->{if(a.path("area").asText().equals("PROMPT"))((com.fasterxml.jackson.databind.node.ObjectNode)a.get("dimensions").get(0)).put("state","SUFFICIENT");})
       );
       for(var corruption:corruptions){var invalid=base.deepCopy();corruption.accept(invalid);assertThatThrownBy(()->resultValidator.validate(invalid,snapshot)).isInstanceOf(com.doezip.evaluation.service.InvalidEvaluationResult.class);}
       var invalid=base.deepCopy();documentDimension(invalid).put("code","missing");assertThatThrownBy(()->resultPublisher.publish(job,invalid,true)).isInstanceOf(com.doezip.evaluation.service.InvalidEvaluationResult.class);noPublishedResult();assertThat(evaluationJobs.find(job.id()).orElseThrow().status()).isEqualTo("RUNNING");
@@ -669,5 +669,47 @@ class SessionIntegrationTest {
         var first=pool.submit(publish);var second=pool.submit(publish);gate.countDown();assertThat(List.of(first.get(15,java.util.concurrent.TimeUnit.SECONDS),second.get(15,java.util.concurrent.TimeUnit.SECONDS))).containsExactlyInAnyOrder(true,false);
       }finally{pool.shutdownNow();}
       assertThat(database.queryForObject("SELECT count(*) FROM feedback_reports",Integer.class)).isEqualTo(1);assertThat(database.queryForObject("SELECT count(*) FROM dimension_evaluations",Integer.class)).isEqualTo(4);
+    }
+
+    @org.springframework.test.context.bean.override.mockito.MockitoSpyBean com.doezip.evaluation.adapter.EvaluationSettings aiSettings;
+    @org.springframework.test.context.bean.override.mockito.MockitoBean com.doezip.evaluation.adapter.EvaluationAdapter aiAdapter;
+    @Autowired com.doezip.evaluation.repository.EvaluationBudget aiBudget;
+    com.doezip.evaluation.repository.EvaluationRepository.Job aiJob()throws Exception{
+      org.mockito.Mockito.doReturn(true).when(aiSettings).available();
+      var job=resultJob();
+      database.update("UPDATE evaluation_runs SET status='QUEUED',lease_token=NULL,lease_expires_at=NULL,attempt_count=0 WHERE id=?",job.id());
+      return evaluationJobs.find(job.id()).orElseThrow();
+    }
+    @Test void workerPublishesValidatedAdapterResultWithoutHoldingTransaction()throws Exception{
+      var job=aiJob();var draft=resultDraft(job);addObservation(draft,job);
+      org.mockito.Mockito.when(aiAdapter.evaluate(org.mockito.ArgumentMatchers.any())).thenAnswer(call->{
+        assertThat(org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive()).isFalse();return draft;
+      });
+      evaluationWorker.tick();var completed=evaluationJobs.find(job.id()).orElseThrow();assertThat(completed.status()).isEqualTo("SUCCEEDED");
+      var report=json(request("/api/v1/reports/"+completed.reportId(),HttpMethod.GET,alice,null));assertThat(report.get("sample").asBoolean()).isFalse();assertThat(report.get("summary").asText()).contains("Synthetic");
+      var snapshot=mapper.readTree(completed.snapshot());assertThat(snapshot.path("evaluatorVersion").asText()).isEqualTo("gemini-evaluation-v1");assertThat(snapshot.path("llmConfig").path("model").asText()).isEqualTo("gemini-3.5-flash-lite");assertThat(snapshot.toString()).doesNotContain("apiKey");
+      assertThat(database.queryForObject("SELECT sum(calls) FROM evaluation_call_budgets WHERE scope='global'",Integer.class)).isEqualTo(1);
+    }
+    @Test void invalidAiOutputRetriesAtMostThreeTimesAndLeavesNoPartialReport()throws Exception{
+      var job=aiJob();org.mockito.Mockito.when(aiAdapter.evaluate(org.mockito.ArgumentMatchers.any())).thenReturn(mapper.createObjectNode().put("privateAnswer","not allowed"));
+      for(int n=1;n<=3;n++){evaluationWorker.tick();var current=evaluationJobs.find(job.id()).orElseThrow();assertThat(current.attempts()).isEqualTo(n);assertThat(current.status()).isEqualTo(n<3?"QUEUED":"FAILED");noPublishedResult();database.update("UPDATE evaluation_runs SET next_attempt_at=now() WHERE id=?",job.id());}
+      org.mockito.Mockito.verify(aiAdapter,org.mockito.Mockito.times(3)).evaluate(org.mockito.ArgumentMatchers.any());assertThat(evaluationJobs.find(job.id()).orElseThrow().retryable()).isTrue();
+    }
+    @Test void quotaReservationRollsBackGlobalIncrementAndPreventsProviderCall()throws Exception{
+      var job=aiJob();org.mockito.Mockito.doReturn(1).when(aiSettings).dailyLimit();aiBudget.reserve(job.sessionId());
+      evaluationWorker.tick();assertThat(evaluationJobs.find(job.id()).orElseThrow().error()).isEqualTo("EVALUATION_DAILY_LIMIT");org.mockito.Mockito.verifyNoInteractions(aiAdapter);noPublishedResult();assertThat(database.queryForObject("SELECT calls FROM evaluation_call_budgets WHERE scope='global'",Integer.class)).isEqualTo(1);
+    }
+    @Test void heartbeatOnlyRenewsCurrentUnexpiredClaim()throws Exception{
+      var job=resultJob();assertThat(evaluationJobs.heartbeat(job)).isTrue();database.update("UPDATE evaluation_runs SET lease_expires_at=now()-interval '1 second' WHERE id=?",job.id());assertThat(evaluationJobs.heartbeat(job)).isFalse();
+    }
+
+    @Test void concurrentBudgetReservationsCannotExceedAccountLimit()throws Exception{
+      var job=aiJob();org.mockito.Mockito.doReturn(1).when(aiSettings).dailyLimit();
+      var pool=java.util.concurrent.Executors.newFixedThreadPool(2);var gate=new java.util.concurrent.CountDownLatch(1);
+      try{
+        java.util.concurrent.Callable<Boolean> reserve=()->{gate.await();try{aiBudget.reserve(job.sessionId());return true;}catch(com.doezip.evaluation.adapter.EvaluationFailure limited){return false;}};
+        var first=pool.submit(reserve);var second=pool.submit(reserve);gate.countDown();assertThat(List.of(first.get(15,java.util.concurrent.TimeUnit.SECONDS),second.get(15,java.util.concurrent.TimeUnit.SECONDS))).containsExactlyInAnyOrder(true,false);
+      }finally{pool.shutdownNow();}
+      assertThat(database.queryForObject("SELECT calls FROM evaluation_call_budgets WHERE scope='global'",Integer.class)).isEqualTo(1);
     }
 }

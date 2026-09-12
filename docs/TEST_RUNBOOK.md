@@ -171,4 +171,7 @@ F04b 검토·인용·제출 검사는 SessionIntegrationTest와 tests/e2e/review
 F05a: SessionIntegrationTest의 평가·lease 검사와 tests/e2e/evaluation.spec.ts를 실행한다. 실제 evaluator 미연결 실패가 정상이며 성공 점수를 기대하지 않는다. [기록](F05A_EVALUATION_LIFECYCLE.md).
 
 ## F05b 결과 검증·저장·조회
-`npm run check`에 PostgreSQL 원자 발행/롤백/소유권 검사, 리포트 단위 검사, 브라우저 UI 경계 검사를 포함한다. 실제 worker는 계속 미연결 실패를 검증하며 sample GET 응답을 사용한 화면 검사를 실제 AI 성공으로 표시하지 않는다. 상세 검증과 미실행 범위는 [F05b 기록](F05B_EVALUATION_RESULTS.md)을 따른다.
+`npm run check`에 PostgreSQL 원자 발행/롤백/소유권 검사, 리포트 단위 검사, 브라우저 UI 경계 검사를 포함한다. 기본 검사의 worker는 AI 비활성 상태의 미연결 실패를 검증하며 sample GET 응답을 사용한 화면 검사를 실제 AI 성공으로 표시하지 않는다. 상세 검증과 미실행 범위는 [F05b 기록](F05B_EVALUATION_RESULTS.md)을 따른다.
+
+## F05c 실제 AI 검사
+기본 check는 외부 AI를 호출하지 않는다. SDK HTTP 경계와 PostgreSQL worker 통합 검사를 포함한다. 명시적 `npm run test:ai`는 가상 공개 데이터로 실제 Gemini를 1회 호출한다. 키가 없으면 실행 불가이며 성공/skip으로 대신하지 않는다. [AI 설정](AI_SETUP.md)과 [F05c 검증 기록](F05C_AI_EVALUATION.md)을 따른다.
