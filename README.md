@@ -1,7 +1,7 @@
 # Doezip
 
 AI 활용 역량 훈련 서비스.
-현재 저장소에는 Next.js 웹, Spring Boot API, PostgreSQL 개발 환경과 과제 조회·로그인·보고서 작성·최초 제출·검산 초안 열람·검토 저장·제출 기능이 구성되어 있다.
+현재 저장소에는 Next.js 웹, Spring Boot API, PostgreSQL 개발 환경과 과제 조회·로그인·보고서 작성·최초 제출·검산 초안 열람·검토 저장·제출·Gemini INITIAL 평가·결과 조회 기능이 구성되어 있다.
 제품 기능의 구현 범위와 진행 상태는 [개발 계획](docs/FEATURE_BACKLOG.md)을 참고한다.
 
 ## 로컬 실행
@@ -47,7 +47,8 @@ Ctrl+C는 이 실행기가 시작한 프로세스만 종료한다. DB와 영속 
 | `npm run check:web` | lint·typecheck·Vitest·production build |
 | `npm run check:api` | JUnit·실제 PostgreSQL Testcontainers·JAR build |
 | `npm run test:e2e` | 빌드된 실제 웹·API 서버를 시작해 Playwright 검사 |
-| `npm run check` | 계약·웹·API·E2E 전체 검사 |
+| `npm run check` | 계약·웹·API·E2E 전체 검사(AI 비활성) |
+| `npm run test:flow:ai` | 가상 과제의 실제 AI 평가·결과 복원 브라우저 검사(키 필요) |
 
 ## 검증
 
@@ -63,7 +64,7 @@ npm run check
 Linux에서 브라우저 OS 라이브러리도 필요하면 `npx playwright install --with-deps chromium`을 실행한다.
 첫 설치·Gradle 해석·Docker image pull·브라우저 설치에는 네트워크가 필요하다.
 Docker 또는 Java가 없으면 관련 검사는 실패하며 자동 skip/H2 대체하지 않는다.
-AI 키·OAuth 계정은 검사에 필요 없다. 실제 결과는 [F00 검증 기록](docs/F00_VALIDATION.md)을 참고한다.
+AI 키·OAuth 계정은 검사에 필요 없다. 최신 통합 결과와 실제 AI 검사 구분은 [I01 검증 기록](docs/I01_INTEGRATION.md)을 참고한다.
 
 DB를 멈출 때는 `docker compose --env-file .env -f compose.local.yml stop db`를 쓴다.
 볼륨 삭제 옵션은 일반 실행·검증 명령에 넣지 않는다.
@@ -114,3 +115,5 @@ DB를 멈출 때는 `docker compose --env-file .env -f compose.local.yml stop db
 결과 검증·원자 저장·소유자 조회와 기본 표시는 [F05b 기록](docs/F05B_EVALUATION_RESULTS.md)을 따른다. AI 연결 설정은 아래 F05c 안내를 따르며 일반 실행에서 가상 성공 결과를 생성하지 않는다.
 
 AI 평가 설정과 실행은 [AI_SETUP](docs/AI_SETUP.md), 구현·검증 구분은 [F05c 기록](docs/F05C_AI_EVALUATION.md)을 따른다. `npm run test:ai`는 기본 CI와 분리한 명시적 실제 호출 검사다.
+
+웹과 API는 같은 checkout에서 npm run dev로 실행한다. 이전의 F04c 웹/F05c API 분리 실행은 통합 전 기록이다. 새 기능은 통합된 develop에서 새 feature 브랜치로 시작한다.

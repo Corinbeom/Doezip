@@ -175,3 +175,6 @@ F05a: SessionIntegrationTest의 평가·lease 검사와 tests/e2e/evaluation.spe
 
 ## F05c 실제 AI 검사
 기본 check는 외부 AI를 호출하지 않는다. SDK HTTP 경계와 PostgreSQL worker 통합 검사를 포함한다. 명시적 `npm run test:ai`는 가상 공개 데이터로 실제 Gemini를 1회 호출한다. 키가 없으면 실행 불가이며 성공/skip으로 대신하지 않는다. [AI 설정](AI_SETUP.md)과 [F05c 검증 기록](F05C_AI_EVALUATION.md)을 따른다.
+
+## I01 한 checkout 통합 검증
+기본 전체 검사는 npm run check, 선택적 실제 AI 브라우저 검사는 npm run test:flow:ai다. 가상 과제·테스트 JWT를 사용하며 실제 Gemini/DB/worker/결과 API는 대체하지 않는다. Google OAuth 공급자 화면의 실제 로그인과 모델 품질 평가는 별도다. 실행 결과와 이전 브랜치 관계는 [I01 기록](I01_INTEGRATION.md)을 따른다.

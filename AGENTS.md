@@ -1,8 +1,9 @@
 # Doezip 협업 규칙
 
 AI 활용 역량 훈련 서비스. 현재 1인 개발로 진행하며 기능별로 화면·API·DB·테스트까지 함께 구현·검증한다.
-F00 실행 환경은 구축됐다. 이후 기능은 docs/FEATURE_BACKLOG.md의 현재 실행 순서를 따른다. 디자인은 학습 플랫폼 v0.1을 기준으로 승인됐으며 화면별 이식 상태는 docs/design/README.md에서 관리한다. 로그인은 구현·검증 상태를 docs/F01_AUTH_VALIDATION.md에서 확인한다. 채팅·검산·평가·리포트·AI 호출,
-전체 22개 테이블 migration과 seed는 후속 작업이며 완료로 표시하지 않는다.
+실행 환경, 과제 조회·로그인·보고서 작성/최초 제출·검산 검토·INITIAL AI 평가·결과 조회를 통합한다.
+디자인 기준은 docs/design/README.md, 통합·검증 범위는 docs/I01_INTEGRATION.md다.
+채팅·되묻기·FINAL 평가·비교 리포트, 전체 22개 테이블 migration/seed와 평가 품질 검수는 후속이며 완료로 표시하지 않는다.
 
 ## Git
 - main은 배포 기준, develop은 통합 기준이다. 두 브랜치에서 직접 기능 개발 금지.
@@ -26,7 +27,7 @@ F00 실행 환경은 구축됐다. 이후 기능은 docs/FEATURE_BACKLOG.md의 �
 ## 실제 명령 (루트)
 Node 24.20.0, Java 21, Docker Compose v2를 준비한다.
 `npm install` → `cp .env.example .env` → `npm run db:up` → `npm run dev`.
-개별 실행: `npm run dev:web`, `npm run dev:api`. 전체 검증: `npm run check`.
+개별 실행: `npm run dev:web`, `npm run dev:api`. 전체 검증: `npm run check`. 실제 AI 전체 흐름은 키 설정 후 명시적으로 `npm run test:flow:ai` 실행(기본 CI 제외).
 DB 시작은 별도다. 볼륨 삭제를 일반 실행·검증에 넣지 않는다.
 
 ## 기준 문서
