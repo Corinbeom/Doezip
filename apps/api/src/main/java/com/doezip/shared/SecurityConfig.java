@@ -45,6 +45,10 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/api/v1/challenge-runs/*", me);
         source.registerCorsConfiguration("/api/v1/challenge-runs/*/reviews", draft);
         source.registerCorsConfiguration("/api/v1/challenge-runs/*/submit", bootstrap);
+        CorsConfiguration evaluation=new CorsConfiguration(bootstrap);evaluation.setAllowedHeaders(List.of("Authorization","Content-Type","Idempotency-Key"));
+        source.registerCorsConfiguration("/api/v1/sessions/*/evaluations",evaluation);
+        source.registerCorsConfiguration("/api/v1/evaluations/*",me);
+        source.registerCorsConfiguration("/api/v1/evaluations/*/retry",bootstrap);
         org.springframework.security.web.AuthenticationEntryPoint unauthorized = (request, response, exception) -> {
             response.setStatus(401); response.setContentType("application/json");
             response.setHeader("WWW-Authenticate", "Bearer");
@@ -57,15 +61,17 @@ public class SecurityConfig {
                 org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/sessions/*/document-versions"),
                 org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/sessions/*/challenge"),
                 org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.PUT, "/api/v1/challenge-runs/*/reviews"),
-                org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/challenge-runs/*/submit")))
+                org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/challenge-runs/*/submit"),
+                org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/sessions/*/evaluations"),
+                org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/evaluations/*/retry")))
             .oauth2ResourceServer(c -> c.jwt(jwt -> {}).authenticationEntryPoint(unauthorized))
             .cors(c -> c.configurationSource(source))
             .sessionManagement(c -> c.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .formLogin(AbstractHttpConfigurer::disable).httpBasic(AbstractHttpConfigurer::disable)
             .requestCache(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(c -> c.requestMatchers(HttpMethod.GET, "/actuator/health", "/api/v1/tasks", "/api/v1/tasks/*").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/me", "/api/v1/sessions/*/workspace", "/api/v1/sessions/*/materials/*", "/api/v1/sessions/*/document-versions", "/api/v1/challenge-runs/*").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/v1/me/bootstrap", "/api/v1/sessions", "/api/v1/sessions/*/document-versions", "/api/v1/sessions/*/challenge", "/api/v1/challenge-runs/*/submit").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/v1/me", "/api/v1/sessions/*/workspace", "/api/v1/sessions/*/materials/*", "/api/v1/sessions/*/document-versions", "/api/v1/challenge-runs/*", "/api/v1/evaluations/*").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/v1/me/bootstrap", "/api/v1/sessions", "/api/v1/sessions/*/document-versions", "/api/v1/sessions/*/challenge", "/api/v1/challenge-runs/*/submit", "/api/v1/sessions/*/evaluations", "/api/v1/evaluations/*/retry").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/v1/sessions/*/draft", "/api/v1/challenge-runs/*/reviews").authenticated()
                 .anyRequest().denyAll())
             .exceptionHandling(c -> c
