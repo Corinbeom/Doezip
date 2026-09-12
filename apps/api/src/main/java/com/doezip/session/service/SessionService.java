@@ -14,9 +14,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Service @Transactional(readOnly=true)
 public class SessionService {
  private final ChallengeRunRepository challenges;private final ChallengeTemplateRepository templates;private final DocumentRepository documents;
+ private final com.doezip.evaluation.repository.EvaluationRepository evaluations;
  private final SessionRepository sessions; private final MaterialRepository materials;
  private final TaskRepository tasks; private final TaskService taskService;
- public SessionService(SessionRepository sessions,MaterialRepository materials,TaskRepository tasks,TaskService taskService,ChallengeRunRepository challenges,ChallengeTemplateRepository templates,DocumentRepository documents){
+ public SessionService(SessionRepository sessions,MaterialRepository materials,TaskRepository tasks,TaskService taskService,ChallengeRunRepository challenges,ChallengeTemplateRepository templates,DocumentRepository documents,com.doezip.evaluation.repository.EvaluationRepository evaluations){
+  this.evaluations=evaluations;
   this.challenges=challenges;this.templates=templates;this.documents=documents;
   this.sessions=sessions;this.materials=materials;this.tasks=tasks;this.taskService=taskService;
  }
@@ -37,9 +39,10 @@ public class SessionService {
   if(challenge.isEmpty()&&s.getStatus().equals("ACTIVE")&&s.getCurrentStep().equals("CHALLENGE")
     &&documents.findBySessionIdAndCheckpoint(s.getId(),"INITIAL").isPresent()&&templates.existsByTaskId(s.getTaskId()))actions.add("START_CHALLENGE");
   if(challenge.isPresent()&&challenge.get().getStatus().equals("IN_PROGRESS")&&s.getStatus().equals("ACTIVE")&&s.getCurrentStep().equals("CHALLENGE"))actions.addAll(List.of("EDIT_CHALLENGE","SUBMIT_CHALLENGE"));
+  if(challenge.isPresent()&&challenge.get().getStatus().equals("SUBMITTED")&&s.getStatus().equals("ACTIVE")&&Set.of("CHALLENGE","FEEDBACK").contains(s.getCurrentStep())&&evaluations.latest(s.getId()).isEmpty())actions.add("REQUEST_INITIAL_EVALUATION");
   return new Workspace(new Session(s.getId(),s.getTaskId(),s.getStatus(),s.getCurrentStep(),s.getMode(),s.getConditionReleasedAt(),
    actions),taskService.get(s.getTaskId()),summary,
-   new Draft(s.getMarkdown(),s.getLockVersion(),hash(s.getMarkdown())),challenge.map(c->c.getId()).orElse(null),null,null,null);
+   new Draft(s.getMarkdown(),s.getLockVersion(),hash(s.getMarkdown())),challenge.map(c->c.getId()).orElse(null),null,null,evaluations.latest(s.getId()).map(j->j.id()).orElse(null));
  }
  public Material material(UUID userId,UUID id,UUID materialId){
   var s=owned(userId,id);

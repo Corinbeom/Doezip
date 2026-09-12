@@ -1,4 +1,4 @@
-> **현재 구현 상태 (2026-09-12):** F02a 공개 과제 조회, F01 me/bootstrap, F02b 세션 생성·workspace·공개 자료·draft 저장을 구현한다. F02c INITIAL 제출·제출본 조회도 구현한다. F04a 검산 시작·조회도 구현한다. F04b 검토 저장/제출도 구현한다. FINAL·평가 등 나머지 제품 경로는 기본 차단이다. [F02b 범위와 검증](F02B_REPORT_DRAFT.md)을 참고한다.
+> **현재 구현 상태 (2026-09-12):** F02a 공개 과제 조회, F01 me/bootstrap, F02b 세션 생성·workspace·공개 자료·draft 저장을 구현한다. F02c INITIAL 제출·제출본 조회도 구현한다. F04a 검산 시작·조회도 구현한다. F04b 검토 저장/제출도 구현한다. F05a INITIAL 평가 요청·조회·재시도도 구현한다. 실제 평가기는 미연결이다. FINAL 등 나머지 제품 경로는 기본 차단이다. [F02b 범위와 검증](F02B_REPORT_DRAFT.md)을 참고한다.
 
 # API 계약 — 화면·상태·데이터 연결
 
@@ -268,3 +268,5 @@ ACTIVE/CHALLENGE 상태여야 새 run을 배정한다. 세션 행 잠금과 UNIQ
 안내 확인 전 workspace에는 초안 본문·제목·템플릿 ID를 넣지 않는다. 확인 후 run ID와 공개 문장만 제공한다.
 variant_code·오류 키·정답·오류 개수는 응답에서 제외한다. 초안 준비 실패/해시 불일치는 CHALLENGE_UNAVAILABLE(503)이며 run을 저장하지 않는다.
 F04a에는 검토 저장 API가 없으므로 reviews는 실제로 비어 있고 submittedAt은 null이다. 검토 저장·제출은 후속 구현이다.
+
+F05a 구현과 미구현 평가기 경계는 [F05a 기록](F05A_EVALUATION_LIFECYCLE.md)을 따른다. workspace.activeEvaluationId는 복원을 위해 terminal 상태를 포함한 최신 요청 ID를 제공한다.

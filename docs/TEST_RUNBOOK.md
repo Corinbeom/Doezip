@@ -167,3 +167,5 @@ F02c는 `tests/e2e/submission.spec.ts`와 SessionIntegrationTest에서 저장 �
 F04a 검산 시작/열람 검사는 `tests/e2e/challenge.spec.ts`와 SessionIntegrationTest에 있다. 안내 확인 전 미노출, 실제 배정·복원·응답 유실 재시도, 사용자 보고서 보존, 소유권, 동시 시작, 단계·해시 검사, 320px 화면을 확인한다. [F04a 실행 기록](F04A_CHALLENGE_START.md)을 참고한다.
 
 F04b 검토·인용·제출 검사는 SessionIntegrationTest와 tests/e2e/reviews.spec.ts에 있다. 실행 결과와 실제 Google 검증 구분은 [F04b](F04B_CHALLENGE_REVIEW.md)를 따른다.
+
+F05a: SessionIntegrationTest의 평가·lease 검사와 tests/e2e/evaluation.spec.ts를 실행한다. 실제 evaluator 미연결 실패가 정상이며 성공 점수를 기대하지 않는다. [기록](F05A_EVALUATION_LIFECYCLE.md).

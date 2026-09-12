@@ -4,6 +4,7 @@ import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {getWorkspace,getMaterial} from '@/features/workspace/api';
 import {getChallenge,saveReviews,submitChallenge,type ChallengeRun,type ReviewInput} from './api';
 import styles from './challenge.module.css';
+import {EvaluationPanel} from '@/features/evaluation/evaluation-panel';
 const toInput=(run:ChallengeRun):ReviewInput[]=>run.reviews.map(r=>({statementId:r.statementId,decision:r.decision,reasonText:r.reasonText,replacementText:r.replacementText,evidence:r.evidence.map(e=>({materialId:e.materialId,lineStart:e.lineStart,lineEnd:e.lineEnd,relation:e.relation,...(e.userNote===null?{}:{userNote:e.userNote})}))}));
 function EvidencePicker({sessionId,userId,onAdd}:{sessionId:string;userId:string;onAdd:(e:ReviewInput['evidence'][number])=>void}){
  const workspace=useQuery({queryKey:['evidence-workspace',userId,sessionId],queryFn:({signal})=>getWorkspace(sessionId,signal),meta:{private:true}});
@@ -61,5 +62,6 @@ export function ReviewEditor({initial,userId}:{initial:ChallengeRun;userId:strin
  })}</fieldset>
  {!locked&&<><button disabled={busy||!dirty} onClick={()=>void perform('save')}>검토 저장</button><button disabled={busy||dirty} onClick={()=>void perform('submit')}>검산 제출</button></>}
  <button disabled={busy} onClick={()=>void perform('reload')}>서버 검토 다시 불러오기</button>
+ {locked&&<EvaluationPanel sessionId={run.sessionId} userId={userId}/>}
  </div>;
 }

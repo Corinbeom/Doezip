@@ -3,6 +3,7 @@ import {beforeEach,expect,it,vi} from 'vitest';
 import {QueryClient,QueryClientProvider} from '@tanstack/react-query';
 import {ReviewEditor} from './review-editor';
 import {saveReviews,type ChallengeRun} from './api';
+vi.mock('@/features/evaluation/evaluation-panel',()=>({EvaluationPanel:()=>null}));
 vi.mock('./api',()=>({saveReviews:vi.fn(),getChallenge:vi.fn(),submitChallenge:vi.fn()}));
 vi.mock('@/features/workspace/api',()=>({getWorkspace:vi.fn().mockResolvedValue({materials:[]}),getMaterial:vi.fn()}));
 const initial:ChallengeRun={id:'r',sessionId:'s',title:'초안',instructionsMarkdown:'안내',noticeVersion:'challenge-notice-v1',status:'IN_PROGRESS',lockVersion:0,statements:[{id:'one',statementKey:'S01',order:1,text:'문장'}],reviews:[],submittedAt:null};

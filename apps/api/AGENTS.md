@@ -20,3 +20,5 @@
 - 검산 시작 POST /sessions/{id}/challenge와 조회 GET /challenge-runs/{id}는 인증·소유권이 필요하다. 안내 버전/확인을 검증하고 최초 제출과 ACTIVE/CHALLENGE를 같은 세션 잠금 안에서 확인한다. 기존 run은 재배정하지 않는다. 초안 DTO에 템플릿 변형 코드·오류 수·정답을 넣지 않는다.
 
 - 검토 PUT과 제출 POST는 session → run 잠금을 같은 순서로 사용한다. 제출 후 검토/인용 수정 금지. 인용은 같은 과제·공개 자료의 줄 범위에서 서버가 추출한다. 저장 요청은 전체 버퍼이며 CAS 충돌은 409다.
+
+- 평가는 서버 snapshot만 사용한다. request/retry는 session 잠금, worker는 SKIP LOCKED claim·token/만료 확인을 사용한다. 실제 평가기 없는 상태를 성공으로 표시하지 않는다. F05a 기록을 따른다.
