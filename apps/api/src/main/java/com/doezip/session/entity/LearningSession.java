@@ -21,6 +21,7 @@ public class LearningSession {
  public String getMarkdown(){return markdown;} public long getLockVersion(){return lockVersion;}
  public Instant getConditionReleasedAt(){return conditionReleasedAt;}
  public boolean writable(){return status.equals("ACTIVE") && currentStep.equals("WRITING");}
+ public void feedback(){currentStep="FEEDBACK";updatedAt=Instant.now();}
  public void submitInitial(){currentStep="CHALLENGE";updatedAt=Instant.now();}
  public void saveDraft(String text){markdown=text;lockVersion++;updatedAt=Instant.now();}
 }

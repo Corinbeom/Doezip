@@ -1,4 +1,4 @@
-> **현재 구현 상태 (2026-09-12):** F02a 공개 과제 조회, F01 me/bootstrap, F02b 세션 생성·workspace·공개 자료·draft 저장을 구현한다. F02c INITIAL 제출·제출본 조회도 구현한다. F04a 검산 시작·조회도 구현한다. F04b 검토 저장/제출도 구현한다. F05a INITIAL 평가 요청·조회·재시도도 구현한다. 실제 평가기는 미연결이다. FINAL 등 나머지 제품 경로는 기본 차단이다. [F02b 범위와 검증](F02B_REPORT_DRAFT.md)을 참고한다.
+> **현재 구현 상태 (2026-09-12):** F02a 공개 과제 조회, F01 me/bootstrap, F02b 세션 생성·workspace·공개 자료·draft 저장을 구현한다. F02c INITIAL 제출·제출본 조회도 구현한다. F04a 검산 시작·조회도 구현한다. F04b 검토 저장/제출도 구현한다. F05a INITIAL 평가 요청·조회·재시도도 구현한다. F05b는 성공 결과 GET /reports/{id} 조회와 기본 표시를 구현한다. 실제 평가기는 미연결이다. FINAL 등 나머지 제품 경로는 기본 차단이다. [F02b 범위와 검증](F02B_REPORT_DRAFT.md)을 참고한다.
 
 # API 계약 — 화면·상태·데이터 연결
 
@@ -252,11 +252,11 @@ HTTP 경로, DTO, bootstrap 액션, SSE 프레임, input 상한, 재전송 정�
 ### F02c 구현 범위 (2026-09-11)
 
 POST/GET `/api/v1/sessions/{sessionId}/document-versions`를 구현했다. 인증과 소유권 검사가 필요하다.
-INITIAL만 생성하며 FINAL/REVISION과 평가 시작은 구현하지 않았다. 생성 성공과 동일 입력 재전송은 기존 계약대로 201이다.
+INITIAL만 생성하며 FINAL/REVISION은 구현하지 않았다. 평가 시작은 F05a를 따른다. 생성 성공과 동일 입력 재전송은 기존 계약대로 201이다.
 소유자 세션 행 잠금 안에서 버전·해시를 검사한 뒤 저장과 WRITING → CHALLENGE 전환을 함께 커밋한다.
 다른 입력의 중복 INITIAL은 DOCUMENT_ALREADY_SUBMITTED(409), 버전/해시 불일치는 각각
 DRAFT_VERSION_CONFLICT/DRAFT_CONTENT_CONFLICT(409), 빈 본문(Unicode 공백만 포함)은 EMPTY_DOCUMENT(422)다.
-최초 제출 이후 status는 ACTIVE이며 initialReportId는 평가 리포트가 없으므로 null이다.
+최초 제출 이후 status는 ACTIVE이며 initialReportId는 리포트 발행 전 null이며 F05b 원자 발행 후 실제 ID를 제공한다.
 제출본은 사용자 작성 보고서이고 검산 초안·비공개 정답과는 별개다. 응답은 no-store이며 수정 API는 없다.
 
 ### F04a 검산 시작·조회
@@ -270,3 +270,5 @@ variant_code·오류 키·정답·오류 개수는 응답에서 제외한다. �
 F04a에는 검토 저장 API가 없으므로 reviews는 실제로 비어 있고 submittedAt은 null이다. 검토 저장·제출은 후속 구현이다.
 
 F05a 구현과 미구현 평가기 경계는 [F05a 기록](F05A_EVALUATION_LIFECYCLE.md)을 따른다. workspace.activeEvaluationId는 복원을 위해 terminal 상태를 포함한 최신 요청 ID를 제공한다.
+
+F05b GET /reports/{id}는 성공 평가의 소유자만 조회하며 no-store, 타인/없는 ID는 REPORT_NOT_FOUND(404)다. 공개 결과 스키마는 기존 계약을 사용한다. INITIAL 및 DOCUMENT_VERSION/FAULT_ATTEMPT 관찰만 발행하며 FINAL·기타 관찰 대상은 미지원이다. [결과 검증 경계](F05B_EVALUATION_RESULTS.md)를 따른다.

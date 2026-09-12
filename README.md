@@ -27,7 +27,7 @@ npm run dev
 웹 http://localhost:3000 에서 API와 PostgreSQL 연결 상태를 확인한다.
 API 운영 health: http://localhost:8080/actuator/health (`UP`: 200 / DB 장애 `DOWN`: 503, 상세 비공개).
 웹 http://localhost:3000/tasks 에서 로컬 조회용 가상 과제의 설명과 공개 루브릭을 확인한다.
-공개 과제 조회 외에 인증된 사용자 연결 POST `/api/v1/me/bootstrap`, 조회 GET `/api/v1/me`를 제공한다. 과제 시작·공개 자료 열람·보고서 저장/복원 API도 제공한다. [F02b 범위](docs/F02B_REPORT_DRAFT.md)를 참고한다. 저장한 초안의 최초 제출·불변 제출본 조회는 [F02c 범위](docs/F02C_INITIAL_SUBMISSION.md)를 따른다. [F04a 검산 시작·열람](docs/F04A_CHALLENGE_START.md)을 제공하며 [F04b 검토 저장·제출](docs/F04B_CHALLENGE_REVIEW.md)도 제공한다. 평가 등 미구현 경로는 차단된다.
+공개 과제 조회 외에 인증된 사용자 연결 POST `/api/v1/me/bootstrap`, 조회 GET `/api/v1/me`를 제공한다. 과제 시작·공개 자료 열람·보고서 저장/복원 API도 제공한다. [F02b 범위](docs/F02B_REPORT_DRAFT.md)를 참고한다. 저장한 초안의 최초 제출·불변 제출본 조회는 [F02c 범위](docs/F02C_INITIAL_SUBMISSION.md)를 따른다. [F04a 검산 시작·열람](docs/F04A_CHALLENGE_START.md)을 제공하며 [F04b 검토 저장·제출](docs/F04B_CHALLENGE_REVIEW.md)도 제공한다. INITIAL 평가 요청·상태 조회와 저장된 결과 조회도 제공한다. FINAL 등 미구현 경로는 차단된다.
 
 Google 로그인 설정은 [인증 설정](docs/AUTH_SETUP.md)을 따른다. 설정이 없으면 `/login`에서 안내를 표시하고 로그인 버튼을 비활성화한다. 최초 Google 로그인은 사용자 확인 및 DB 연결 확인을 마쳤으며, 세부 검증 상태는 F01 기록을 따른다.
 
@@ -107,6 +107,8 @@ DB를 멈출 때는 `docker compose --env-file .env -f compose.local.yml stop db
 
 보고서 작성·자동 저장·복원과 인증 통합 검사: [F02b 기록](docs/F02B_REPORT_DRAFT.md). `npm run test:e2e`는 외부 OAuth 없이 검증하도록 테스트용 웹을 다시 빌드한다. 일반 실행은 `npm run dev`를 사용한다.
 
-검산 문장별 판단·원자료 줄 인용·명시적 저장·제출 잠금은 [F04b 작업 기록](docs/F04B_CHALLENGE_REVIEW.md)을 참고한다. 평가 결과는 아직 제공하지 않는다.
+검산 문장별 판단·원자료 줄 인용·명시적 저장·제출 잠금은 [F04b 작업 기록](docs/F04B_CHALLENGE_REVIEW.md)을 참고한다. 실제 평가기 연결은 후속 작업이다.
 
 검산 제출 후 평가 요청·상태 조회·복구 기반은 [F05a 기록](docs/F05A_EVALUATION_LIFECYCLE.md)을 참고한다. 현재 실제 워커는 평가기 미연결 실패를 표시하며 평가 점수·리포트를 만들지 않는다.
+
+결과 검증·원자 저장·소유자 조회와 기본 표시는 [F05b 기록](docs/F05B_EVALUATION_RESULTS.md)을 따른다. 실제 평가기는 미연결이며 일반 실행에서 가상 성공 결과를 생성하지 않는다.

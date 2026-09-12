@@ -34,15 +34,17 @@ public class SessionService {
   var summary=materials.findByTaskIdAndReleaseStageInOrderBySortOrderAscIdAsc(s.getTaskId(),stages(s)).stream()
     .map(m->new MaterialSummary(m.getId(),m.getTitle(),m.getType(),m.getSortOrder())).toList();
   var challenge=challenges.findBySessionId(s.getId());
+  var evaluation=evaluations.latest(s.getId());
   List<String> actions=new ArrayList<>(List.of("READ_MATERIALS"));
   if(s.writable())actions.addAll(List.of("WRITE_DRAFT","SNAPSHOT_INITIAL"));
   if(challenge.isEmpty()&&s.getStatus().equals("ACTIVE")&&s.getCurrentStep().equals("CHALLENGE")
     &&documents.findBySessionIdAndCheckpoint(s.getId(),"INITIAL").isPresent()&&templates.existsByTaskId(s.getTaskId()))actions.add("START_CHALLENGE");
   if(challenge.isPresent()&&challenge.get().getStatus().equals("IN_PROGRESS")&&s.getStatus().equals("ACTIVE")&&s.getCurrentStep().equals("CHALLENGE"))actions.addAll(List.of("EDIT_CHALLENGE","SUBMIT_CHALLENGE"));
-  if(challenge.isPresent()&&challenge.get().getStatus().equals("SUBMITTED")&&s.getStatus().equals("ACTIVE")&&Set.of("CHALLENGE","FEEDBACK").contains(s.getCurrentStep())&&evaluations.latest(s.getId()).isEmpty())actions.add("REQUEST_INITIAL_EVALUATION");
+  if(challenge.isPresent()&&challenge.get().getStatus().equals("SUBMITTED")&&s.getStatus().equals("ACTIVE")&&Set.of("CHALLENGE","FEEDBACK").contains(s.getCurrentStep())&&evaluation.isEmpty())actions.add("REQUEST_INITIAL_EVALUATION");
+  if(evaluation.map(j->j.reportId()).isPresent())actions.add("READ_INITIAL_REPORT");
   return new Workspace(new Session(s.getId(),s.getTaskId(),s.getStatus(),s.getCurrentStep(),s.getMode(),s.getConditionReleasedAt(),
    actions),taskService.get(s.getTaskId()),summary,
-   new Draft(s.getMarkdown(),s.getLockVersion(),hash(s.getMarkdown())),challenge.map(c->c.getId()).orElse(null),null,null,evaluations.latest(s.getId()).map(j->j.id()).orElse(null));
+   new Draft(s.getMarkdown(),s.getLockVersion(),hash(s.getMarkdown())),challenge.map(c->c.getId()).orElse(null),evaluation.map(j->j.reportId()).orElse(null),null,evaluation.map(j->j.id()).orElse(null));
  }
  public Material material(UUID userId,UUID id,UUID materialId){
   var s=owned(userId,id);

@@ -169,3 +169,6 @@ F04a 검산 시작/열람 검사는 `tests/e2e/challenge.spec.ts`와 SessionInte
 F04b 검토·인용·제출 검사는 SessionIntegrationTest와 tests/e2e/reviews.spec.ts에 있다. 실행 결과와 실제 Google 검증 구분은 [F04b](F04B_CHALLENGE_REVIEW.md)를 따른다.
 
 F05a: SessionIntegrationTest의 평가·lease 검사와 tests/e2e/evaluation.spec.ts를 실행한다. 실제 evaluator 미연결 실패가 정상이며 성공 점수를 기대하지 않는다. [기록](F05A_EVALUATION_LIFECYCLE.md).
+
+## F05b 결과 검증·저장·조회
+`npm run check`에 PostgreSQL 원자 발행/롤백/소유권 검사, 리포트 단위 검사, 브라우저 UI 경계 검사를 포함한다. 실제 worker는 계속 미연결 실패를 검증하며 sample GET 응답을 사용한 화면 검사를 실제 AI 성공으로 표시하지 않는다. 상세 검증과 미실행 범위는 [F05b 기록](F05B_EVALUATION_RESULTS.md)을 따른다.
