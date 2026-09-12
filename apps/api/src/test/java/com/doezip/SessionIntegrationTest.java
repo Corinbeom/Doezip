@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.*;
 
 @ActiveProfiles("test")
 @Testcontainers
-@SpringBootTest(webEnvironment=SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment=SpringBootTest.WebEnvironment.RANDOM_PORT,properties="app.evaluation.worker-enabled=false")
 class SessionIntegrationTest {
     @Container static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17.11");
     static final RSAKey rsa;
@@ -70,7 +70,7 @@ class SessionIntegrationTest {
     @Autowired JwtDecoder decoder;
     @Autowired CurrentUser currentUser;
     @BeforeEach void setup() throws Exception {
-        database.update("DELETE FROM evidence_links"); database.update("DELETE FROM fault_attempts"); database.update("DELETE FROM challenge_runs"); database.update("DELETE FROM challenge_statements"); database.update("DELETE FROM challenge_templates"); database.update("DELETE FROM document_versions"); database.update("DELETE FROM learning_sessions"); database.update("DELETE FROM materials");
+        database.update("DELETE FROM evaluation_runs"); database.update("DELETE FROM evidence_links"); database.update("DELETE FROM fault_attempts"); database.update("DELETE FROM challenge_runs"); database.update("DELETE FROM challenge_statements"); database.update("DELETE FROM challenge_templates"); database.update("DELETE FROM document_versions"); database.update("DELETE FROM learning_sessions"); database.update("DELETE FROM materials");
         database.update("DELETE FROM rubric_dimensions"); database.update("DELETE FROM tasks"); database.update("DELETE FROM users");
         database.update("INSERT INTO tasks(id,task_code,title,description_markdown,status,published_at) VALUES (?,'test-writing','Test','Public task','PUBLISHED',now())", taskId);
         alice=token("alice",c->{}); bob=token("bob",c->{});bootstrap(alice,"{}");bootstrap(bob,"{}");
@@ -148,7 +148,7 @@ class SessionIntegrationTest {
       assertThat(create(null,taskId).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
       assertError(request(path(UUID.randomUUID().toString())+"/workspace",HttpMethod.GET,alice,null),HttpStatus.NOT_FOUND,"SESSION_NOT_FOUND");
       assertThat(json(request(path(id)+"/workspace",HttpMethod.GET,alice,null)).get("draft").get("markdown").asText()).isEmpty();
-      assertThat(request(path(id)+"/evaluations",HttpMethod.POST,alice,"{}").getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+      assertThat(request(path(id)+"/evaluations",HttpMethod.POST,alice,"{}").getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
     @Test void staleAndConcurrentWritesNeverOverwrite() throws Exception {
       String id=start();
@@ -505,5 +505,60 @@ class SessionIntegrationTest {
       var current=json(request("/api/v1/challenge-runs/"+id,HttpMethod.GET,alice,null));
       assertThat(submitReview(id,alice,current.get("lockVersion").asLong()).getStatusCode()).isEqualTo(HttpStatus.OK);
       assertError(saveReview(id,alice,body),HttpStatus.CONFLICT,"CHALLENGE_SUBMITTED");
+    }
+
+    @Autowired com.doezip.evaluation.repository.EvaluationRepository evaluationJobs;
+    @Autowired com.doezip.evaluation.service.EvaluationWorker evaluationWorker;
+    String evaluationSession() throws Exception {String run=reviewRun();assertThat(submitReview(run,alice,0).getStatusCode()).isEqualTo(HttpStatus.OK);return json(request("/api/v1/challenge-runs/"+run,HttpMethod.GET,alice,null)).get("sessionId").asText();}
+    String evaluationDocument(String id)throws Exception{return json(request(path(id)+"/document-versions",HttpMethod.GET,alice,null)).get("items").get(0).get("id").asText();}
+    ResponseEntity<String> evaluate(String session,String jwt,UUID key,String document){
+      HttpHeaders h=new HttpHeaders();h.setContentType(MediaType.APPLICATION_JSON);if(jwt!=null)h.setBearerAuth(jwt);if(key!=null)h.set("Idempotency-Key",key.toString());
+      return http.exchange(path(session)+"/evaluations",HttpMethod.POST,new HttpEntity<>("{\"phase\":\"INITIAL\",\"documentVersionId\":\""+document+"\"}",h),String.class);
+    }
+    @Test void evaluationFreezesInputReplaysAndNeverExposesSnapshot()throws Exception{
+      String sid=evaluationSession(),doc=evaluationDocument(sid);UUID key=UUID.randomUUID();var created=evaluate(sid,alice,key,doc);assertThat(created.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+      var value=json(created);UUID id=UUID.fromString(value.get("id").asText());assertThat(value.size()).isEqualTo(9);assertThat(value.get("status").asText()).isEqualTo("QUEUED");
+      assertThat(created.getBody()).doesNotContain("USER_ORIGINAL_REPORT","inputSnapshot","leaseToken","fingerprint","materials");assertThat(created.getHeaders().getCacheControl()).contains("no-store");
+      assertThat(json(evaluate(sid,alice,key,doc))).isEqualTo(value);
+      assertError(evaluate(sid,alice,key,UUID.randomUUID().toString()),HttpStatus.CONFLICT,"IDEMPOTENCY_CONFLICT");
+      var conflict=evaluate(sid,alice,UUID.randomUUID(),doc);assertThat(conflict.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);assertThat(json(conflict).get("code").asText()).isEqualTo("EVALUATION_IN_PROGRESS");assertThat(json(conflict).get("details").get("evaluationId").asText()).isEqualTo(id.toString());
+      var snapshot=evaluationJobs.find(id).orElseThrow().snapshot();assertThat(snapshot).contains("USER_ORIGINAL_REPORT","materials","challenge","lifecycle-v1");
+      assertThatThrownBy(()->database.update("UPDATE evaluation_runs SET input_snapshot_json='{}' WHERE id=?",id)).isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
+      evaluationWorker.tick();var terminal=json(request("/api/v1/evaluations/"+id,HttpMethod.GET,alice,null));assertThat(terminal.get("status").asText()).isEqualTo("FAILED");assertThat(terminal.get("errorCode").asText()).isEqualTo("EVALUATOR_NOT_CONFIGURED");assertThat(terminal.get("reportId").isNull()).isTrue();assertThat(terminal.get("retryable").asBoolean()).isFalse();
+      assertThat(json(evaluate(sid,alice,key,doc))).isEqualTo(terminal);assertThat(evaluationJobs.find(id).orElseThrow().snapshot()).isEqualTo(snapshot);
+      assertThat(json(request(path(sid)+"/workspace",HttpMethod.GET,alice,null)).get("activeEvaluationId").asText()).isEqualTo(id.toString());
+    }
+    @Test void evaluationOwnershipHeadersAndPhaseAreRequired()throws Exception{
+      String sid=evaluationSession(),doc=evaluationDocument(sid);UUID key=UUID.randomUUID();
+      assertError(evaluate(sid,bob,key,doc),HttpStatus.NOT_FOUND,"SESSION_NOT_FOUND");assertError(evaluate(sid,null,key,doc),HttpStatus.UNAUTHORIZED,"UNAUTHORIZED");assertError(evaluate(sid,alice,null,doc),HttpStatus.BAD_REQUEST,"INVALID_INPUT");
+      assertError(evaluate(sid,alice,key,UUID.randomUUID().toString()),HttpStatus.UNPROCESSABLE_ENTITY,"INVALID_EVALUATION_INPUT");
+      String id=json(evaluate(sid,alice,key,doc)).get("id").asText();
+      assertError(request("/api/v1/evaluations/"+id,HttpMethod.GET,bob,null),HttpStatus.NOT_FOUND,"EVALUATION_NOT_FOUND");
+      assertError(request("/api/v1/evaluations/"+id+"/retry",HttpMethod.POST,bob,null),HttpStatus.NOT_FOUND,"EVALUATION_NOT_FOUND");
+      assertError(request("/api/v1/evaluations/"+id+"/retry",HttpMethod.POST,alice,null),HttpStatus.CONFLICT,"EVALUATION_NOT_RETRYABLE");
+      String writing=start();assertError(evaluate(writing,alice,UUID.randomUUID(),doc),HttpStatus.CONFLICT,"INVALID_SESSION_STATE");
+      String unsubmitted=submittedSession();assertError(evaluate(unsubmitted,alice,UUID.randomUUID(),evaluationDocument(unsubmitted)),HttpStatus.CONFLICT,"CHALLENGE_NOT_SUBMITTED");
+    }
+    @Test void expiredWorkerCannotFinishAndRetryRetainsSnapshotAndAttemptLimit()throws Exception{
+      String sid=evaluationSession();UUID id=UUID.fromString(json(evaluate(sid,alice,UUID.randomUUID(),evaluationDocument(sid))).get("id").asText());String snapshot=evaluationJobs.find(id).orElseThrow().snapshot();
+      for(int attempt=1;attempt<=3;attempt++){
+       database.update("UPDATE evaluation_runs SET next_attempt_at=now() WHERE id=?",id);var claim=evaluationJobs.claim().orElseThrow();assertThat(claim.attempts()).isEqualTo(attempt);assertThat(evaluationJobs.claim()).isEmpty();
+       database.update("UPDATE evaluation_runs SET lease_expires_at=now()-interval '1 second' WHERE id=?",id);assertThat(evaluationJobs.recoverExpired()).isEqualTo(1);assertThat(evaluationJobs.fail(claim,"STALE_WORKER_RESULT",false)).isFalse();
+      }
+      assertThat(evaluationJobs.find(id).orElseThrow().retryable()).isTrue();
+      assertThat(request("/api/v1/evaluations/"+id+"/retry",HttpMethod.POST,alice,null).getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+      var fourth=evaluationJobs.claim().orElseThrow();assertThat(fourth.attempts()).isEqualTo(4);assertThat(evaluationJobs.fail(fourth,"WORKER_TEMPORARY_FAILURE",true)).isTrue();
+      assertThat(evaluationJobs.find(id).orElseThrow().retryable()).isFalse();assertError(request("/api/v1/evaluations/"+id+"/retry",HttpMethod.POST,alice,null),HttpStatus.CONFLICT,"EVALUATION_NOT_RETRYABLE");assertThat(evaluationJobs.find(id).orElseThrow().snapshot()).isEqualTo(snapshot);
+    }
+    @Test void concurrentEvaluationRequestsCreateOneJobAndCorsAllowsOnlyLocalOrigin()throws Exception{
+      String sid=evaluationSession(),doc=evaluationDocument(sid);UUID key=UUID.randomUUID();
+      try(var pool=Executors.newFixedThreadPool(2)){
+       var gate=new CountDownLatch(1);var a=pool.submit(()->{gate.await();return evaluate(sid,alice,key,doc);});var b=pool.submit(()->{gate.await();return evaluate(sid,alice,key,doc);});gate.countDown();
+       var first=a.get(20,TimeUnit.SECONDS);var second=b.get(20,TimeUnit.SECONDS);assertThat(first.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);assertThat(json(first)).isEqualTo(json(second));
+      }
+      assertThat(database.queryForObject("SELECT count(*) FROM evaluation_runs",Integer.class)).isEqualTo(1);
+      HttpHeaders headers=new HttpHeaders();headers.setOrigin("http://localhost:3000");headers.setAccessControlRequestMethod(HttpMethod.POST);headers.setAccessControlRequestHeaders(List.of("authorization","content-type","idempotency-key"));
+      assertThat(http.exchange(path(sid)+"/evaluations",HttpMethod.OPTIONS,new HttpEntity<>(headers),String.class).getStatusCode()).isEqualTo(HttpStatus.OK);
+      headers.setOrigin("https://attacker.invalid");assertThat(http.exchange(path(sid)+"/evaluations",HttpMethod.OPTIONS,new HttpEntity<>(headers),String.class).getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 }
