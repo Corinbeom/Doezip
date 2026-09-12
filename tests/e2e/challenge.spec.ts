@@ -39,6 +39,6 @@ test('cross-account access is denied and notice/reading fit 320px',async({page,c
  await installTestSession(context,identity.session);await page.setViewportSize({width:320,height:844});await page.goto(`/sessions/${id}`);await page.getByRole('checkbox').check();await page.getByRole('button',{name:'검산 시작하기'}).click();await expect(page.getByRole('heading',{name:'개발용 검토 초안'})).toBeVisible();
  const runId=(await (await request.get(`${apiBase}/sessions/${id}/workspace`,{headers:identity.headers})).json()).challengeRunId;
  expect((await request.get(`${apiBase}/challenge-runs/${runId}`,{headers:bob.headers})).status()).toBe(404);
- expect((await request.put(`${apiBase}/challenge-runs/${runId}/reviews`,{headers:identity.headers,data:{}})).status()).toBe(403);
+ expect((await request.put(`${apiBase}/challenge-runs/${runId}/reviews`,{headers:identity.headers,data:{}})).status()).toBe(400);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.evaluate(()=>window.scrollTo(0,0));await page.screenshot({path:testInfo.outputPath('challenge-mobile.png'),fullPage:true});
 });

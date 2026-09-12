@@ -36,6 +36,7 @@ public class SessionService {
   if(s.writable())actions.addAll(List.of("WRITE_DRAFT","SNAPSHOT_INITIAL"));
   if(challenge.isEmpty()&&s.getStatus().equals("ACTIVE")&&s.getCurrentStep().equals("CHALLENGE")
     &&documents.findBySessionIdAndCheckpoint(s.getId(),"INITIAL").isPresent()&&templates.existsByTaskId(s.getTaskId()))actions.add("START_CHALLENGE");
+  if(challenge.isPresent()&&challenge.get().getStatus().equals("IN_PROGRESS")&&s.getStatus().equals("ACTIVE")&&s.getCurrentStep().equals("CHALLENGE"))actions.addAll(List.of("EDIT_CHALLENGE","SUBMIT_CHALLENGE"));
   return new Workspace(new Session(s.getId(),s.getTaskId(),s.getStatus(),s.getCurrentStep(),s.getMode(),s.getConditionReleasedAt(),
    actions),taskService.get(s.getTaskId()),summary,
    new Draft(s.getMarkdown(),s.getLockVersion(),hash(s.getMarkdown())),challenge.map(c->c.getId()).orElse(null),null,null,null);

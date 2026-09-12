@@ -18,3 +18,5 @@
 - POST/GET /api/v1/sessions/{id}/document-versions는 인증·소유권 검사 후 처리한다. INITIAL 제출은 draft와 같은 세션 행 잠금에서 CAS·중복 확인·봉인·CHALLENGE 전환을 원자적으로 처리한다. 동일 입력 재시도는 기존 제출본을 반환하며 수정 API를 추가하지 않는다.
 
 - 검산 시작 POST /sessions/{id}/challenge와 조회 GET /challenge-runs/{id}는 인증·소유권이 필요하다. 안내 버전/확인을 검증하고 최초 제출과 ACTIVE/CHALLENGE를 같은 세션 잠금 안에서 확인한다. 기존 run은 재배정하지 않는다. 초안 DTO에 템플릿 변형 코드·오류 수·정답을 넣지 않는다.
+
+- 검토 PUT과 제출 POST는 session → run 잠금을 같은 순서로 사용한다. 제출 후 검토/인용 수정 금지. 인용은 같은 과제·공개 자료의 줄 범위에서 서버가 추출한다. 저장 요청은 전체 버퍼이며 CAS 충돌은 409다.

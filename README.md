@@ -1,7 +1,7 @@
 # Doezip
 
 AI 활용 역량 훈련 서비스.
-현재 저장소에는 Next.js 웹, Spring Boot API, PostgreSQL 개발 환경과 과제 조회·로그인·보고서 작성·최초 제출·검산 초안 열람 기능이 구성되어 있다.
+현재 저장소에는 Next.js 웹, Spring Boot API, PostgreSQL 개발 환경과 과제 조회·로그인·보고서 작성·최초 제출·검산 초안 열람·검토 저장·제출 기능이 구성되어 있다.
 제품 기능의 구현 범위와 진행 상태는 [개발 계획](docs/FEATURE_BACKLOG.md)을 참고한다.
 
 ## 로컬 실행
@@ -27,7 +27,7 @@ npm run dev
 웹 http://localhost:3000 에서 API와 PostgreSQL 연결 상태를 확인한다.
 API 운영 health: http://localhost:8080/actuator/health (`UP`: 200 / DB 장애 `DOWN`: 503, 상세 비공개).
 웹 http://localhost:3000/tasks 에서 로컬 조회용 가상 과제의 설명과 공개 루브릭을 확인한다.
-공개 과제 조회 외에 인증된 사용자 연결 POST `/api/v1/me/bootstrap`, 조회 GET `/api/v1/me`를 제공한다. 과제 시작·공개 자료 열람·보고서 저장/복원 API도 제공한다. [F02b 범위](docs/F02B_REPORT_DRAFT.md)를 참고한다. 저장한 초안의 최초 제출·불변 제출본 조회는 [F02c 범위](docs/F02C_INITIAL_SUBMISSION.md)를 따른다. [F04a 검산 시작·열람](docs/F04A_CHALLENGE_START.md)을 제공하며 검토 저장·검산 제출 등 미구현 경로는 차단된다.
+공개 과제 조회 외에 인증된 사용자 연결 POST `/api/v1/me/bootstrap`, 조회 GET `/api/v1/me`를 제공한다. 과제 시작·공개 자료 열람·보고서 저장/복원 API도 제공한다. [F02b 범위](docs/F02B_REPORT_DRAFT.md)를 참고한다. 저장한 초안의 최초 제출·불변 제출본 조회는 [F02c 범위](docs/F02C_INITIAL_SUBMISSION.md)를 따른다. [F04a 검산 시작·열람](docs/F04A_CHALLENGE_START.md)을 제공하며 [F04b 검토 저장·제출](docs/F04B_CHALLENGE_REVIEW.md)도 제공한다. 평가 등 미구현 경로는 차단된다.
 
 Google 로그인 설정은 [인증 설정](docs/AUTH_SETUP.md)을 따른다. 설정이 없으면 `/login`에서 안내를 표시하고 로그인 버튼을 비활성화한다. 최초 Google 로그인은 사용자 확인 및 DB 연결 확인을 마쳤으며, 세부 검증 상태는 F01 기록을 따른다.
 
@@ -82,7 +82,7 @@ DB를 멈출 때는 `docker compose --env-file .env -f compose.local.yml stop db
 - `apps/web/src/shared/api`: 공통 fetch·오류·Query Provider. `shared/ui`: 승인 디자인의 공통 화면 구성·스타일.
 - `apps/web/src/generated/api-types.ts`: 생성 타입. **손으로 수정하지 않는다.**
 - `apps/api`: Spring MVC·JPA·Validation·Security·Actuator·Flyway. DB 상세 비공개. health·과제 조회 GET은 공개다. 사용자·학습 세션·제출본·검산 경로는 JWT와 소유권을 확인하고, 미구현 경로는 차단한다.
-- `apps/api/src/main/resources/db/migration`: 과제·루브릭·사용자·학습 세션·자료·제출본·검산 템플릿·문장·실행 등 아홉 테이블. `db/local`: 로컬 조회용 seed.
+- `apps/api/src/main/resources/db/migration`: 과제·루브릭·사용자·학습 세션·자료·제출본·검산 템플릿·문장·실행 등 열한 테이블. `db/local`: 로컬 조회용 seed.
   전체 ERD migration·학습 과제 패키지 seed는 후속 작업.
 - `contracts`, `docs`, `fixtures`, `templates`: 기존 기준 자료 보존. fixture는 웹에 import·배포하지 않는다.
   templates는 참고 예시이며 실제 앱 설정은 루트와 apps/api 아래에 있다.
@@ -106,3 +106,5 @@ DB를 멈출 때는 `docker compose --env-file .env -f compose.local.yml stop db
 로그인 구현 범위와 검증 기록: [F01 인증](docs/F01_AUTH_VALIDATION.md).
 
 보고서 작성·자동 저장·복원과 인증 통합 검사: [F02b 기록](docs/F02B_REPORT_DRAFT.md). `npm run test:e2e`는 외부 OAuth 없이 검증하도록 테스트용 웹을 다시 빌드한다. 일반 실행은 `npm run dev`를 사용한다.
+
+검산 문장별 판단·원자료 줄 인용·명시적 저장·제출 잠금은 [F04b 작업 기록](docs/F04B_CHALLENGE_REVIEW.md)을 참고한다. 평가 결과는 아직 제공하지 않는다.

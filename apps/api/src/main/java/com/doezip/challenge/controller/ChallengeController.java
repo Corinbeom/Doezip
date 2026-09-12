@@ -16,4 +16,10 @@ public class ChallengeController {
     @GetMapping("/challenge-runs/{id}") public ResponseEntity<Run> get(Authentication auth,@PathVariable UUID id){
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(challenges.get(user.id(auth),id));
     }
+    @PutMapping("/challenge-runs/{id}/reviews") public ResponseEntity<Run> save(Authentication auth,@PathVariable UUID id,@RequestBody com.doezip.challenge.dto.ReviewDtos.Save input){
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(challenges.saveReviews(user.id(auth),id,input));
+    }
+    @PostMapping("/challenge-runs/{id}/submit") public ResponseEntity<Run> submit(Authentication auth,@PathVariable UUID id,@RequestBody com.doezip.challenge.dto.ReviewDtos.Submit input){
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(challenges.submit(user.id(auth),id,input));
+    }
 }

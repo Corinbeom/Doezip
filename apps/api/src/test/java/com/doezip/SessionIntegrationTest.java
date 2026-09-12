@@ -70,7 +70,7 @@ class SessionIntegrationTest {
     @Autowired JwtDecoder decoder;
     @Autowired CurrentUser currentUser;
     @BeforeEach void setup() throws Exception {
-        database.update("DELETE FROM challenge_runs"); database.update("DELETE FROM challenge_statements"); database.update("DELETE FROM challenge_templates"); database.update("DELETE FROM document_versions"); database.update("DELETE FROM learning_sessions"); database.update("DELETE FROM materials");
+        database.update("DELETE FROM evidence_links"); database.update("DELETE FROM fault_attempts"); database.update("DELETE FROM challenge_runs"); database.update("DELETE FROM challenge_statements"); database.update("DELETE FROM challenge_templates"); database.update("DELETE FROM document_versions"); database.update("DELETE FROM learning_sessions"); database.update("DELETE FROM materials");
         database.update("DELETE FROM rubric_dimensions"); database.update("DELETE FROM tasks"); database.update("DELETE FROM users");
         database.update("INSERT INTO tasks(id,task_code,title,description_markdown,status,published_at) VALUES (?,'test-writing','Test','Public task','PUBLISHED',now())", taskId);
         alice=token("alice",c->{}); bob=token("bob",c->{});bootstrap(alice,"{}");bootstrap(bob,"{}");
@@ -394,8 +394,8 @@ class SessionIntegrationTest {
       assertError(request("/api/v1/challenge-runs/"+runId,HttpMethod.GET,bob,null),HttpStatus.NOT_FOUND,"CHALLENGE_NOT_FOUND");
       assertError(request("/api/v1/challenge-runs/"+runId,HttpMethod.GET,null,null),HttpStatus.UNAUTHORIZED,"UNAUTHORIZED");
       assertError(request("/api/v1/challenge-runs/"+UUID.randomUUID(),HttpMethod.GET,alice,null),HttpStatus.NOT_FOUND,"CHALLENGE_NOT_FOUND");
-      assertThat(request("/api/v1/challenge-runs/"+runId+"/reviews",HttpMethod.PUT,alice,"{}").getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
-      assertThat(request("/api/v1/challenge-runs/"+runId+"/submit",HttpMethod.POST,alice,"{}").getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+      assertThat(request("/api/v1/challenge-runs/"+runId+"/reviews",HttpMethod.PUT,alice,"{}").getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+      assertThat(request("/api/v1/challenge-runs/"+runId+"/submit",HttpMethod.POST,alice,"{}").getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
       assertThat(request("/api/v1/challenge-templates",HttpMethod.GET,alice,null).getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
     @Test void challengeConcurrentStartsAssignOneRun() throws Exception {
@@ -431,4 +431,79 @@ class SessionIntegrationTest {
       }
     }
 
+
+    String reviewRun() throws Exception {template(taskId,null);return json(beginChallenge(submittedSession(),alice)).get("id").asText();}
+    String reviewBody(String run,long version,String reason) throws Exception {
+      String statement=json(request("/api/v1/challenge-runs/"+run,HttpMethod.GET,alice,null)).get("statements").get(0).get("id").asText();
+      return "{\"expectedLockVersion\":"+version+",\"reviews\":[{\"statementId\":\""+statement+"\",\"decision\":\"KEEP\",\"reasonText\":\""+reason+"\",\"replacementText\":null,\"evidence\":[]}]}";
+    }
+    ResponseEntity<String> saveReview(String run,String jwt,String body){return request("/api/v1/challenge-runs/"+run+"/reviews",HttpMethod.PUT,jwt,body);}
+    ResponseEntity<String> submitReview(String run,String jwt,long version){return request("/api/v1/challenge-runs/"+run+"/submit",HttpMethod.POST,jwt,"{\"expectedLockVersion\":"+version+"}");}
+    @Test void reviewsPersistStableIdsAndDeleteOmittedRows() throws Exception {
+      String id=reviewRun();var first=json(saveReview(id,alice,reviewBody(id,0,"자료와 일치합니다")));
+      assertThat(first.get("lockVersion").asLong()).isEqualTo(1);String row=first.get("reviews").get(0).get("id").asText();
+      var second=json(saveReview(id,alice,reviewBody(id,1,"이유 수정")));
+      assertThat(second.get("reviews").get(0).get("id").asText()).isEqualTo(row);
+      assertThat(json(request("/api/v1/challenge-runs/"+id,HttpMethod.GET,alice,null))).isEqualTo(second);
+      assertThat(json(saveReview(id,alice,"{\"expectedLockVersion\":2,\"reviews\":[]}")).get("reviews")).isEmpty();
+    }
+    @Test void reviewOwnershipVersionAndStrictInputAreEnforced() throws Exception {
+      String id=reviewRun();String body=reviewBody(id,0,"검토");
+      assertError(saveReview(id,bob,body),HttpStatus.NOT_FOUND,"CHALLENGE_NOT_FOUND");
+      assertError(saveReview(id,null,body),HttpStatus.UNAUTHORIZED,"UNAUTHORIZED");
+      assertError(saveReview(id,alice,body.replace("\"KEEP\"","\"CORRECT\"")),HttpStatus.UNPROCESSABLE_ENTITY,"INVALID_REVIEW");
+      assertError(saveReview(id,alice,body.replace("검토","　")),HttpStatus.UNPROCESSABLE_ENTITY,"INVALID_REVIEW");
+      assertError(saveReview(id,alice,body.replace("\"reviews\":","\"userId\":\"forged\",\"reviews\":")),HttpStatus.BAD_REQUEST,"INVALID_INPUT");
+      assertThat(saveReview(id,alice,body).getStatusCode()).isEqualTo(HttpStatus.OK);
+      assertError(saveReview(id,alice,body),HttpStatus.CONFLICT,"CHALLENGE_VERSION_CONFLICT");
+      assertError(submitReview(id,alice,0),HttpStatus.CONFLICT,"CHALLENGE_VERSION_CONFLICT");
+    }
+    @Test void reviewEvidenceIsResolvedFromPublicOriginalAndRangesAreValidated() throws Exception {
+      String id=reviewRun();UUID material=UUID.randomUUID();
+      database.update("INSERT INTO materials(id,task_id,material_code,title,material_type,content_markdown,content_hash,release_stage,sort_order) VALUES (?,?,'review-evidence','원자료','LOG',? ,?,'INITIAL',1)",material,taskId,"첫 줄\n실제 근거\n끝 줄",com.doezip.session.service.SessionService.hash("첫 줄\n실제 근거\n끝 줄"));
+      var body=(com.fasterxml.jackson.databind.node.ObjectNode)mapper.readTree(reviewBody(id,0,"근거 확인"));
+      var evidence=(com.fasterxml.jackson.databind.node.ArrayNode)body.get("reviews").get(0).get("evidence");
+      evidence.addObject().put("materialId",material.toString()).put("lineStart",2).put("lineEnd",2).put("relation","SUPPORTS");
+      var saved=json(saveReview(id,alice,body.toString()));var link=saved.get("reviews").get(0).get("evidence").get(0);
+      assertThat(link.get("quotedText").asText()).isEqualTo("실제 근거");assertThat(link.get("origin").asText()).isEqualTo("USER");
+      body.put("expectedLockVersion",1);((com.fasterxml.jackson.databind.node.ObjectNode)evidence.get(0)).put("lineEnd",500);
+      assertError(saveReview(id,alice,body.toString()),HttpStatus.UNPROCESSABLE_ENTITY,"INVALID_EVIDENCE");
+      ((com.fasterxml.jackson.databind.node.ObjectNode)evidence.get(0)).put("lineEnd",2);evidence.add(evidence.get(0).deepCopy());
+      assertError(saveReview(id,alice,body.toString()),HttpStatus.UNPROCESSABLE_ENTITY,"INVALID_EVIDENCE");evidence.remove(1);
+      database.update("UPDATE materials SET release_stage='CONDITION_CHANGE' WHERE id=?",material);
+      assertError(saveReview(id,alice,body.toString()),HttpStatus.NOT_FOUND,"MATERIAL_NOT_FOUND");
+      assertThat(json(request("/api/v1/challenge-runs/"+id,HttpMethod.GET,alice,null))).isEqualTo(saved);
+    }
+    @Test void submissionFreezesPartialReviewsAndReplaysWithoutChangingReport() throws Exception {
+      String id=reviewRun();var before=json(request("/api/v1/challenge-runs/"+id,HttpMethod.GET,alice,null));String sid=before.get("sessionId").asText();
+      var workspace=json(request(path(sid)+"/workspace",HttpMethod.GET,alice,null));var documents=json(request(path(sid)+"/document-versions",HttpMethod.GET,alice,null));
+      assertThat(saveReview(id,alice,reviewBody(id,0,"확인")).getStatusCode()).isEqualTo(HttpStatus.OK);
+      var submitted=json(submitReview(id,alice,1));assertThat(submitted.get("status").asText()).isEqualTo("SUBMITTED");assertThat(submitted.get("lockVersion").asLong()).isEqualTo(2);
+      assertThat(json(submitReview(id,alice,1))).isEqualTo(submitted);
+      assertError(saveReview(id,alice,reviewBody(id,2,"변조")),HttpStatus.CONFLICT,"CHALLENGE_SUBMITTED");
+      assertThat(json(request(path(sid)+"/workspace",HttpMethod.GET,alice,null)).get("draft")).isEqualTo(workspace.get("draft"));
+      assertThat(json(request(path(sid)+"/document-versions",HttpMethod.GET,alice,null))).isEqualTo(documents);
+      assertError(submitReview(id,bob,2),HttpStatus.NOT_FOUND,"CHALLENGE_NOT_FOUND");
+    }
+    @Test void concurrentReviewWritesHaveOneWinner() throws Exception {
+      String id=reviewRun();String body=reviewBody(id,0,"경합");
+      try(var pool=Executors.newFixedThreadPool(2)){
+       var gate=new CountDownLatch(1);var a=pool.submit(()->{gate.await();return saveReview(id,alice,body);});var b=pool.submit(()->{gate.await();return saveReview(id,alice,body);});gate.countDown();
+       var codes=List.of(a.get(20,TimeUnit.SECONDS).getStatusCode().value(),b.get(20,TimeUnit.SECONDS).getStatusCode().value());assertThat(codes).containsExactlyInAnyOrder(200,409);
+      }
+    }
+
+    @Test void submitAndSaveSerializeAndForeignStatementsAreRejected() throws Exception {
+      String id=reviewRun();String body=reviewBody(id,0,"경합");
+      var malformed=(com.fasterxml.jackson.databind.node.ObjectNode)mapper.readTree(body);
+      ((com.fasterxml.jackson.databind.node.ObjectNode)malformed.get("reviews").get(0)).put("statementId",UUID.randomUUID().toString());
+      assertError(saveReview(id,alice,malformed.toString()),HttpStatus.UNPROCESSABLE_ENTITY,"INVALID_REVIEW");
+      try(var pool=Executors.newFixedThreadPool(2)){
+       var gate=new CountDownLatch(1);var a=pool.submit(()->{gate.await();return saveReview(id,alice,body);});var b=pool.submit(()->{gate.await();return submitReview(id,alice,0);});gate.countDown();
+       assertThat(List.of(a.get(20,TimeUnit.SECONDS).getStatusCode().value(),b.get(20,TimeUnit.SECONDS).getStatusCode().value())).containsExactlyInAnyOrder(200,409);
+      }
+      var current=json(request("/api/v1/challenge-runs/"+id,HttpMethod.GET,alice,null));
+      assertThat(submitReview(id,alice,current.get("lockVersion").asLong()).getStatusCode()).isEqualTo(HttpStatus.OK);
+      assertError(saveReview(id,alice,body),HttpStatus.CONFLICT,"CHALLENGE_SUBMITTED");
+    }
 }
