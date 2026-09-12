@@ -6,7 +6,7 @@ import { getChallenge,startChallenge,type ChallengeRun } from './api';
 import { getWorkspace,type Workspace } from '@/features/workspace/api';
 vi.mock('./api',()=>({getChallenge:vi.fn(),startChallenge:vi.fn()}));
 vi.mock('@/features/workspace/api',()=>({getWorkspace:vi.fn()}));
-const workspace={session:{allowedActions:['START_CHALLENGE']},challengeRunId:null} as unknown as Workspace;
+const workspace={session:{allowedActions:['START_CHALLENGE']},challengeRunId:null,materials:[]} as unknown as Workspace;
 const run:ChallengeRun={id:'run',sessionId:'session',title:'검토 초안',instructionsMarkdown:'원자료와 비교하세요.',noticeVersion:'challenge-notice-v1',status:'IN_PROGRESS',lockVersion:0,statements:[{id:'statement',statementKey:'S01',order:1,text:'<script>hidden()</script>'}],reviews:[],submittedAt:null};
 beforeEach(()=>{vi.clearAllMocks();vi.mocked(getWorkspace).mockResolvedValue(workspace);vi.mocked(getChallenge).mockResolvedValue(run);});
 function mount(){const client=new QueryClient({defaultOptions:{queries:{retry:false}}});return {client,...render(<QueryClientProvider client={client}><ChallengePanel userId="owner" sessionId="session"/></QueryClientProvider>)};}
@@ -35,4 +35,11 @@ it('aborts assignment when the authenticated editor unmounts',async()=>{
 });
 it('offers no start action when the server denies this phase',async()=>{
  vi.mocked(getWorkspace).mockResolvedValue({...workspace,session:{...workspace.session,allowedActions:[]}});mount();await screen.findByText('이 과제의 검산 초안은 아직 준비되지 않았거나, 현재 단계에서 시작할 수 없습니다.');expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();expect(startChallenge).not.toHaveBeenCalled();
+});
+
+it('retains unsaved review when a background read fails',async()=>{
+ vi.mocked(getWorkspace).mockResolvedValue({...workspace,challengeRunId:'run'});const {client}=mount();await screen.findByText('<script>hidden()</script>');
+ fireEvent.change(screen.getByLabelText('판단',{exact:true}),{target:{value:'KEEP'}});fireEvent.change(screen.getByLabelText('판단 이유'),{target:{value:'keep local edits'}});
+ vi.mocked(getChallenge).mockRejectedValue(new Error('background offline'));await act(async()=>{await client.invalidateQueries({queryKey:['challenge','owner','run']});});
+ expect(screen.getByLabelText('판단 이유')).toHaveValue('keep local edits');
 });

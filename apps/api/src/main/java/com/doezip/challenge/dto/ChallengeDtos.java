@@ -17,7 +17,6 @@ public final class ChallengeDtos {
         }
     }
     public record Statement(UUID id,String statementKey,int order,String text) {}
-    // No reviews exist in F04a. Review persistence is a separate feature, not a fake saved review.
     public record Run(UUID id,UUID sessionId,String title,String instructionsMarkdown,String noticeVersion,String status,
-                      long lockVersion,List<Statement> statements,List<Void> reviews,Instant submittedAt) {}
+                      long lockVersion,List<Statement> statements,List<ReviewDtos.Review> reviews,Instant submittedAt) {}
 }
