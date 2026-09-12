@@ -1,0 +1,261 @@
+{
+  "type": "OBJECT",
+  "properties": {
+    "summary": {
+      "type": "STRING"
+    },
+    "strengths": {
+      "type": "ARRAY",
+      "items": {
+        "type": "STRING"
+      }
+    },
+    "improvements": {
+      "type": "ARRAY",
+      "items": {
+        "type": "STRING"
+      }
+    },
+    "areas": {
+      "type": "ARRAY",
+      "items": {
+        "type": "OBJECT",
+        "properties": {
+          "area": {
+            "type": "STRING",
+            "enum": [
+              "PROMPT",
+              "EVIDENCE",
+              "DOCUMENT",
+              "DEFENSE"
+            ]
+          },
+          "dimensions": {
+            "type": "ARRAY",
+            "items": {
+              "type": "OBJECT",
+              "properties": {
+                "code": {
+                  "type": "STRING"
+                },
+                "title": {
+                  "type": "STRING"
+                },
+                "state": {
+                  "type": "STRING",
+                  "enum": [
+                    "SUFFICIENT",
+                    "PARTIAL",
+                    "NEEDS_REVIEW",
+                    "NOT_OBSERVED"
+                  ]
+                },
+                "rationale": {
+                  "type": "STRING"
+                },
+                "gap": {
+                  "type": "STRING",
+                  "nullable": true
+                },
+                "nextAction": {
+                  "type": "STRING",
+                  "nullable": true
+                },
+                "confidenceLevel": {
+                  "type": "STRING",
+                  "enum": [
+                    "LOW",
+                    "MEDIUM",
+                    "HIGH"
+                  ],
+                  "nullable": true
+                },
+                "evidence": {
+                  "type": "ARRAY",
+                  "items": {
+                    "type": "OBJECT",
+                    "properties": {
+                      "id": {
+                        "type": "STRING"
+                      },
+                      "kind": {
+                        "type": "STRING",
+                        "enum": [
+                          "SOURCE_CHECK",
+                          "FAULT_REPAIR",
+                          "COUNTEREVIDENCE",
+                          "EXPLANATION",
+                          "SELF_REPORT"
+                        ]
+                      },
+                      "polarity": {
+                        "type": "STRING",
+                        "enum": [
+                          "SUPPORT",
+                          "CONTRADICT"
+                        ]
+                      },
+                      "method": {
+                        "type": "STRING",
+                        "enum": [
+                          "LLM"
+                        ]
+                      },
+                      "subjectType": {
+                        "type": "STRING",
+                        "enum": [
+                          "DOCUMENT_VERSION",
+                          "FAULT_ATTEMPT"
+                        ]
+                      },
+                      "subjectId": {
+                        "type": "STRING"
+                      },
+                      "excerpt": {
+                        "type": "STRING",
+                        "nullable": true
+                      },
+                      "explanation": {
+                        "type": "STRING"
+                      },
+                      "source": {
+                        "type": "OBJECT",
+                        "properties": {
+                          "materialId": {
+                            "type": "STRING"
+                          },
+                          "lineStart": {
+                            "type": "INTEGER"
+                          },
+                          "lineEnd": {
+                            "type": "INTEGER"
+                          },
+                          "quotedText": {
+                            "type": "STRING"
+                          }
+                        },
+                        "required": [
+                          "materialId",
+                          "lineStart",
+                          "lineEnd",
+                          "quotedText"
+                        ],
+                        "nullable": true
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "kind",
+                      "polarity",
+                      "method",
+                      "subjectType",
+                      "subjectId",
+                      "excerpt",
+                      "explanation",
+                      "source"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "code",
+                "title",
+                "state",
+                "rationale",
+                "gap",
+                "nextAction",
+                "confidenceLevel",
+                "evidence"
+              ]
+            }
+          }
+        },
+        "required": [
+          "area",
+          "dimensions"
+        ]
+      }
+    },
+    "faultSummary": {
+      "type": "OBJECT",
+      "properties": {
+        "statements": {
+          "type": "ARRAY",
+          "items": {
+            "type": "OBJECT",
+            "properties": {
+              "statementId": {
+                "type": "STRING"
+              },
+              "reviewId": {
+                "type": "STRING",
+                "nullable": true
+              },
+              "detectionResult": {
+                "type": "STRING",
+                "enum": [
+                  "UNREVIEWED",
+                  "REVIEW_REQUIRED"
+                ]
+              },
+              "evidenceResult": {
+                "type": "STRING",
+                "enum": [
+                  "INSUFFICIENT",
+                  "NOT_OBSERVED",
+                  "REVIEW_REQUIRED"
+                ]
+              },
+              "repairResult": {
+                "type": "STRING",
+                "enum": [
+                  "NOT_APPLICABLE",
+                  "NOT_OBSERVED",
+                  "REVIEW_REQUIRED"
+                ]
+              },
+              "recheckResult": {
+                "type": "STRING",
+                "enum": [
+                  "NOT_OBSERVED",
+                  "REVIEW_REQUIRED"
+                ]
+              },
+              "feedback": {
+                "type": "STRING"
+              }
+            },
+            "required": [
+              "statementId",
+              "reviewId",
+              "detectionResult",
+              "evidenceResult",
+              "repairResult",
+              "recheckResult",
+              "feedback"
+            ]
+          }
+        },
+        "note": {
+          "type": "STRING"
+        }
+      },
+      "required": [
+        "statements",
+        "note"
+      ]
+    },
+    "nextPracticeText": {
+      "type": "STRING",
+      "nullable": true
+    }
+  },
+  "required": [
+    "summary",
+    "strengths",
+    "improvements",
+    "areas",
+    "faultSummary",
+    "nextPracticeText"
+  ]
+}

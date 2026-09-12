@@ -1,0 +1,33 @@
+/* Approved learning-platform v0.1 palette and shell, scoped to product routes. */
+.shell {
+  --paper: #f7f8f5; --surface: #fff; --ink: #24342d; --muted: #647169;
+  --green: #255846; --green-hover: #1b4536; --lime: #d5e9a7; --sage: #eaf0e5;
+  --line: #e0e5dd; --soft: #f1f4ee;
+  min-height: 100dvh; background: var(--paper); color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+  font-size: 15px; line-height: 1.65; -webkit-font-smoothing: antialiased;
+}
+.shell a { text-decoration: none; }
+.shell :is(a, button):focus-visible { outline: 3px solid #7e9c49; outline-offset: 4px; }
+.shell main:focus { outline: none; }
+.shell ::selection { background: var(--lime); }
+.skipLink { position: fixed; top: -100px; left: 20px; z-index: 100; padding: 12px 18px; background: var(--green); color: white; border-radius: 8px; }
+.skipLink:focus { top: 12px; }
+.header { background: #ffffffed; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20; backdrop-filter: blur(12px); }
+.headerInner { max-width: 1280px; height: 76px; margin: auto; padding: 0 32px; display: flex; align-items: center; gap: 62px; }
+.brand { display: flex; gap: 9px; align-items: center; color: var(--green); flex-shrink: 0; }
+.brand svg { width: 30px; height: 30px; }
+.brand > span { font-size: 25px; font-weight: 800; letter-spacing: -1.2px; display: flex; gap: 9px; align-items: baseline; }
+.brand small { font-size: 12px; letter-spacing: -.1px; font-weight: 550; color: var(--muted); }
+.navigation { display: flex; align-self: stretch; }
+.navigation a { display: flex; align-items: center; position: relative; color: var(--green); font-size: 14px; font-weight: 650; }
+.navigation a::after { content: ''; height: 3px; position: absolute; bottom: -1px; left: 0; right: 0; background: var(--green); border-radius: 2px; }
+.tagline { margin-left: auto; font-size: 12px; color: var(--muted); }
+.footer { border-top: 1px solid var(--line); padding: 26px 32px; max-width: 1216px; margin: 0 auto; display: flex; align-items: center; gap: 18px; color: var(--muted); font-size: 11px; }
+.footer > a { font-size: 18px; color: var(--green); font-weight: 750; letter-spacing: -1px; }
+.footerNote { margin-left: auto; }
+@media (max-width: 640px) {
+ .headerInner { height: 64px; padding: 0 18px; gap: 16px; }
+ .brand svg { width: 25px; height: 25px; } .brand > span { font-size: 23px; } .brand small, .tagline, .footerNote { display: none; }
+ .navigation a { font-size: 12px; } .footer { padding: 21px 18px; gap: 12px; font-size: 10px; flex-wrap: wrap; }
+}

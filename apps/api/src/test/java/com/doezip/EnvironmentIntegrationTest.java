@@ -20,6 +20,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+@org.springframework.test.context.ActiveProfiles("test")
 @Testcontainers
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -35,13 +36,18 @@ class EnvironmentIntegrationTest {
     @Autowired DataSource dataSource;
     @Autowired ObjectMapper mapper;
 
-    @Test @Order(1) void connectsToPostgresWithoutInventingDomainTables() throws Exception {
+    @Test @Order(1) void connectsToPostgresWithTaskCatalogAndUsers() throws Exception {
         try (var connection = dataSource.getConnection(); var statement = connection.createStatement()) {
             assertThat(connection.getMetaData().getDatabaseProductName()).isEqualTo("PostgreSQL");
             try (var rows = statement.executeQuery("select count(*) from information_schema.tables where table_schema='public' and table_name <> 'flyway_schema_history'")) {
-                rows.next(); assertThat(rows.getInt(1)).isZero();
+                rows.next(); assertThat(rows.getInt(1)).isEqualTo(16);
             }
         }
+    }
+    @Test @Order(1) void defaultProfileHasNoSeed() throws Exception {
+        var response = http.getForEntity("/api/v1/tasks", String.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(mapper.readTree(response.getBody()).get("items").size()).isZero();
     }
     @Test @Order(2) void publicHealthShowsOnlyStatus() throws Exception {
         var response = http.getForEntity("/actuator/health", String.class);
@@ -49,7 +55,7 @@ class EnvironmentIntegrationTest {
         assertThat(mapper.readTree(response.getBody())).isEqualTo(mapper.readTree("{\"status\":\"UP\"}"));
     }
     @Test @Order(3) void protectsEveryOtherPathAndHealthWrites() throws Exception {
-        for (String path : new String[]{"/api/v1/tasks", "/api/v1/me", "/actuator/env", "/actuator/health/db", "/"}) {
+        for (String path : new String[]{"/api/v1/me", "/actuator/env", "/actuator/health/db", "/"}) {
             var response = http.getForEntity(path, String.class);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
             var body = mapper.readTree(response.getBody());
@@ -81,5 +87,13 @@ class EnvironmentIntegrationTest {
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
             assertThat(mapper.readTree(response.getBody())).isEqualTo(mapper.readTree("{\"status\":\"DOWN\"}"));
         });
+        var tasks = http.getForEntity("/api/v1/tasks", String.class);
+        assertThat(tasks.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+        assertThat(tasks.getBody()).doesNotContain("jdbc", "postgres", "Exception", "password");
+        try {
+            var error = mapper.readTree(tasks.getBody());
+            assertThat(error.size()).isEqualTo(3);
+            assertThat(error.get("code").asText()).isEqualTo("SERVICE_UNAVAILABLE");
+        } catch (java.io.IOException exception) { throw new AssertionError(exception); }
     }
 }

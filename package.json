@@ -17,8 +17,10 @@
     "api:check": "node scripts/contract-check.mjs",
     "check:web": "npm run lint -w apps/web && npm run typecheck -w apps/web && npm run test -w apps/web && node scripts/run.mjs build:web",
     "check:api": "node scripts/run.mjs check:api",
-    "test:e2e": "playwright test",
-    "check": "npm run api:check && npm run check:web && npm run check:api && npm run test:e2e"
+    "test:e2e": "node scripts/verify.mjs e2e",
+    "check": "node scripts/verify.mjs check",
+    "test:ai": "node scripts/ai-smoke.mjs",
+    "test:flow:ai": "node scripts/ai-flow.mjs"
   },
   "devDependencies": {
     "@apidevtools/swagger-parser": "12.1.0",

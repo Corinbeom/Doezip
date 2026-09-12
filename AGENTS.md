@@ -1,13 +1,14 @@
 # Doezip 협업 규칙
 
-AI 활용 역량 훈련 서비스. 2인이 약 2주 동안 기능별로 화면·API·DB·테스트를 함께 소유한다.
-현재 F00은 실행 환경만 구축한다. 제품 디자인·로그인·채팅·검산·평가·리포트·AI 호출,
-전체 22개 테이블 migration과 seed는 후속 작업이며 완료로 표시하지 않는다.
+AI 활용 역량 훈련 서비스. 현재 1인 개발로 진행하며 기능별로 화면·API·DB·테스트까지 함께 구현·검증한다.
+실행 환경, 과제 조회·로그인·보고서 작성/최초 제출·검산 검토·INITIAL AI 평가·결과 조회를 통합한다.
+디자인 기준은 docs/design/README.md, 통합·검증 범위는 docs/I01_INTEGRATION.md다.
+채팅·되묻기·FINAL 평가·비교 리포트, 전체 22개 테이블 migration/seed와 평가 품질 검수는 후속이며 완료로 표시하지 않는다.
 
 ## Git
 - main은 배포 기준, develop은 통합 기준이다. 두 브랜치에서 직접 기능 개발 금지.
 - feature/*는 develop에서 분기하며 PR 대상은 develop. 같은 기능의 web/api는 같은 브랜치.
-- 상대방 1명 리뷰·승인과 CI 통과 후 squash merge. squash한 기능 브랜치는 재사용하지 않는다.
+- 1인 개발 중에는 작성자의 diff 검토·실제 동작 확인과 CI 통과 후 squash merge. Codex 검토는 보조이며 작성자의 확인을 대신하지 않는다. squash한 기능 브랜치는 재사용하지 않는다.
 - develop → main은 배포 검증 후 merge commit. main 반영 결과는 develop에도 동기화.
 - 공유 브랜치 강제 push·임의 히스토리 재작성 금지. 동시 Codex는 별도 clone/worktree 사용.
 - 공통 UI·계약·의존성·DB 변경은 PR에 영향 범위와 리뷰 대상을 표시한다.
@@ -26,7 +27,7 @@ AI 활용 역량 훈련 서비스. 2인이 약 2주 동안 기능별로 화면·
 ## 실제 명령 (루트)
 Node 24.20.0, Java 21, Docker Compose v2를 준비한다.
 `npm install` → `cp .env.example .env` → `npm run db:up` → `npm run dev`.
-개별 실행: `npm run dev:web`, `npm run dev:api`. 전체 검증: `npm run check`.
+개별 실행: `npm run dev:web`, `npm run dev:api`. 전체 검증: `npm run check`. 실제 AI 전체 흐름은 키 설정 후 명시적으로 `npm run test:flow:ai` 실행(기본 CI 제외).
 DB 시작은 별도다. 볼륨 삭제를 일반 실행·검증에 넣지 않는다.
 
 ## 기준 문서

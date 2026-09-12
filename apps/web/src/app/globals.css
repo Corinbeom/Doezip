@@ -1,5 +1,7 @@
 @import "tailwindcss";
-/* Temporary technical verification page; no approved product theme. */
-body { font-family: system-ui, sans-serif; margin: 2rem; }
+/* Product styling is scoped in CSS modules; technical health keeps a minimal layout. */
+body { font-family: system-ui, sans-serif; margin: 0; }
 button { border: 1px solid currentColor; padding: .5rem 1rem; cursor: pointer; }
 button:disabled { cursor: wait; }
+
+.technical-page { margin: 2rem; }

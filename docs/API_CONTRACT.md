@@ -1,9 +1,11 @@
+> **현재 구현 상태 (2026-09-12):** F02a 공개 과제 조회, F01 me/bootstrap, F02b 세션 생성·workspace·공개 자료·draft 저장을 구현한다. F02c INITIAL 제출·제출본 조회도 구현한다. F04a 검산 시작·조회도 구현한다. F04b 검토 저장/제출도 구현한다. F05a INITIAL 평가 요청·조회·재시도도 구현한다. F05b는 성공 결과 GET /reports/{id} 조회와 기본 표시를 구현한다. F05c는 설정된 Gemini 어댑터를 연결하며 실제 계정 호출 검증은 별도다. FINAL 등 나머지 제품 경로는 기본 차단이다. [F02b 범위와 검증](F02B_REPORT_DRAFT.md)을 참고한다.
+
 # API 계약 — 화면·상태·데이터 연결
 
 **버전:** 1.0.0 · **상태:** 구현 제안. 실행 중인 서버의 자동 추출 결과가 아니다.
 기계 판독 명세는 [OpenAPI](../contracts/openapi.yaml), 원본 컬럼은 [ERD](sources/ERD.md)를 따른다.
 
-F00에서는 아래 제품 API를 구현하지 않는다. 별도 운영 경로 `GET /actuator/health`만 공개하며,
+F00 당시에는 제품 API 없이 운영 경로 `GET /actuator/health`만 공개했다. 현재 F02a 과제 조회 GET이 추가됐으며, health는
 실제 PostgreSQL 연결이 정상이면 `200 {"status":"UP"}`, 장애면 `503 {"status":"DOWN"}`을 반환한다.
 운영 health 응답은 제품 DTO·오류 계약과 구분하고 내부 컴포넌트·DB 연결 정보는 노출하지 않는다.
 프론트 제품 타입은 루트 `npm run api:generate`로 기존 OpenAPI에서 생성한다.
@@ -246,3 +248,29 @@ unknown field, 다른 과제 자료, 숨긴 자료, KEEP+replacement, 빈 이유
 원문 기획의 학습 순서와 원본 ERD의 관계·상태는 유지했다.
 HTTP 경로, DTO, bootstrap 액션, SSE 프레임, input 상한, 재전송 정책, 동일 화면 buffer 교체 방식은
 2인 구현을 위해 이 패키지에서 새로 제안한 계약이다. 변경 시 OpenAPI와 fixture도 같이 바꾼다.
+
+### F02c 구현 범위 (2026-09-11)
+
+POST/GET `/api/v1/sessions/{sessionId}/document-versions`를 구현했다. 인증과 소유권 검사가 필요하다.
+INITIAL만 생성하며 FINAL/REVISION은 구현하지 않았다. 평가 시작은 F05a를 따른다. 생성 성공과 동일 입력 재전송은 기존 계약대로 201이다.
+소유자 세션 행 잠금 안에서 버전·해시를 검사한 뒤 저장과 WRITING → CHALLENGE 전환을 함께 커밋한다.
+다른 입력의 중복 INITIAL은 DOCUMENT_ALREADY_SUBMITTED(409), 버전/해시 불일치는 각각
+DRAFT_VERSION_CONFLICT/DRAFT_CONTENT_CONFLICT(409), 빈 본문(Unicode 공백만 포함)은 EMPTY_DOCUMENT(422)다.
+최초 제출 이후 status는 ACTIVE이며 initialReportId는 리포트 발행 전 null이며 F05b 원자 발행 후 실제 ID를 제공한다.
+제출본은 사용자 작성 보고서이고 검산 초안·비공개 정답과는 별개다. 응답은 no-store이며 수정 API는 없다.
+
+### F04a 검산 시작·조회
+
+POST `/api/v1/sessions/{id}/challenge`, GET `/api/v1/challenge-runs/{id}`를 구현했다.
+`challenge-notice-v1`과 acknowledged=true를 엄격히 검사한다. 사용자 소유 세션에 최초 제출본이 있고
+ACTIVE/CHALLENGE 상태여야 새 run을 배정한다. 세션 행 잠금과 UNIQUE(session_id)로 중복 시작을 막고
+같은 요청에는 기존 run을 반환한다. GET은 소유자만 가능하고 응답은 no-store다.
+안내 확인 전 workspace에는 초안 본문·제목·템플릿 ID를 넣지 않는다. 확인 후 run ID와 공개 문장만 제공한다.
+variant_code·오류 키·정답·오류 개수는 응답에서 제외한다. 초안 준비 실패/해시 불일치는 CHALLENGE_UNAVAILABLE(503)이며 run을 저장하지 않는다.
+F04a에는 검토 저장 API가 없으므로 reviews는 실제로 비어 있고 submittedAt은 null이다. 검토 저장·제출은 후속 구현이다.
+
+F05a 구현과 미구현 평가기 경계는 [F05a 기록](F05A_EVALUATION_LIFECYCLE.md)을 따른다. workspace.activeEvaluationId는 복원을 위해 terminal 상태를 포함한 최신 요청 ID를 제공한다.
+
+F05b GET /reports/{id}는 성공 평가의 소유자만 조회하며 no-store, 타인/없는 ID는 REPORT_NOT_FOUND(404)다. 공개 결과 스키마는 기존 계약을 사용한다. INITIAL 및 DOCUMENT_VERSION/FAULT_ATTEMPT 관찰만 발행하며 FINAL·기타 관찰 대상은 미지원이다. [결과 검증 경계](F05B_EVALUATION_RESULTS.md)를 따른다.
+
+F05c 오류/호출 설정은 [AI 설정](AI_SETUP.md)을 따른다. 공개 Evaluation/Report 계약은 유지하며 원문 제공자 오류나 키를 응답에 넣지 않는다.

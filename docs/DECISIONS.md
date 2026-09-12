@@ -1,4 +1,4 @@
-> **F00 범위 정정 (2026-09-06):** 최신 사용자 지시에 따라 이번 작업은 [개발 환경 구축](F00_ENVIRONMENT.md)만 수행한다. 기존 전체 MVP·ERD·seed·AI·배포 계획은 후속 작업이다. 현재 실행 명령은 [루트 README](../README.md)를 따른다.
+> **F00 당시 범위 (2026-09-06, 과거 기록):** 해당 작업은 [개발 환경 구축](F00_ENVIRONMENT.md)만 수행한다. 기존 전체 MVP·ERD·seed·AI·배포 계획은 후속 작업이다. 현재 실행 명령은 [루트 README](../README.md)를 따른다.
 
 # 결정 기록 — 원문 유지 / 구현 구체화 / 범위 조정
 
@@ -53,3 +53,43 @@
 
 - ADR-23 (사용자 확정): main ← develop ← feature/* 및 이번 F00 범위는 루트 AGENTS.md와 F00_ENVIRONMENT.md를 따른다. 전체 ERD·seed·AI·디자인 이식은 후속 작업이다.
 - ADR-24 (형식 수정): 표준 OpenAPI 3.0 validator가 BootstrapRequest의 required: []를 거부하여 빈 선언을 제거했다. displayName은 기존처럼 선택 입력이며 제품 API 의미는 바꾸지 않는다. 빈 bootstrap 요청 fixture와 공개 fixture schema 검증으로 확인한다.
+
+## 1인 개발 전환 (2026-09-10)
+
+- ADR-25 (사용자 확정): 1인 개발로 전환한다. ADR-16의 A/B 분담과 상호 승인 필수 규칙은 현재 적용하지 않는다. 기능별 풀스택 소유는 유지하며 작성자의 diff 검토·실제 동작 확인과 CI 통과를 병합 기준으로 삼는다. GitHub 설정 자체는 이번 문서 변경으로 적용되지 않는다.
+- 실행 순서는 FEATURE_BACKLOG.md의 현재 실행 순서를 따른다. 기존 2인·2주 추정은 참고 기록이며 새 일정의 약속이 아니다. 과제 조회부터 작은 단위로 구현하며 전체 MVP 범위를 완료한 것으로 표시하지 않는다.
+
+- ADR-26 (F02a 구현): 기존 공개 GET tasks 계약으로 과제 조회를 구현한다. ERD의 tasks·rubric_dimensions만 우선 적용하고, 별도 local 프로필의 조회용 가상 데이터는 실제 학습용 과제 발행과 구분한다. 원본 과제 패키지의 정답·자료 검수와 나머지 migration은 후속 작업이다.
+
+- ADR-27 (사용자 확정, 2026-09-10): 학습 플랫폼 시안 v0.1을 제품 디자인 기준으로 승인한다. 과제 조회 화면부터 실제 API에 연결해 이식하며, 미구현 흐름의 가상 데이터·모의 AI는 제품에 포함하지 않는다. 후속 개선은 승인 기준에서 필요한 부분을 점진적으로 수정한다.
+
+- ADR-28 (F01 구현, 2026-09-10): Supabase Google 인증을 브라우저 PKCE로 연결하고 Spring은 고정 issuer/audience 및 ES256·RS256 JWKS 서명을 검증한다. 사용자 매핑은 provider+sub이며 이메일로 합치지 않는다. 세션은 SDK의 브라우저 저장소에 저장하므로 XSS 방어가 필요하며 HttpOnly BFF 구조가 아니다. 로그아웃은 로컬 세션을 제거하고 기존 access JWT의 서버 수명은 만료까지 남는다. 설정 미완료 시 인증은 비활성화하고 실제 Google 성공 검증으로 표시하지 않는다. 자세한 설정과 검증 경계는 AUTH_SETUP.md와 F01_AUTH_VALIDATION.md를 따른다.
+
+- ADR-29 (F02b, 2026-09-11): 보고서 draft는 기존 계약의 1초 debounce·직렬 저장·expectedLockVersion CAS를 따른다. ACTIVE/WRITING 및 버전 검사는 소유자 세션의 행 잠금 안에서 처리한다. 충돌에서 자동 덮어쓰기하지 않는다. 수행 세션과 공개 자료만 추가하며 제출본·평가 기능은 별도 구현한다.
+
+- ADR-30 (F02c, 2026-09-11): INITIAL 생성·봉인과 WRITING → CHALLENGE 전환은 동일 세션 행 잠금의 트랜잭션으로 처리한다. 같은 checkpoint/sourceDraftLockVersion/hash는 기존 제출본을 반환하며 다른 입력의 재제출은 409다. P0 sealed_at은 NOT NULL, DB UPDATE 트리거와 JPA Immutable로 본문 변경을 막는다. 빈 본문은 422이며 FINAL·검산 시작·평가 완료는 이번 범위가 아니다.
+
+- ADR-31 (F04a, 2026-09-11): 검산 시작은 notice v1 확인 후 최초 제출된 세션에 고정 초안을 배정한다. 세션 잠금·세션당 run 유일성·동일 과제 복합 FK를 적용한다. 검산 정답·검토 저장·평가는 이번 범위가 아니며 로컬 v3는 열람 검증용 가상 콘텐츠다. 템플릿 본문 해시를 검증하고 배정된 내용을 재작성하지 않는다.
+
+## ADR-32: F04b 수동 검토와 인용 저장
+- 검토 저장·제출은 session → challenge_run 순서로 부모 행을 잠가 상태와 CAS를 검사한다. 제출은 CHALLENGE 단계에서 run만 SUBMITTED로 잠그며 미구현 평가 단계로 이동하지 않는다.
+- fault_attempts와 수동 검산용 evidence_links를 추가한다. claims·AI 후보 연결은 미구현이므로 claim_id 또는 FK 없는 가짜 claims 테이블을 만들지 않는다. 이후 claims 기능에서 XOR 제약·FK와 origin/review_status 확장을 migration으로 추가한다. 현재 evidence_links는 전체 ERD 구현이 아니다.
+- JDBC repository는 인용의 서버 원문 추출 후 같은 트랜잭션에서 검토 전체 버퍼를 교체한다. 같은 문장·인용 범위의 ID를 유지한다. Entity를 HTTP로 반환하지 않는다.
+
+## ADR-33: F05a 평가 수명 주기와 실제 평가기 분리
+서버 입력 snapshot을 DB에서 불변으로 보존하고, 실제 scheduled worker가 claim/검증/실패 처리를 수행한다. 실제 평가기 미연결은 영구 실패 EVALUATOR_NOT_CONFIGURED로 알리며 가짜 성공 결과를 만들지 않는다. 초기 성공 발행은 F05b의 결과/리포트 원자 발행에 포함한다. 공개 workspace의 activeEvaluationId는 terminal 실패 복원에도 사용한다.
+
+## ADR-34: F05b 결과 원자 발행과 공개 투영
+- V12에서 결과·관찰·리포트를 추가한다. evaluation_evidence는 현재 존재하는 fault_attempt/document_version FK 중 정확히 하나만 가진다. 채팅·claim·defense/event FK는 해당 기능 migration에서 확장한다. 전체 ERD 구현으로 표시하지 않는다.
+- feedback_reports.public_report_json은 기존 Report 계약의 불변 공개 투영이다. 정규화 관찰과 동일 트랜잭션에서 작성하고 UPDATE를 차단해 조회마다 결과를 재조합하거나 일부 결과를 공개하지 않는다. 내부 snapshot·정답·lease를 이 JSON에 넣지 않는다.
+- 공개 루브릭의 코드/영역/제목 및 입력 참조를 결정적으로 검증한다. 검수된 정답 정책이 없는 현재 단계에서는 검토 성공을 확정하지 않는다. PROMPT/DEFENSE 입력 부재는 NOT_OBSERVED다. 실제 평가기는 F05c에서 연결하며 테스트 성공 발행을 일반 실행 경로로 노출하지 않는다.
+
+## ADR-35: F05c Gemini 연결과 제한된 호출
+Spring AI 1.1.8/Google GenAI SDK 1.37.0을 명시적 클라이언트로 사용하고 고정 endpoint·60초 timeout·내부 재시도 1회를 적용한다. 180초 lease와 20초 heartbeat는 외부 호출과 별도 트랜잭션이다. 실제 모델/프롬프트 설정을 입력과 함께 고정한다.
+V13은 UTC 일일 계정/전체 호출 예약용 운영 테이블이다. 성공뿐 아니라 실패한 호출도 예산을 소비하며 재시작으로 지우지 않는다.
+SDK ApiException이 Retry-After를 보존하지 않으므로 제공자 429/5xx 자동 재시도는 보류한다. 대기 지시를 무시하는 추정 재시도를 구현하지 않는다. 네트워크 timeout과 검증 실패만 자동 최대 3회이며, 허용한 수동 재시도를 포함해 누적 최대 4회다. 5xx/인증 수정은 수동 재시도 가능하고 429/일일 한도는 현재 재시도 불가다. 원래 전체 재시도 정책 완료로 표시하지 않는다.
+정답 키와 미공개 조건 자료는 전송하지 않는다. 검수된 정답 정책이 연결되기 전까지 REVIEW_REQUIRED 경계를 유지한다.
+
+2026-09-12 모델 기본값을 gemini-3.8-flash로 변경한다. 공식 안정 버전과 계정 모델 목록을 확인했으며 temperature=1.0, thinkingLevel=MEDIUM을 snapshot에 고정한다. 2.5의 추론 비활성화 설정은 제거한다. 실제 검증 결과와 미완료 품질 비교는 F05C_AI_EVALUATION.md에 기록한다.
+
+최종 공유 기본값은 사용자와 실제 검증으로 선택한 gemini-3.5-flash-lite다. 3.8 Flash는 반복 5xx, 3.1 Pro는 무료 티어 429가 관찰되어 기본값으로 사용하지 않는다. 기존 평가 snapshot의 모델은 변경하지 않는다.
