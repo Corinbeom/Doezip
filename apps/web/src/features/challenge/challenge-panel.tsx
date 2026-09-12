@@ -4,15 +4,13 @@ import { useQuery,useQueryClient } from '@tanstack/react-query';
 import { getWorkspace } from '@/features/workspace/api';
 import { getChallenge,startChallenge } from './api';
 import styles from './challenge.module.css';
+import {ReviewEditor} from './review-editor';
 
 function ChallengeReader({runId,userId}:{runId:string;userId:string}){
  const query=useQuery({queryKey:['challenge',userId,runId],queryFn:({signal})=>getChallenge(runId,signal),meta:{private:true},refetchOnMount:'always'});
  if(query.isPending)return <p role="status">검산 초안을 불러오는 중…</p>;
- if(query.isError)return <><p role="alert">검산 초안을 불러오지 못했습니다.</p><button disabled={query.isFetching} onClick={()=>void query.refetch()}>초안 다시 불러오기</button></>;
- return <><h3>{query.data.title}</h3><p className={styles.instructions}>{query.data.instructionsMarkdown}</p>
- <p>사용자 보고서와 별도로 제공된 검토용 초안입니다. 문장의 내용과 근거를 원자료에 대조해 보세요.</p>
- <ol className={styles.statements}>{query.data.statements.map(statement=><li key={statement.id}><span>{statement.statementKey}</span><p>{statement.text}</p></li>)}</ol>
- <p className={styles.note}>현재는 초안 열람까지 가능합니다. 문장별 판단·근거 선택·검산 제출은 준비 중입니다.</p></>;
+ if(!query.data)return <><p role="alert">검산 초안을 불러오지 못했습니다.</p><button disabled={query.isFetching} onClick={()=>void query.refetch()}>초안 다시 불러오기</button></>;
+ return <ReviewEditor key={runId} initial={query.data} userId={userId}/>;
 }
 export function ChallengePanel({sessionId,userId}:{sessionId:string;userId:string}){
  const client=useQueryClient();
