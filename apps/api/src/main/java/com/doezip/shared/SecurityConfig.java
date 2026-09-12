@@ -43,6 +43,8 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/api/v1/sessions/*/document-versions", documents);
         source.registerCorsConfiguration("/api/v1/sessions/*/challenge", bootstrap);
         source.registerCorsConfiguration("/api/v1/challenge-runs/*", me);
+        source.registerCorsConfiguration("/api/v1/challenge-runs/*/reviews", draft);
+        source.registerCorsConfiguration("/api/v1/challenge-runs/*/submit", bootstrap);
         org.springframework.security.web.AuthenticationEntryPoint unauthorized = (request, response, exception) -> {
             response.setStatus(401); response.setContentType("application/json");
             response.setHeader("WWW-Authenticate", "Bearer");
@@ -53,7 +55,9 @@ public class SecurityConfig {
                 org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/sessions"),
                 org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.PUT, "/api/v1/sessions/*/draft"),
                 org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/sessions/*/document-versions"),
-                org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/sessions/*/challenge")))
+                org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/sessions/*/challenge"),
+                org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.PUT, "/api/v1/challenge-runs/*/reviews"),
+                org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/challenge-runs/*/submit")))
             .oauth2ResourceServer(c -> c.jwt(jwt -> {}).authenticationEntryPoint(unauthorized))
             .cors(c -> c.configurationSource(source))
             .sessionManagement(c -> c.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -61,8 +65,8 @@ public class SecurityConfig {
             .requestCache(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(c -> c.requestMatchers(HttpMethod.GET, "/actuator/health", "/api/v1/tasks", "/api/v1/tasks/*").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/me", "/api/v1/sessions/*/workspace", "/api/v1/sessions/*/materials/*", "/api/v1/sessions/*/document-versions", "/api/v1/challenge-runs/*").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/v1/me/bootstrap", "/api/v1/sessions", "/api/v1/sessions/*/document-versions", "/api/v1/sessions/*/challenge").authenticated()
-                .requestMatchers(HttpMethod.PUT, "/api/v1/sessions/*/draft").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/v1/me/bootstrap", "/api/v1/sessions", "/api/v1/sessions/*/document-versions", "/api/v1/sessions/*/challenge", "/api/v1/challenge-runs/*/submit").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/v1/sessions/*/draft", "/api/v1/challenge-runs/*/reviews").authenticated()
                 .anyRequest().denyAll())
             .exceptionHandling(c -> c
                 .authenticationEntryPoint(unauthorized)
