@@ -11,11 +11,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class EvaluationRepository {
  private final JdbcTemplate db;
  public EvaluationRepository(JdbcTemplate db){this.db=db;}
- public record Job(UUID id,UUID sessionId,UUID documentId,String phase,String status,String snapshot,String fingerprint,UUID lease,int attempts,String error,Instant createdAt){
+ public record Job(UUID id,UUID sessionId,UUID documentId,String phase,String status,String snapshot,String fingerprint,UUID lease,int attempts,String error,Instant createdAt,UUID reportId){
   public boolean retryable(){return status.equals("FAILED")&&attempts<4&&Set.of("WORKER_LEASE_EXPIRED","WORKER_TEMPORARY_FAILURE").contains(error==null?"":error);}
-  public Evaluation view(){return new Evaluation(id,sessionId,phase,status,null,error,retryable(),2000,createdAt);}
+  public Evaluation view(){return new Evaluation(id,sessionId,phase,status,reportId,error,retryable(),2000,createdAt);}
  }
- private Job map(ResultSet r,int index)throws SQLException{return new Job(r.getObject("id",UUID.class),r.getObject("session_id",UUID.class),r.getObject("document_version_id",UUID.class),r.getString("phase"),r.getString("status"),r.getString("input_snapshot_json"),r.getString("input_fingerprint"),r.getObject("lease_token",UUID.class),r.getInt("attempt_count"),r.getString("error_code"),r.getTimestamp("created_at").toInstant());}
+ private Job map(ResultSet r,int index)throws SQLException{return new Job(r.getObject("id",UUID.class),r.getObject("session_id",UUID.class),r.getObject("document_version_id",UUID.class),r.getString("phase"),r.getString("status"),r.getString("input_snapshot_json"),r.getString("input_fingerprint"),r.getObject("lease_token",UUID.class),r.getInt("attempt_count"),r.getString("error_code"),r.getTimestamp("created_at").toInstant(),r.getString("status").equals("SUCCEEDED")?db.queryForObject("SELECT id FROM feedback_reports WHERE evaluation_run_id=?",UUID.class,r.getObject("id",UUID.class)):null);}
  public Optional<Job> find(UUID id){return db.query("SELECT * FROM evaluation_runs WHERE id=?",this::map,id).stream().findFirst();}
  public Optional<Job> byKey(UUID session,UUID key){return db.query("SELECT * FROM evaluation_runs WHERE session_id=? AND idempotency_key=?",this::map,session,key).stream().findFirst();}
  public Optional<Job> latest(UUID session){return db.query("SELECT * FROM evaluation_runs WHERE session_id=? ORDER BY created_at DESC,id DESC LIMIT 1",this::map,session).stream().findFirst();}

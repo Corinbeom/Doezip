@@ -26,3 +26,26 @@ test('job queries exclude frozen input and reject cross-account reads and retrie
  for(const value of ['Private original evaluation report','inputSnapshot','leaseToken','inputFingerprint','llmConfig'])expect(JSON.stringify(job)).not.toContain(value);
  expect((await request.get(`${apiBase}/evaluations/${job.id}`,{headers:bob.headers})).status()).toBe(404);expect((await request.post(`${apiBase}/evaluations/${job.id}/retry`,{headers:bob.headers})).status()).toBe(404);
 });
+
+test('report endpoint requires auth, conceals unknown reports and denies mutation',async({request})=>{
+ const identity=await testIdentity(request);const url=`${apiBase}/reports/${crypto.randomUUID()}`;
+ expect((await request.get(url)).status()).toBe(401);
+ const missing=await request.get(url,{headers:identity.headers});expect(missing.status()).toBe(404);expect((await missing.json()).code).toBe('REPORT_NOT_FOUND');
+ expect((await request.post(url,{headers:identity.headers,data:{summary:'unauthorized publication'}})).status()).toBe(403);
+});
+
+test('report UI boundary: explicit sample result, reload, failure and retry',async({page,context,request},info)=>{
+ // Only the read boundary is intercepted. This does NOT claim the live worker publishes results.
+ // Publication/ownership/rollback are verified separately against Testcontainers PostgreSQL.
+ const {identity,id,document}=await prepared(request);await installTestSession(context,identity.session);
+ const job=await (await request.post(`${apiBase}/sessions/${id}/evaluations`,{headers:{...identity.headers,'Idempotency-Key':crypto.randomUUID()},data:{phase:'INITIAL',documentVersionId:document.id}})).json();
+ const reportId=crypto.randomUUID();const report={id:reportId,sessionId:id,evaluationId:job.id,phase:'INITIAL',documentVersionId:document.id,sample:true,summary:'테스트용 결과 표시 확인',strengths:[],improvements:[],areas:['PROMPT','EVIDENCE','DOCUMENT','DEFENSE'].map(area=>({area,dimensions:[{code:`${area}.test`,title:'테스트 기준',state:'NOT_OBSERVED',rationale:'이번 입력에서 관찰되지 않았습니다.',gap:null,nextAction:null,confidenceLevel:null,evidence:[]}]})),faultSummary:{statements:[],note:'개발용 가상 데이터입니다.'},comparison:null,nextPracticeText:null,createdAt:new Date().toISOString()};
+ await page.route(`**/evaluations/${job.id}`,route=>route.fulfill({json:{...job,status:'SUCCEEDED',reportId,errorCode:null,retryable:false}}));
+ let unavailable=false;
+ await page.route(`**/reports/${reportId}`,route=>unavailable?route.fulfill({status:503,json:{code:'UNAVAILABLE',message:'test',traceId:'test'}}):route.fulfill({json:report}));
+ const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(`/sessions/${id}`);
+ await expect(page.getByRole('heading',{name:'최초 평가 결과'})).toBeVisible();await expect(page.getByRole('note')).toContainText('개발용 예시');
+ await page.reload();await expect(page.getByText('테스트용 결과 표시 확인')).toBeVisible();
+ await page.setViewportSize({width:320,height:844});await page.getByRole('heading',{name:'최초 평가 결과'}).scrollIntoViewIfNeeded();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:info.outputPath('report-sample-mobile.png'),fullPage:true});await page.getByRole('region',{name:'평가 결과',exact:true}).screenshot({path:info.outputPath('report-panel-mobile.png')});
+ unavailable=true;await page.reload();await expect(page.getByText('평가 결과를 불러오지 못했습니다.')).toBeVisible({timeout:15000});unavailable=false;await page.getByRole('button',{name:'결과 다시 불러오기'}).click();await expect(page.getByRole('heading',{name:'최초 평가 결과'})).toBeVisible();expect(errors).toEqual([]);
+});
