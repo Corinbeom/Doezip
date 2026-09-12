@@ -14,6 +14,8 @@ public class ChallengeRun {
     @Column(name="notice_acknowledged_at",nullable=false) private Instant acknowledgedAt;
     @Column(name="submitted_at") private Instant submittedAt;
     @Column(name="lock_version",nullable=false) private long lockVersion;
+    public void saved(){lockVersion++;}
+    public void submit(){status="SUBMITTED";submittedAt=Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS);lockVersion++;}
     protected ChallengeRun() {}
     public ChallengeRun(LearningSession session,UUID template,String notice){
         id=UUID.randomUUID();sessionId=session.getId();taskId=session.getTaskId();templateId=template;

@@ -16,3 +16,5 @@ V6(local)은 개발용 과제의 옛 조회 전용 안내를 고치는 대신 �
 V7은 document_versions 1개 테이블을 추가한다. INITIAL은 세션당 한 번 생성하며 본문·해시·저장 버전과 봉인 시각을 보관한다. UPDATE는 DB 트리거로 거부한다. P0에서는 생성과 동시에 봉인하므로 sealed_at은 NOT NULL이다. 기존 V1~V6는 수정하지 않는다.
 
 V8은 challenge_templates, challenge_statements, challenge_runs를 추가한다. 같은 과제의 초안만 배정하도록 복합 FK를 두며 세션당 run은 하나다. 템플릿·문장의 UPDATE는 거부한다. V9(local)은 기존 과제 v2를 ARCHIVED로 보존하고 v3·자료 사본·열람 검증용 가상 초안을 추가한다. 정답 키·전체 과제 pack은 포함하지 않는다. 현재 도메인 테이블은 9개다.
+
+V10은 fault_attempts와 수동 검산용 evidence_links를 추가한다. claims/AI 근거 연결은 후속 migration이다. 적용한 migration은 수정하지 않는다.
