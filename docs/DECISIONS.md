@@ -75,3 +75,6 @@
 - 검토 저장·제출은 session → challenge_run 순서로 부모 행을 잠가 상태와 CAS를 검사한다. 제출은 CHALLENGE 단계에서 run만 SUBMITTED로 잠그며 미구현 평가 단계로 이동하지 않는다.
 - fault_attempts와 수동 검산용 evidence_links를 추가한다. claims·AI 후보 연결은 미구현이므로 claim_id 또는 FK 없는 가짜 claims 테이블을 만들지 않는다. 이후 claims 기능에서 XOR 제약·FK와 origin/review_status 확장을 migration으로 추가한다. 현재 evidence_links는 전체 ERD 구현이 아니다.
 - JDBC repository는 인용의 서버 원문 추출 후 같은 트랜잭션에서 검토 전체 버퍼를 교체한다. 같은 문장·인용 범위의 ID를 유지한다. Entity를 HTTP로 반환하지 않는다.
+
+## ADR-33: F05a 평가 수명 주기와 실제 평가기 분리
+서버 입력 snapshot을 DB에서 불변으로 보존하고, 실제 scheduled worker가 claim/검증/실패 처리를 수행한다. 실제 평가기 미연결은 영구 실패 EVALUATOR_NOT_CONFIGURED로 알리며 가짜 성공 결과를 만들지 않는다. 초기 성공 발행은 F05b의 결과/리포트 원자 발행에 포함한다. 공개 workspace의 activeEvaluationId는 terminal 실패 복원에도 사용한다.
