@@ -623,7 +623,7 @@ class SessionIntegrationTest {
         d->d.put("privateAnswer","must not pass through"),
         d->d.put("summary","\u0000"),
         d->((com.fasterxml.jackson.databind.node.ObjectNode)d.get("faultSummary").get("statements").get(0)).put("detectionResult","VALID_KEEP"),
-        d->((com.fasterxml.jackson.databind.node.ObjectNode)d.get("areas").get(0).get("dimensions").get(0)).put("state","SUFFICIENT")
+        d->d.get("areas").forEach(a->{if(a.path("area").asText().equals("PROMPT"))((com.fasterxml.jackson.databind.node.ObjectNode)a.get("dimensions").get(0)).put("state","SUFFICIENT");})
       );
       for(var corruption:corruptions){var invalid=base.deepCopy();corruption.accept(invalid);assertThatThrownBy(()->resultValidator.validate(invalid,snapshot)).isInstanceOf(com.doezip.evaluation.service.InvalidEvaluationResult.class);}
       var invalid=base.deepCopy();documentDimension(invalid).put("code","missing");assertThatThrownBy(()->resultPublisher.publish(job,invalid,true)).isInstanceOf(com.doezip.evaluation.service.InvalidEvaluationResult.class);noPublishedResult();assertThat(evaluationJobs.find(job.id()).orElseThrow().status()).isEqualTo("RUNNING");

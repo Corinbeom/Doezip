@@ -1,0 +1,15 @@
+.panel {margin-top:28px;padding-top:24px;border-top:1px solid var(--line);min-width:0}
+.panel h3 {font-size:20px;font-weight:700}
+.panel h4 {font-size:16px;font-weight:650;margin:20px 0 10px}
+.panel h5 {font-size:14px;font-weight:650;color:var(--green)}
+.panel > section {margin:16px 0;padding:18px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.panel > section > h4 {margin-top:0}
+.panel article + article {border-top:1px solid var(--line);margin-top:16px;padding-top:16px}
+.panel p,.panel li {font-size:14px;line-height:1.8;overflow-wrap:anywhere}
+.panel ul,.panel ol {padding-left:22px;list-style:revert}
+.panel li + li {margin-top:8px}
+.panel details {margin-top:12px;padding:12px;border-radius:8px;background:var(--soft)}
+.panel summary {cursor:pointer;color:var(--green);font-size:13px;font-weight:600}
+.panel blockquote {white-space:pre-wrap;border-left:3px solid var(--green);padding:10px 14px;margin:12px 0;background:var(--surface)}
+.panel [role=note] {padding:12px;border-radius:8px;background:var(--sage)}
+@media(max-width:600px) {.panel > section {padding:12px}.panel p,.panel li {font-size:13px}}

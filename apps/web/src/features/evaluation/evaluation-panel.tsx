@@ -27,7 +27,7 @@ export function EvaluationPanel({sessionId,userId}:{sessionId:string;userId:stri
   try{const documents=await getDocuments(sessionId,c.signal);const initial=documents.items.find(d=>d.checkpoint==='INITIAL');if(!initial)throw new Error('Missing submission');const evaluation=await requestEvaluation(sessionId,initial.id,requestKey.current,c.signal);if(!alive.current)return;client.setQueryData(['evaluation',userId,evaluation.id],evaluation);client.setQueryData(key,{...workspace.data,activeEvaluationId:evaluation.id});}
   catch{if(alive.current)setFailed(true);}finally{pending.current=null;if(alive.current)setBusy(false);}
  };
- return <section aria-labelledby="evaluation-heading"><h3 id="evaluation-heading">제출 내용 평가</h3><p>실제 평가기는 아직 연결 전입니다. 평가 결과가 저장된 경우에만 아래에 표시됩니다.</p>
+ return <section aria-labelledby="evaluation-heading"><h3 id="evaluation-heading">제출 내용 평가</h3><p>평가를 요청하면 제출한 보고서·검토·공개 자료를 AI 제공자에게 전송합니다. AI 평가는 틀릴 수 있으므로 근거와 함께 확인하세요.</p>
  {!workspace.data?<><p role={workspace.isError?'alert':'status'}>{workspace.isError?'평가 요청 상태를 불러오지 못했습니다.':'평가 요청 상태 확인 중…'}</p><button onClick={()=>void workspace.refetch()}>요청 상태 다시 확인</button></>:workspace.data.activeEvaluationId?<Status key={workspace.data.activeEvaluationId} id={workspace.data.activeEvaluationId} userId={userId}/>:workspace.data.session.allowedActions.includes('REQUEST_INITIAL_EVALUATION')?<><button disabled={busy} onClick={()=>void start()}>{busy?'평가 요청 중…':failed?'같은 평가 요청 재전송':'평가 요청하기'}</button>{failed&&<><p role="alert">평가 요청 결과를 확인하지 못했습니다. 같은 요청으로 재전송하거나 상태를 확인하세요.</p><button disabled={busy} onClick={()=>void workspace.refetch()}>요청 상태 다시 확인</button></>}</>:<p>검산 제출 후 평가를 요청할 수 있습니다.</p>}
  </section>;
 }

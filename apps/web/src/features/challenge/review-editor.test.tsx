@@ -14,5 +14,5 @@ it('keeps review input when save fails and prevents submitting an unsaved buffer
  expect(screen.getByRole('button',{name:'검산 제출'})).toBeDisabled();fireEvent.click(screen.getByRole('button',{name:'검토 저장'}));await screen.findByRole('alert');expect(screen.getByLabelText('판단 이유')).toHaveValue('판단 근거');expect(saveReviews).toHaveBeenCalledWith('r',[{statementId:'one',decision:'KEEP',reasonText:'판단 근거',replacementText:null,evidence:[]}],0,expect.any(AbortSignal));
 });
 it('renders a submitted review as read-only without an evaluation result',()=>{
- mount({...initial,status:'SUBMITTED',submittedAt:'2026-09-12T00:00:00Z'});expect(screen.getByLabelText('판단',{exact:true})).toBeDisabled();expect(screen.queryByRole('button',{name:'검산 제출'})).not.toBeInTheDocument();expect(screen.getByText('검토와 근거가 잠겼습니다. 평가 결과는 아직 제공되지 않습니다.')).toBeVisible();
+ mount({...initial,status:'SUBMITTED',submittedAt:'2026-09-12T00:00:00Z'});expect(screen.getByLabelText('판단',{exact:true})).toBeDisabled();expect(screen.queryByRole('button',{name:'검산 제출'})).not.toBeInTheDocument();expect(screen.getByText('제출한 검토와 근거는 수정할 수 없습니다. 평가 진행 상태와 결과는 아래에서 확인하세요.')).toBeVisible();
 });

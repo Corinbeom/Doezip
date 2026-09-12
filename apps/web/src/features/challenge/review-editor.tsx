@@ -47,7 +47,7 @@ export function ReviewEditor({initial,userId}:{initial:ChallengeRun;userId:strin
  };
  return <div className={styles.editor}><h3>{run.title}</h3><p>{run.instructionsMarkdown}</p><p>사용자 보고서와 별도의 검토입니다. 모든 문장을 검토할 필요는 없지만 미검토와 유지 판단은 다르게 기록됩니다.</p>
  <p role="status">{locked?'검산 제출 완료 · 읽기 전용':dirty?'저장하지 않은 검토가 있습니다.':'현재 검토가 저장되어 있습니다.'} · 미검토 {run.statements.length-buffer.length}개</p>
- {locked&&<p>검토와 근거가 잠겼습니다. 평가 결과는 아직 제공되지 않습니다.</p>}
+ {locked&&<p>제출한 검토와 근거는 수정할 수 없습니다. 평가 진행 상태와 결과는 아래에서 확인하세요.</p>}
  {message&&<p role={error?'alert':'status'}>{message}</p>}
  <fieldset disabled={busy||locked} className={styles.reviewFields}><legend>문장별 검토</legend>{run.statements.map(statement=>{
   const review=buffer.find(r=>r.statementId===statement.id);const saved=run.reviews.find(r=>r.statementId===statement.id);
