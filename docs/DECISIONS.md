@@ -83,3 +83,13 @@
 - V12에서 결과·관찰·리포트를 추가한다. evaluation_evidence는 현재 존재하는 fault_attempt/document_version FK 중 정확히 하나만 가진다. 채팅·claim·defense/event FK는 해당 기능 migration에서 확장한다. 전체 ERD 구현으로 표시하지 않는다.
 - feedback_reports.public_report_json은 기존 Report 계약의 불변 공개 투영이다. 정규화 관찰과 동일 트랜잭션에서 작성하고 UPDATE를 차단해 조회마다 결과를 재조합하거나 일부 결과를 공개하지 않는다. 내부 snapshot·정답·lease를 이 JSON에 넣지 않는다.
 - 공개 루브릭의 코드/영역/제목 및 입력 참조를 결정적으로 검증한다. 검수된 정답 정책이 없는 현재 단계에서는 검토 성공을 확정하지 않는다. PROMPT/DEFENSE 입력 부재는 NOT_OBSERVED다. 실제 평가기는 F05c에서 연결하며 테스트 성공 발행을 일반 실행 경로로 노출하지 않는다.
+
+## ADR-35: F05c Gemini 연결과 제한된 호출
+Spring AI 1.1.8/Google GenAI SDK 1.37.0을 명시적 클라이언트로 사용하고 고정 endpoint·60초 timeout·내부 재시도 1회를 적용한다. 180초 lease와 20초 heartbeat는 외부 호출과 별도 트랜잭션이다. 실제 모델/프롬프트 설정을 입력과 함께 고정한다.
+V13은 UTC 일일 계정/전체 호출 예약용 운영 테이블이다. 성공뿐 아니라 실패한 호출도 예산을 소비하며 재시작으로 지우지 않는다.
+SDK ApiException이 Retry-After를 보존하지 않으므로 제공자 429/5xx 자동 재시도는 보류한다. 대기 지시를 무시하는 추정 재시도를 구현하지 않는다. 네트워크 timeout과 검증 실패만 자동 최대 3회이며, 허용한 수동 재시도를 포함해 누적 최대 4회다. 5xx/인증 수정은 수동 재시도 가능하고 429/일일 한도는 현재 재시도 불가다. 원래 전체 재시도 정책 완료로 표시하지 않는다.
+정답 키와 미공개 조건 자료는 전송하지 않는다. 검수된 정답 정책이 연결되기 전까지 REVIEW_REQUIRED 경계를 유지한다.
+
+2026-09-12 모델 기본값을 gemini-3.8-flash로 변경한다. 공식 안정 버전과 계정 모델 목록을 확인했으며 temperature=1.0, thinkingLevel=MEDIUM을 snapshot에 고정한다. 2.5의 추론 비활성화 설정은 제거한다. 실제 검증 결과와 미완료 품질 비교는 F05C_AI_EVALUATION.md에 기록한다.
+
+최종 공유 기본값은 사용자와 실제 검증으로 선택한 gemini-3.5-flash-lite다. 3.8 Flash는 반복 5xx, 3.1 Pro는 무료 티어 429가 관찰되어 기본값으로 사용하지 않는다. 기존 평가 snapshot의 모델은 변경하지 않는다.

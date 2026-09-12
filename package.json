@@ -18,7 +18,8 @@
     "check:web": "npm run lint -w apps/web && npm run typecheck -w apps/web && npm run test -w apps/web && node scripts/run.mjs build:web",
     "check:api": "node scripts/run.mjs check:api",
     "test:e2e": "node scripts/verify.mjs e2e",
-    "check": "node scripts/verify.mjs check"
+    "check": "node scripts/verify.mjs check",
+    "test:ai": "node scripts/ai-smoke.mjs"
   },
   "devDependencies": {
     "@apidevtools/swagger-parser": "12.1.0",

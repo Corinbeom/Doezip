@@ -6,6 +6,9 @@ server:
     include-stacktrace: never
     include-binding-errors: never
 spring:
+  ai:
+    model:
+      chat: none # Construct the bounded evaluation adapter explicitly.
   datasource:
     url: ${DATABASE_URL}
     username: ${DATABASE_USERNAME}
@@ -46,3 +49,10 @@ app:
     jwk-set-uri: ${AUTH_JWK_SET_URI:}
     audience: ${AUTH_AUDIENCE:authenticated}
     provider-id: ${AUTH_PROVIDER_ID:}
+
+  evaluation:
+    enabled: ${AI_EVALUATION_ENABLED:false}
+    api-key: ${GEMINI_API_KEY:}
+    model: ${AI_EVALUATION_MODEL:gemini-3.5-flash-lite}
+    daily-call-limit: ${AI_EVALUATION_DAILY_CALL_LIMIT:10}
+    global-daily-call-limit: ${AI_EVALUATION_GLOBAL_DAILY_CALL_LIMIT:50}

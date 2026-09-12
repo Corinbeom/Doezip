@@ -107,8 +107,10 @@ DB를 멈출 때는 `docker compose --env-file .env -f compose.local.yml stop db
 
 보고서 작성·자동 저장·복원과 인증 통합 검사: [F02b 기록](docs/F02B_REPORT_DRAFT.md). `npm run test:e2e`는 외부 OAuth 없이 검증하도록 테스트용 웹을 다시 빌드한다. 일반 실행은 `npm run dev`를 사용한다.
 
-검산 문장별 판단·원자료 줄 인용·명시적 저장·제출 잠금은 [F04b 작업 기록](docs/F04B_CHALLENGE_REVIEW.md)을 참고한다. 실제 평가기 연결은 후속 작업이다.
+검산 문장별 판단·원자료 줄 인용·명시적 저장·제출 잠금은 [F04b 작업 기록](docs/F04B_CHALLENGE_REVIEW.md)을 참고한다. 실제 평가기 설정·검증은 F05c 안내를 따른다.
 
-검산 제출 후 평가 요청·상태 조회·복구 기반은 [F05a 기록](docs/F05A_EVALUATION_LIFECYCLE.md)을 참고한다. 현재 실제 워커는 평가기 미연결 실패를 표시하며 평가 점수·리포트를 만들지 않는다.
+검산 제출 후 평가 요청·상태 조회·복구 기반은 [F05a 기록](docs/F05A_EVALUATION_LIFECYCLE.md)을 참고한다. AI 설정 전에는 실제 워커가 평가기 미연결 실패를 표시하며 결과를 만들지 않는다.
 
-결과 검증·원자 저장·소유자 조회와 기본 표시는 [F05b 기록](docs/F05B_EVALUATION_RESULTS.md)을 따른다. 실제 평가기는 미연결이며 일반 실행에서 가상 성공 결과를 생성하지 않는다.
+결과 검증·원자 저장·소유자 조회와 기본 표시는 [F05b 기록](docs/F05B_EVALUATION_RESULTS.md)을 따른다. AI 연결 설정은 아래 F05c 안내를 따르며 일반 실행에서 가상 성공 결과를 생성하지 않는다.
+
+AI 평가 설정과 실행은 [AI_SETUP](docs/AI_SETUP.md), 구현·검증 구분은 [F05c 기록](docs/F05C_AI_EVALUATION.md)을 따른다. `npm run test:ai`는 기본 CI와 분리한 명시적 실제 호출 검사다.
