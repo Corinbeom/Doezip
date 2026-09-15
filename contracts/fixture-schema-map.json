@@ -19,5 +19,7 @@
   "material_db-metrics.json": "Material",
   "material_provider-latency.json": "Material",
   "material_ops-note.json": "Material",
-  "bootstrap.request.json": "BootstrapRequest"
+  "bootstrap.request.json": "BootstrapRequest",
+  "coding-save.request.json": "CodingSave",
+  "coding-workspace.json": "CodingWorkspace"
 }

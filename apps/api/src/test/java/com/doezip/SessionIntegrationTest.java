@@ -69,6 +69,78 @@ class SessionIntegrationTest {
     @Autowired JdbcTemplate database;
     @Autowired JwtDecoder decoder;
     @Autowired CurrentUser currentUser;
+    @org.springframework.test.context.bean.override.mockito.MockitoBean com.doezip.coding.adapter.CodingAi codingAi;
+    @BeforeEach void codingMock(){org.mockito.Mockito.when(codingAi.available()).thenReturn(true);}
+    String codingStart(String jwt) throws Exception {var response=request("/api/v1/coding-workspaces",HttpMethod.POST,jwt,"{}");assertThat(response.getStatusCode().value()).as(response.getBody()).isEqualTo(200);return json(response).get("id").asText();}
+    @Test void codingOwnershipCasRunAndImmutableSubmission() throws Exception {
+      String id=codingStart(alice),p="/api/v1/coding-workspaces/"+id;
+      assertThat(request(p,HttpMethod.GET,bob,null).getStatusCode().value()).isEqualTo(404);
+      assertThat(request(p,HttpMethod.GET,null,null).getStatusCode().value()).isEqualTo(401);
+      assertThat(request(p,HttpMethod.PUT,alice,"{}").getStatusCode().value()).isEqualTo(400);
+      String save=mapper.writeValueAsString(Map.of("code","function addItem(items,item){return items;}","expectedVersion",0));
+      assertThat(request(p,HttpMethod.PUT,alice,save).getStatusCode().value()).isEqualTo(200);
+      assertThat(request(p,HttpMethod.PUT,alice,save).getStatusCode().value()).isEqualTo(409);
+      String submit=mapper.writeValueAsString(Map.of("expectedVersion",1,"explanation","테스트의 한계를 확인했습니다."));
+      assertThat(request(p+"/submit",HttpMethod.POST,alice,submit).getStatusCode().value()).isEqualTo(409);
+      String run=mapper.writeValueAsString(Map.of("version",1,"suite","duplicate-items-v1","results",List.of(Map.of("name","중복 확인","passed",false,"detail","실패"))));
+      assertThat(request(p+"/runs",HttpMethod.POST,alice,run).getStatusCode().value()).isEqualTo(200);
+      assertThat(request(p+"/submit",HttpMethod.POST,alice,submit).getStatusCode().value()).isEqualTo(200);
+      assertThat(request(p+"/submit",HttpMethod.POST,alice,submit).getStatusCode().value()).isEqualTo(200);
+      assertThat(request(p+"/runs",HttpMethod.POST,alice,run).getStatusCode().value()).isEqualTo(409);
+      assertThat(request(p,HttpMethod.PUT,alice,save).getStatusCode().value()).isEqualTo(409);
+      assertThat(json(request(p,HttpMethod.GET,alice,null)).get("submittedAt").isNull()).isFalse();
+    }
+    @Test void codingAiProposalIsStoredWithoutOverwritingAndReplaysOnce() throws Exception {
+      String id=codingStart(alice),p="/api/v1/coding-workspaces/"+id;
+      String original=json(request(p,HttpMethod.GET,alice,null)).get("code").asText();
+      org.mockito.Mockito.when(codingAi.propose(org.mockito.ArgumentMatchers.anyString())).thenReturn(new com.doezip.coding.dto.CodingDtos.Proposal("직접 테스트하세요.","function addItem(items,item){return items;}"));
+      String ask=mapper.writeValueAsString(Map.of("requestKey",UUID.randomUUID(),"expectedVersion",0,"instruction","중복 버그 수정"));
+      var first=request(p+"/turns",HttpMethod.POST,alice,ask);
+      assertThat(first.getStatusCode().value()).isEqualTo(200);
+      assertThat(json(first).get("code").asText()).isEqualTo(original);
+      assertThat(json(first).get("turns").get(0).get("status").asText()).isEqualTo("SUCCEEDED");
+      assertThat(request(p+"/turns",HttpMethod.POST,alice,ask).getStatusCode().value()).isEqualTo(200);
+      assertThat(request(p+"/turns",HttpMethod.POST,alice,ask.replace("중복 버그 수정","다른 요청")).getStatusCode().value()).isEqualTo(409);
+      var context=org.mockito.ArgumentCaptor.forClass(String.class);org.mockito.Mockito.verify(codingAi).propose(context.capture());
+      assertThat(context.getValue()).contains(original.replace("\n","\\n")).doesNotContain("Never leak","private/task-pack","GEMINI_API_KEY");
+    }
+    @Test void codingAiFailureStaleReservationAndBudgetAreNotSuccess() throws Exception {
+      String id=codingStart(alice),p="/api/v1/coding-workspaces/"+id;
+      org.mockito.Mockito.when(codingAi.propose(org.mockito.ArgumentMatchers.anyString())).thenThrow(new com.doezip.session.service.SessionFailure(503,"CODING_AI_FAILED"));
+      String ask=mapper.writeValueAsString(Map.of("requestKey",UUID.randomUUID(),"expectedVersion",0,"instruction","수정"));
+      assertThat(request(p+"/turns",HttpMethod.POST,alice,ask).getStatusCode().value()).isEqualTo(503);
+      assertThat(json(request(p,HttpMethod.GET,alice,null)).get("turns").get(0).get("status").asText()).isEqualTo("FAILED");
+      assertThat(request(p+"/turns",HttpMethod.POST,alice,ask).getStatusCode().value()).isEqualTo(200);
+      database.update("UPDATE coding_turns SET status='RUNNING',created_at=now()-interval '2 minutes' WHERE workspace_id=?",UUID.fromString(id));
+      assertThat(json(request(p,HttpMethod.GET,alice,null)).get("turns").get(0).get("status").asText()).isEqualTo("FAILED");
+      for(int i=0;i<19;i++)database.update("INSERT INTO coding_turns(id,workspace_id,request_key,base_version,base_code,instruction,status) VALUES (?,?,?,0,'code','request','FAILED')",UUID.randomUUID(),UUID.fromString(id),UUID.randomUUID());
+      ask=mapper.writeValueAsString(Map.of("requestKey",UUID.randomUUID(),"expectedVersion",0,"instruction","수정"));
+      assertThat(request(p+"/turns",HttpMethod.POST,alice,ask).getStatusCode().value()).isEqualTo(429);
+    }
+    @Test void codingConcurrentRetryDoesNotCallAiTwiceAndLateReplyCannotReviveExpiredTurn() throws Exception {
+      String id=codingStart(alice),p="/api/v1/coding-workspaces/"+id;
+      var entered=new CountDownLatch(1);var release=new CountDownLatch(1);
+      org.mockito.Mockito.when(codingAi.propose(org.mockito.ArgumentMatchers.anyString())).thenAnswer(invocation->{
+        assertThat(org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
+        entered.countDown();if(!release.await(15,TimeUnit.SECONDS))throw new IllegalStateException("test timeout");
+        return new com.doezip.coding.dto.CodingDtos.Proposal("테스트하세요.","function addItem(items,item){return items;}");
+      });
+      String ask=mapper.writeValueAsString(Map.of("requestKey",UUID.randomUUID(),"expectedVersion",0,"instruction","수정"));
+      try(var executor=Executors.newVirtualThreadPerTaskExecutor()){
+        var first=executor.submit(()->request(p+"/turns",HttpMethod.POST,alice,ask));
+        try{
+          assertThat(entered.await(15,TimeUnit.SECONDS)).isTrue();
+          var replay=request(p+"/turns",HttpMethod.POST,alice,ask);
+          assertThat(replay.getStatusCode().value()).isEqualTo(200);
+          assertThat(json(replay).get("turns").get(0).get("status").asText()).isEqualTo("RUNNING");
+          assertThat(request(p,HttpMethod.PUT,alice,mapper.writeValueAsString(Map.of("code","changed","expectedVersion",0))).getStatusCode().value()).isEqualTo(409);
+          database.update("UPDATE coding_turns SET created_at=now()-interval '2 minutes' WHERE workspace_id=?",UUID.fromString(id));
+          assertThat(json(request(p,HttpMethod.GET,alice,null)).get("turns").get(0).get("status").asText()).isEqualTo("FAILED");
+        }finally{release.countDown();}
+        assertThat(json(first.get(15,TimeUnit.SECONDS)).get("turns").get(0).get("status").asText()).isEqualTo("FAILED");
+        org.mockito.Mockito.verify(codingAi).propose(org.mockito.ArgumentMatchers.anyString());
+      }
+    }
     @BeforeEach void setup() throws Exception {
         database.update("DELETE FROM evaluation_call_budgets"); database.update("DELETE FROM feedback_reports"); database.update("DELETE FROM evaluation_evidence"); database.update("DELETE FROM dimension_evaluations"); database.update("DELETE FROM evaluation_runs"); database.update("DELETE FROM evidence_links"); database.update("DELETE FROM fault_attempts"); database.update("DELETE FROM challenge_runs"); database.update("DELETE FROM challenge_statements"); database.update("DELETE FROM challenge_templates"); database.update("DELETE FROM document_versions"); database.update("DELETE FROM learning_sessions"); database.update("DELETE FROM materials");
         database.update("DELETE FROM rubric_dimensions"); database.update("DELETE FROM tasks"); database.update("DELETE FROM users");

@@ -35,3 +35,5 @@ DB 시작은 별도다. 볼륨 삭제를 일반 실행·검증에 넣지 않는�
 docs/DEVELOPMENT_SPEC.md, docs/FEATURE_BACKLOG.md, docs/API_CONTRACT.md,
 contracts/openapi.yaml, docs/sources/ERD.md, docs/TEST_RUNBOOK.md.
 디자인 상태는 docs/design/README.md. templates/는 원본 참고용, 실제 설정은 루트와 apps/api.
+
+- F08a 코딩 작업은 docs/F08A_CODING_WORKSPACE.md를 따른다. 코드 실행/공개 연습 테스트와 독립 서버 채점·역량 평가를 구분한다.

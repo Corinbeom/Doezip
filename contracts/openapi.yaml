@@ -18,6 +18,387 @@ tags:
 - name: evaluation
 - name: defense
 paths:
+  /coding-workspaces:
+    get:
+      operationId: listCodingWorkspaces
+      tags:
+      - coding
+      responses:
+        '200':
+          description: 성공. 개인 응답은 no-store. 테스트 기록은 브라우저 보고이며 서버 채점이 아님.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: &codingPath001
+                  type: string
+                  format: uuid
+        '400':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      operationId: createCodingWorkspace
+      tags:
+      - coding
+      responses:
+        '200':
+          description: 성공. 개인 응답은 no-store. 테스트 기록은 브라우저 보고이며 서버 채점이 아님.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodingWorkspace'
+        '400':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /coding-workspaces/{id}:
+    get:
+      operationId: getCodingWorkspace
+      tags:
+      - coding
+      responses:
+        '200':
+          description: 성공. 개인 응답은 no-store. 테스트 기록은 브라우저 보고이며 서버 채점이 아님.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodingWorkspace'
+        '400':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      operationId: saveCodingWorkspace
+      tags:
+      - coding
+      responses:
+        '200':
+          description: 성공. 개인 응답은 no-store. 테스트 기록은 브라우저 보고이며 서버 채점이 아님.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodingWorkspace'
+        '400':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodingSave'
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema: *codingPath001
+  /coding-workspaces/{id}/turns:
+    post:
+      operationId: askCodingAi
+      tags:
+      - coding
+      responses:
+        '200':
+          description: 성공. 개인 응답은 no-store. 테스트 기록은 브라우저 보고이며 서버 채점이 아님.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodingWorkspace'
+        '400':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodingAsk'
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema: *codingPath001
+  /coding-workspaces/{id}/runs:
+    post:
+      operationId: recordCodingRun
+      tags:
+      - coding
+      responses:
+        '200':
+          description: 성공. 개인 응답은 no-store. 테스트 기록은 브라우저 보고이며 서버 채점이 아님.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodingWorkspace'
+        '400':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodingRun'
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema: *codingPath001
+  /coding-workspaces/{id}/submit:
+    post:
+      operationId: submitCodingWorkspace
+      tags:
+      - coding
+      responses:
+        '200':
+          description: 성공. 개인 응답은 no-store. 테스트 기록은 브라우저 보고이며 서버 채점이 아님.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodingWorkspace'
+        '400':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodingSubmit'
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema: *codingPath001
   /me/bootstrap:
     post:
       operationId: bootstrapUser
@@ -1721,6 +2102,148 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    CodingResult:
+      type: object
+      additionalProperties: false
+      required:
+      - name
+      - passed
+      - detail
+      properties:
+        name:
+          type: string
+          maxLength: 80
+        passed:
+          type: boolean
+        detail:
+          type: string
+          maxLength: 500
+    CodingRun:
+      type: object
+      additionalProperties: false
+      required:
+      - version
+      - suite
+      - results
+      properties:
+        version: &codingSchema002
+          type: integer
+          format: int64
+          minimum: 0
+        suite:
+          type: string
+          enum:
+          - duplicate-items-v1
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/CodingResult'
+          minItems: 1
+          maxItems: 10
+    CodingTurn:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - requestKey
+      - baseVersion
+      - baseCode
+      - instruction
+      - status
+      - explanation
+      - proposedCode
+      properties:
+        id: &codingSchema001
+          type: string
+          format: uuid
+        requestKey: *codingSchema001
+        baseVersion: *codingSchema002
+        baseCode: &codingSchema003
+          type: string
+        instruction: *codingSchema003
+        status:
+          type: string
+          enum:
+          - RUNNING
+          - SUCCEEDED
+          - FAILED
+        explanation:
+          type: string
+          nullable: true
+        proposedCode:
+          type: string
+          nullable: true
+    CodingWorkspace:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - taskVersion
+      - code
+      - version
+      - submittedAt
+      - explanation
+      - lastRun
+      - turns
+      properties:
+        id: *codingSchema001
+        taskVersion:
+          type: string
+          enum:
+          - duplicate-items-v1
+        code: *codingSchema003
+        version: *codingSchema002
+        submittedAt:
+          type: string
+          nullable: true
+        explanation:
+          type: string
+          nullable: true
+        lastRun:
+          allOf:
+          - $ref: '#/components/schemas/CodingRun'
+          nullable: true
+        turns:
+          type: array
+          items:
+            $ref: '#/components/schemas/CodingTurn'
+    CodingSave:
+      type: object
+      additionalProperties: false
+      required:
+      - code
+      - expectedVersion
+      properties:
+        code:
+          type: string
+          maxLength: 20000
+        expectedVersion: *codingSchema002
+    CodingAsk:
+      type: object
+      additionalProperties: false
+      required:
+      - requestKey
+      - expectedVersion
+      - instruction
+      properties:
+        requestKey: *codingSchema001
+        expectedVersion: *codingSchema002
+        instruction:
+          type: string
+          minLength: 1
+          maxLength: 4000
+    CodingSubmit:
+      type: object
+      additionalProperties: false
+      required:
+      - expectedVersion
+      - explanation
+      properties:
+        expectedVersion: *codingSchema002
+        explanation:
+          type: string
+          minLength: 1
+          maxLength: 4000
     Error:
       type: object
       additionalProperties: false

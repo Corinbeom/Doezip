@@ -22,3 +22,5 @@
 - 평가 요청은 동일 작업의 응답 유실 시 같은 Idempotency-Key를 재사용한다. 상태 조회는 개인 Query이며 실패/대기 상태를 가짜 점수로 대체하지 않는다. retryable인 실패에만 재시도 버튼을 표시한다.
 
 - 성공 평가의 reportId로만 결과를 조회한다. sample:true는 개발용 예시 배너, NOT_OBSERVED는 관찰 부재로 표시한다. 결과 본문/인용을 HTML로 실행하지 않는다. private Query·no-store를 유지한다.
+
+- coding 사용자 코드는 QuickJS Worker에서만 실행한다. host eval/Function, 네트워크·인증 상태 전달을 금지한다. 수정안은 코드 버전/미저장 변경 확인 후 사용자 적용이며 계정 변경 시 요청/Worker를 종료한다.

@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 // Verification must never contact a developer's live OAuth project.
-const env = { ...process.env, AUTH_ENABLED: 'false', AI_EVALUATION_ENABLED: 'false', GEMINI_API_KEY: '',
+const env = { ...process.env, AUTH_ENABLED: 'false', AI_CODING_ENABLED: 'false', AI_EVALUATION_ENABLED: 'false', GEMINI_API_KEY: '',
   NEXT_PUBLIC_SUPABASE_URL: 'https://e2e-auth.invalid',
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_e2e_test_only' };
 const cwd = fileURLToPath(new URL('../', import.meta.url));

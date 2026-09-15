@@ -178,3 +178,9 @@ F05a: SessionIntegrationTest의 평가·lease 검사와 tests/e2e/evaluation.spe
 
 ## I01 한 checkout 통합 검증
 기본 전체 검사는 npm run check, 선택적 실제 AI 브라우저 검사는 npm run test:flow:ai다. 가상 과제·테스트 JWT를 사용하며 실제 Gemini/DB/worker/결과 API는 대체하지 않는다. Google OAuth 공급자 화면의 실제 로그인과 모델 품질 평가는 별도다. 실행 결과와 이전 브랜치 관계는 [I01 기록](I01_INTEGRATION.md)을 따른다.
+
+## F08a 코드 실행
+
+`npm run check`에 실제 WASM 실행 unit/E2E와 PostgreSQL 저장·AI 요청 상태 검사가 포함된다.
+`npm run test:coding:ai`는 키가 있을 때만 명시적으로 실행하는 Gemini 형식 검사다.
+브라우저 연습 결과를 독립 서버 채점이나 AI 역량 평가로 표시하지 않는다. [F08a 상세](F08A_CODING_WORKSPACE.md)

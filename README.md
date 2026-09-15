@@ -117,3 +117,9 @@ DB를 멈출 때는 `docker compose --env-file .env -f compose.local.yml stop db
 AI 평가 설정과 실행은 [AI_SETUP](docs/AI_SETUP.md), 구현·검증 구분은 [F05c 기록](docs/F05C_AI_EVALUATION.md)을 따른다. `npm run test:ai`는 기본 CI와 분리한 명시적 실제 호출 검사다.
 
 웹과 API는 같은 checkout에서 npm run dev로 실행한다. 이전의 F04c 웹/F05c API 분리 실행은 통합 전 기록이다. 새 기능은 통합된 develop에서 새 feature 브랜치로 시작한다.
+
+## 서비스 내 구현 연습 (F08a)
+
+`/coding`에서 JavaScript 코드 편집, AI 수정안 적용, 공개 테스트 실행, 저장·복원·제출을 제공한다.
+설정과 실행 경계는 [F08a 작업 기록](docs/F08A_CODING_WORKSPACE.md)을 따른다.
+구현 과제의 AI 역량 평가와 범용 개발 환경은 아직 연결하지 않았다.
