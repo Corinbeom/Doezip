@@ -24,7 +24,7 @@ export function TaskListPage() {
       <div><p className={styles.eyebrow}>배운 것을, 나의 판단으로</p>
         <h2 id="explore-heading">AI와 함께 풀고,<br /><em>내 근거로 완성하세요.</em></h2>
         <p className={styles.description}>실무의 문제를 고르고, 어떤 근거가 필요한지 살펴보세요.<br />스스로 설명할 수 있는 판단의 첫걸음입니다.</p>
-        <div className={styles.heroAction}><a className={styles.button} href="#task-list">문제 살펴보기<Arrow /></a><span>한 문제에서 시작하는 생각의 변화</span></div>
+        <div className={styles.heroAction}><a className={styles.button} href="#task-list">문제 살펴보기<Arrow /></a><Link className={styles.textLink} href="/coding">구현 과제 시작하기<Arrow /></Link></div>
       </div>
       <Image className={styles.heroArt} src="/design/learning-notes.svg" width={430} height={300} alt="자료를 읽고 근거를 연결해 판단을 완성하는 노트 일러스트" priority />
     </section>
@@ -45,7 +45,7 @@ export function TaskListPage() {
         <div className={styles.step}><span>01</span><div><h3>문제를 고르고</h3><p>관심 있는 과제의 제목과<br />설명을 살펴보세요.</p></div></div>
         <div className={styles.step}><span>02</span><div><h3>상황을 이해하고</h3><p>풀어야 할 문제와 필요한<br />판단이 무엇인지 확인해요.</p></div></div>
         <div className={styles.step}><span>03</span><div><h3>기준을 확인해요</h3><p>공개된 평가 기준을 읽고<br />생각의 방향을 잡아보세요.</p></div></div>
-        <p className={styles.noteFoot}>과제를 고르고 자료를 읽으며 보고서를 작성해 보세요. AI 학습은 준비 중입니다.</p>
+        <p className={styles.noteFoot}>보고서 과제는 AI와 자료를 분석하고 내 판단을 글로 정리합니다. 구현 과제는 코드를 수정하고 테스트해 제출합니다.</p>
       </aside></div>
     </section>
   </div></LearningShell>;
@@ -68,7 +68,7 @@ export function TaskDetailPage({ taskId }: { taskId: string }) {
           {task.data.rubrics.length === 0 ? <p className={styles.brief}>등록된 평가 기준이 없습니다.</p> : <ul className={styles.rubrics}>{task.data.rubrics.map((rubric, index) =>
             <li key={rubric.code}><span className={styles.rubricNumber} aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><div><h3>{rubric.title}</h3><p className={styles.preserve}>{rubric.description}</p></div></li>)}</ul>}
         </section>
-      </div><aside className={styles.detailAside}><p className={styles.eyebrow}>문제를 만나기 전에</p><h2>먼저, 충분히 살펴보세요.</h2><p className={styles.description}>과제의 상황과 평가 기준을 읽으며 어떤 근거로 판단할지 생각해 보세요.</p><div className={styles.availability}>자료를 읽고 보고서를 작성할 수 있어요. 제출은 준비 중입니다.</div>{task.data.status === 'PUBLISHED' && <StartSession taskId={task.data.id} />}<Link className={styles.secondaryButton} href="/tasks">다른 문제 살펴보기<Arrow /></Link></aside></div>
+      </div><aside className={styles.detailAside}><p className={styles.eyebrow}>문제를 만나기 전에</p><h2>먼저, 충분히 살펴보세요.</h2><p className={styles.description}>과제의 상황과 평가 기준을 읽으며 어떤 근거로 판단할지 생각해 보세요.</p><div className={styles.availability}>AI와 자료를 분석하고 보고서를 작성해 제출할 수 있어요.</div>{task.data.status === 'PUBLISHED' && <StartSession taskId={task.data.id} />}<Link className={styles.secondaryButton} href="/tasks">다른 문제 살펴보기<Arrow /></Link></aside></div>
     </>}
   </div></LearningShell>;
 }

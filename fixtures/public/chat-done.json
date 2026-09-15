@@ -1,0 +1,12 @@
+{
+  "message": {
+    "id": "63222222-2222-4222-8222-222222222222",
+    "seqNo": 2,
+    "role": "ASSISTANT",
+    "contentText": "가상 개발용 응답입니다. 실제 모델 호출 결과가 아닙니다.",
+    "status": "COMPLETED",
+    "replyToMessageId": "63111111-1111-4111-8111-111111111111",
+    "createdAt": "2026-09-14T00:00:00Z",
+    "completedAt": "2026-09-14T00:00:00Z"
+  }
+}

@@ -42,6 +42,10 @@ management:
     db:
       enabled: true
 app:
+  coding:
+    enabled: ${AI_CODING_ENABLED:false}
+    api-key: ${GEMINI_API_KEY:}
+    model: ${AI_CODING_MODEL:gemini-3.5-flash-lite}
   cors-allowed-origin: ${CORS_ALLOWED_ORIGIN:http://localhost:3000}
   auth:
     enabled: ${AUTH_ENABLED:false}
@@ -56,3 +60,10 @@ app:
     model: ${AI_EVALUATION_MODEL:gemini-3.5-flash-lite}
     daily-call-limit: ${AI_EVALUATION_DAILY_CALL_LIMIT:10}
     global-daily-call-limit: ${AI_EVALUATION_GLOBAL_DAILY_CALL_LIMIT:50}
+
+  chat:
+    enabled: ${AI_CHAT_ENABLED:false}
+    api-key: ${GEMINI_API_KEY:}
+    model: ${AI_CHAT_MODEL:gemini-3.5-flash-lite}
+    daily-call-limit: ${AI_CHAT_DAILY_CALL_LIMIT:20}
+    global-daily-call-limit: ${AI_CHAT_GLOBAL_DAILY_CALL_LIMIT:100}

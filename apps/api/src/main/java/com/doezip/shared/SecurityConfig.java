@@ -41,6 +41,8 @@ public class SecurityConfig {
         CorsConfiguration documents = new CorsConfiguration(me);
         documents.setAllowedMethods(List.of("GET", "POST"));
         source.registerCorsConfiguration("/api/v1/sessions/*/document-versions", documents);
+        source.registerCorsConfiguration("/api/v1/sessions/*/messages", documents);
+        source.registerCorsConfiguration("/api/v1/sessions/*/messages/*/cancel", bootstrap);
         source.registerCorsConfiguration("/api/v1/sessions/*/challenge", bootstrap);
         source.registerCorsConfiguration("/api/v1/challenge-runs/*", me);
         source.registerCorsConfiguration("/api/v1/challenge-runs/*/reviews", draft);
@@ -50,13 +52,27 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/api/v1/evaluations/*",me);
         source.registerCorsConfiguration("/api/v1/reports/*",me);
         source.registerCorsConfiguration("/api/v1/evaluations/*/retry",bootstrap);
+        CorsConfiguration coding = new CorsConfiguration(me);
+        coding.setAllowedMethods(List.of("GET","POST","PUT"));
+        source.registerCorsConfiguration("/api/v1/coding-workspaces",coding);
+        source.registerCorsConfiguration("/api/v1/coding-workspaces/*",coding);
+        source.registerCorsConfiguration("/api/v1/coding-workspaces/*/turns",coding);
+        source.registerCorsConfiguration("/api/v1/coding-workspaces/*/runs",coding);
+        source.registerCorsConfiguration("/api/v1/coding-workspaces/*/submit",coding);
         org.springframework.security.web.AuthenticationEntryPoint unauthorized = (request, response, exception) -> {
             response.setStatus(401); response.setContentType("application/json");
             response.setHeader("WWW-Authenticate", "Bearer");
             response.setHeader("Cache-Control", "no-store");
             mapper.writeValue(response.getOutputStream(), new ApiError("UNAUTHORIZED", "인증이 필요합니다.", RequestIdFilter.id(request)));
         };
-        return http.csrf(c -> c.ignoringRequestMatchers(org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/me/bootstrap"),
+        return http.csrf(c -> c.ignoringRequestMatchers(
+                org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/sessions/*/messages"),
+                org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/sessions/*/messages/*/cancel"),org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/me/bootstrap"),
+                org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/coding-workspaces"),
+                org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.PUT, "/api/v1/coding-workspaces/*"),
+                org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/coding-workspaces/*/turns"),
+                org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/coding-workspaces/*/runs"),
+                org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/coding-workspaces/*/submit"),
                 org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/sessions"),
                 org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.PUT, "/api/v1/sessions/*/draft"),
                 org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/sessions/*/document-versions"),
@@ -71,9 +87,12 @@ public class SecurityConfig {
             .formLogin(AbstractHttpConfigurer::disable).httpBasic(AbstractHttpConfigurer::disable)
             .requestCache(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(c -> c.requestMatchers(HttpMethod.GET, "/actuator/health", "/api/v1/tasks", "/api/v1/tasks/*").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/me", "/api/v1/sessions/*/workspace", "/api/v1/sessions/*/materials/*", "/api/v1/sessions/*/document-versions", "/api/v1/challenge-runs/*", "/api/v1/evaluations/*", "/api/v1/reports/*").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/v1/me/bootstrap", "/api/v1/sessions", "/api/v1/sessions/*/document-versions", "/api/v1/sessions/*/challenge", "/api/v1/challenge-runs/*/submit", "/api/v1/sessions/*/evaluations", "/api/v1/evaluations/*/retry").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/v1/sessions/*/messages", "/api/v1/me", "/api/v1/sessions/*/workspace", "/api/v1/sessions/*/materials/*", "/api/v1/sessions/*/document-versions", "/api/v1/challenge-runs/*", "/api/v1/evaluations/*", "/api/v1/reports/*").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/v1/sessions/*/messages", "/api/v1/sessions/*/messages/*/cancel", "/api/v1/me/bootstrap", "/api/v1/sessions", "/api/v1/sessions/*/document-versions", "/api/v1/sessions/*/challenge", "/api/v1/challenge-runs/*/submit", "/api/v1/sessions/*/evaluations", "/api/v1/evaluations/*/retry").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/v1/sessions/*/draft", "/api/v1/challenge-runs/*/reviews").authenticated()
+                .requestMatchers(HttpMethod.GET,"/api/v1/coding-workspaces","/api/v1/coding-workspaces/*").authenticated()
+                .requestMatchers(HttpMethod.PUT,"/api/v1/coding-workspaces/*").authenticated()
+                .requestMatchers(HttpMethod.POST,"/api/v1/coding-workspaces","/api/v1/coding-workspaces/*/turns","/api/v1/coding-workspaces/*/runs","/api/v1/coding-workspaces/*/submit").authenticated()
                 .anyRequest().denyAll())
             .exceptionHandling(c -> c
                 .authenticationEntryPoint(unauthorized)

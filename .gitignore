@@ -12,3 +12,6 @@ playwright-report/
 test-results/
 .DS_Store
 *.zip
+
+# Built from the pinned QuickJS package by web predev/prebuild
+/apps/web/public/coding-runtime/
