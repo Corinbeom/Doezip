@@ -22,3 +22,5 @@
 - 평가 요청은 동일 작업의 응답 유실 시 같은 Idempotency-Key를 재사용한다. 상태 조회는 개인 Query이며 실패/대기 상태를 가짜 점수로 대체하지 않는다. retryable인 실패에만 재시도 버튼을 표시한다.
 
 - 성공 평가의 reportId로만 결과를 조회한다. sample:true는 개발용 예시 배너, NOT_OBSERVED는 관찰 부재로 표시한다. 결과 본문/인용을 HTML로 실행하지 않는다. private Query·no-store를 유지한다.
+
+- 채팅은 공통 authenticatedStream과 계약 SSE 파서를 사용한다. 같은 요청 재확인은 같은 clientMessageKey, 확정 실패 후 새 생성은 새 key다. 계정/화면 전환 시 stream을 취소하며 실패가 보고서 편집 버퍼를 지우지 않게 한다. AI 응답을 보고서에 자동 반영하지 않는다.

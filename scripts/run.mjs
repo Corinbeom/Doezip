@@ -68,6 +68,6 @@ switch (process.argv[2]) {
   case 'build:web': run('npm', ['run', 'build', '-w', 'apps/web'], root, publicWebEnv()); break;
   case 'start:api': api(true); break;
   case 'db:up': run('docker', ['compose', '--env-file', '.env', '-f', 'compose.local.yml', 'up', '-d', '--wait', 'db']); break;
-  case 'check:api': run('./gradlew', ['--no-daemon', 'test', 'build'], `${root}apps/api`, {...env,AI_EVALUATION_ENABLED:'false',GEMINI_API_KEY:''}); break;
+  case 'check:api': run('./gradlew', ['--no-daemon', 'test', 'build'], `${root}apps/api`, {...env,AI_EVALUATION_ENABLED:'false',AI_CHAT_ENABLED:'false',GEMINI_API_KEY:''}); break;
   default: throw new Error('Unknown command');
 }

@@ -11,10 +11,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional(readOnly = true)
 public class DocumentService {
+    private final com.doezip.chat.repository.ChatRepository chat;
     private final SessionRepository sessions;
     private final DocumentRepository documents;
-    public DocumentService(SessionRepository sessions, DocumentRepository documents) {
-        this.sessions = sessions; this.documents = documents;
+    public DocumentService(SessionRepository sessions, DocumentRepository documents, com.doezip.chat.repository.ChatRepository chat) {
+        this.chat=chat;this.sessions = sessions; this.documents = documents;
     }
     public Documents list(UUID userId, UUID sessionId) {
         sessions.findByIdAndUserId(sessionId, userId).orElseThrow(SessionFailure::missing);
@@ -33,6 +34,8 @@ public class DocumentService {
                 && submitted.getContentHash().equals(request.expectedContentHash())) return Document.from(submitted);
             throw new SessionFailure(409, "DOCUMENT_ALREADY_SUBMITTED");
         }
+        chat.expire(sessionId);
+        if(chat.active(sessionId).isPresent())throw new SessionFailure(409,"MESSAGE_IN_PROGRESS");
         if (!session.writable()) throw new SessionFailure(409, "INVALID_SESSION_STATE");
         if (session.getLockVersion() != request.expectedDraftLockVersion()) throw new SessionFailure(409, "DRAFT_VERSION_CONFLICT");
         String hash = SessionService.hash(session.getMarkdown());

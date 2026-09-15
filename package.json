@@ -20,7 +20,8 @@
     "test:e2e": "node scripts/verify.mjs e2e",
     "check": "node scripts/verify.mjs check",
     "test:ai": "node scripts/ai-smoke.mjs",
-    "test:flow:ai": "node scripts/ai-flow.mjs"
+    "test:flow:ai": "node scripts/ai-flow.mjs",
+    "test:chat:ai": "node scripts/chat-smoke.mjs"
   },
   "devDependencies": {
     "@apidevtools/swagger-parser": "12.1.0",

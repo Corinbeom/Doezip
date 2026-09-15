@@ -4,6 +4,7 @@ import {QueryClient,QueryClientProvider} from '@tanstack/react-query';
 import {WorkspacePage} from './workspace-page';
 import {getMaterial,getWorkspace,type Workspace} from './api';
 import {useAuth} from '@/shared/auth/auth-provider';
+vi.mock('@/features/chat/chat-panel',()=>({ChatPanel:()=>null}));
 vi.mock('./api',()=>({getMaterial:vi.fn(),getWorkspace:vi.fn(),saveDraft:vi.fn(),getDocuments:vi.fn().mockResolvedValue({items:[]}),submitInitial:vi.fn()}));
 vi.mock('@/shared/auth/auth-provider',()=>({useAuth:vi.fn()}));
 vi.mock('@/features/auth/auth-control',()=>({AuthControl:()=>null}));

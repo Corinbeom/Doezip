@@ -36,7 +36,7 @@ public class SessionService {
   var challenge=challenges.findBySessionId(s.getId());
   var evaluation=evaluations.latest(s.getId());
   List<String> actions=new ArrayList<>(List.of("READ_MATERIALS"));
-  if(s.writable())actions.addAll(List.of("WRITE_DRAFT","SNAPSHOT_INITIAL"));
+  if(s.writable())actions.addAll(List.of("WRITE_DRAFT","SNAPSHOT_INITIAL","SEND_MESSAGE"));
   if(challenge.isEmpty()&&s.getStatus().equals("ACTIVE")&&s.getCurrentStep().equals("CHALLENGE")
     &&documents.findBySessionIdAndCheckpoint(s.getId(),"INITIAL").isPresent()&&templates.existsByTaskId(s.getTaskId()))actions.add("START_CHALLENGE");
   if(challenge.isPresent()&&challenge.get().getStatus().equals("IN_PROGRESS")&&s.getStatus().equals("ACTIVE")&&s.getCurrentStep().equals("CHALLENGE"))actions.addAll(List.of("EDIT_CHALLENGE","SUBMIT_CHALLENGE"));

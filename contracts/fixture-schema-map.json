@@ -19,5 +19,10 @@
   "material_db-metrics.json": "Material",
   "material_provider-latency.json": "Material",
   "material_ops-note.json": "Material",
-  "bootstrap.request.json": "BootstrapRequest"
+  "bootstrap.request.json": "BootstrapRequest",
+  "chat.request.json": "ChatRequest",
+  "chat-messages.json": "MessageList",
+  "chat-start.json": "ChatStart",
+  "chat-delta.json": "ChatDelta",
+  "chat-done.json": "ChatDone"
 }

@@ -1,3 +1,5 @@
+> **F03a 로컬 작업:** WRITING 단계의 실제 AI 대화·스트리밍·저장/복원·취소·멱등 요청을 구현했다. develop 미통합이며 대화의 평가 입력 연결·FINAL 흐름은 후속이다. [범위와 검증](F03A_LEARNING_CHAT.md).
+
 > **I01 통합 기준:** F01·F02a/b/c·F04a/b/c·F05a/b/c를 한 checkout으로 모은다. 아래 개별 기능의 “develop 미통합” 표기는 당시 기록이며 최신 통합 범위·검증은 [I01](I01_INTEGRATION.md)을 따른다. 전체 MVP·배포 완료를 뜻하지 않는다.
 
 > **F00 당시 범위 (2026-09-06, 과거 기록):** 해당 작업은 [개발 환경 구축](F00_ENVIRONMENT.md)만 수행한다. 기존 전체 MVP·ERD·seed·AI·배포 계획은 후속 작업이다. 현재 실행 명령은 [루트 README](../README.md)를 따른다.

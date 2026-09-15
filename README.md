@@ -2,6 +2,7 @@
 
 AI 활용 역량 훈련 서비스.
 현재 저장소에는 Next.js 웹, Spring Boot API, PostgreSQL 개발 환경과 과제 조회·로그인·보고서 작성·최초 제출·검산 초안 열람·검토 저장·제출·Gemini INITIAL 평가·결과 조회 기능이 구성되어 있다.
+보고서 작성 단계의 [실제 AI 대화](docs/F03A_LEARNING_CHAT.md)는 별도 기능 브랜치에서 구현했으며 통합 상태와 검증 범위는 해당 기록을 따른다.
 제품 기능의 구현 범위와 진행 상태는 [개발 계획](docs/FEATURE_BACKLOG.md)을 참고한다.
 
 ## 로컬 실행
@@ -48,6 +49,7 @@ Ctrl+C는 이 실행기가 시작한 프로세스만 종료한다. DB와 영속 
 | `npm run check:api` | JUnit·실제 PostgreSQL Testcontainers·JAR build |
 | `npm run test:e2e` | 빌드된 실제 웹·API 서버를 시작해 Playwright 검사 |
 | `npm run check` | 계약·웹·API·E2E 전체 검사(AI 비활성) |
+| `npm run test:chat:ai` | 가상 자료로 실제 AI 대화·PostgreSQL 저장/복원 검사(키 필요) |
 | `npm run test:flow:ai` | 가상 과제의 실제 AI 평가·결과 복원 브라우저 검사(키 필요) |
 
 ## 검증

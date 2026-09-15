@@ -3,7 +3,8 @@
 AI 활용 역량 훈련 서비스. 현재 1인 개발로 진행하며 기능별로 화면·API·DB·테스트까지 함께 구현·검증한다.
 실행 환경, 과제 조회·로그인·보고서 작성/최초 제출·검산 검토·INITIAL AI 평가·결과 조회를 통합한다.
 디자인 기준은 docs/design/README.md, 통합·검증 범위는 docs/I01_INTEGRATION.md다.
-채팅·되묻기·FINAL 평가·비교 리포트, 전체 22개 테이블 migration/seed와 평가 품질 검수는 후속이며 완료로 표시하지 않는다.
+F03a는 WRITING 단계의 실제 AI 대화를 별도 브랜치에서 구현한다(docs/F03A_LEARNING_CHAT.md).
+대화의 평가 입력 연결·되묻기·FINAL 평가·비교 리포트, 전체 22개 테이블 migration/seed와 평가 품질 검수는 후속이며 완료로 표시하지 않는다.
 
 ## Git
 - main은 배포 기준, develop은 통합 기준이다. 두 브랜치에서 직접 기능 개발 금지.

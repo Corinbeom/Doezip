@@ -137,6 +137,8 @@ reviews[]
 
 ## 5. 채팅 SSE
 
+F03a의 현재 구현 범위는 ACTIVE/WRITING이다. includeCurrentDraft는 서버에 저장된 초안만 선택적으로 포함하며 기본 false다. 세션당 20회 요청을 허용하므로 기본 목록 50개로 현재 전체 이력을 복원한다. 조회 페이지네이션 계약도 처리한다. 자세한 제한·검증은 [F03a](F03A_LEARNING_CHAT.md)를 따른다.
+
 ### 5.1 정상 응답
 
 `Content-Type: text/event-stream`, `Cache-Control: no-store`. 프론트 `fetch` streaming parser 사용.

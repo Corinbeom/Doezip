@@ -25,12 +25,19 @@ dependencies {
     testImplementation 'org.testcontainers:postgresql'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
-tasks.named('test') { useJUnitPlatform { excludeTags 'live-ai' } }
+tasks.named('test') { useJUnitPlatform { excludeTags 'live-ai', 'live-chat' } }
 tasks.named('bootJar') { archiveFileName = 'doezip-api.jar' }
 
 tasks.register('aiSmoke', Test) {
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath
     useJUnitPlatform { includeTags 'live-ai' }
+    outputs.upToDateWhen { false }
+}
+
+tasks.register('chatSmoke', Test) {
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform { includeTags 'live-chat' }
     outputs.upToDateWhen { false }
 }

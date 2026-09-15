@@ -178,3 +178,6 @@ F05a: SessionIntegrationTest의 평가·lease 검사와 tests/e2e/evaluation.spe
 
 ## I01 한 checkout 통합 검증
 기본 전체 검사는 npm run check, 선택적 실제 AI 브라우저 검사는 npm run test:flow:ai다. 가상 과제·테스트 JWT를 사용하며 실제 Gemini/DB/worker/결과 API는 대체하지 않는다. Google OAuth 공급자 화면의 실제 로그인과 모델 품질 평가는 별도다. 실행 결과와 이전 브랜치 관계는 [I01 기록](I01_INTEGRATION.md)을 따른다.
+
+## F03a 학습용 AI 대화
+기본 `npm run check`는 실제 AI를 비활성화한다. PostgreSQL의 대화 저장/소유권/멱등/취소 경합/단계/예산 검사, Google SDK HTTP 스트리밍 검사, 웹 SSE 파서와 화면 테스트를 포함한다. 브라우저 성공 채팅은 명시적 UI 경계 모의 응답이며 AI 미설정 오류와 보고서 보존은 실제 API로 검증한다. `npm run test:chat:ai`는 별도로 실제 Gemini+Testcontainers PostgreSQL을 검증한다. [실행 기록](F03A_LEARNING_CHAT.md).

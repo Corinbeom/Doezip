@@ -41,6 +41,8 @@ public class SecurityConfig {
         CorsConfiguration documents = new CorsConfiguration(me);
         documents.setAllowedMethods(List.of("GET", "POST"));
         source.registerCorsConfiguration("/api/v1/sessions/*/document-versions", documents);
+        source.registerCorsConfiguration("/api/v1/sessions/*/messages", documents);
+        source.registerCorsConfiguration("/api/v1/sessions/*/messages/*/cancel", bootstrap);
         source.registerCorsConfiguration("/api/v1/sessions/*/challenge", bootstrap);
         source.registerCorsConfiguration("/api/v1/challenge-runs/*", me);
         source.registerCorsConfiguration("/api/v1/challenge-runs/*/reviews", draft);
@@ -56,7 +58,9 @@ public class SecurityConfig {
             response.setHeader("Cache-Control", "no-store");
             mapper.writeValue(response.getOutputStream(), new ApiError("UNAUTHORIZED", "인증이 필요합니다.", RequestIdFilter.id(request)));
         };
-        return http.csrf(c -> c.ignoringRequestMatchers(org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/me/bootstrap"),
+        return http.csrf(c -> c.ignoringRequestMatchers(
+                org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/sessions/*/messages"),
+                org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/sessions/*/messages/*/cancel"),org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/me/bootstrap"),
                 org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/sessions"),
                 org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.PUT, "/api/v1/sessions/*/draft"),
                 org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/sessions/*/document-versions"),
@@ -71,8 +75,8 @@ public class SecurityConfig {
             .formLogin(AbstractHttpConfigurer::disable).httpBasic(AbstractHttpConfigurer::disable)
             .requestCache(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(c -> c.requestMatchers(HttpMethod.GET, "/actuator/health", "/api/v1/tasks", "/api/v1/tasks/*").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/me", "/api/v1/sessions/*/workspace", "/api/v1/sessions/*/materials/*", "/api/v1/sessions/*/document-versions", "/api/v1/challenge-runs/*", "/api/v1/evaluations/*", "/api/v1/reports/*").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/v1/me/bootstrap", "/api/v1/sessions", "/api/v1/sessions/*/document-versions", "/api/v1/sessions/*/challenge", "/api/v1/challenge-runs/*/submit", "/api/v1/sessions/*/evaluations", "/api/v1/evaluations/*/retry").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/v1/sessions/*/messages", "/api/v1/me", "/api/v1/sessions/*/workspace", "/api/v1/sessions/*/materials/*", "/api/v1/sessions/*/document-versions", "/api/v1/challenge-runs/*", "/api/v1/evaluations/*", "/api/v1/reports/*").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/v1/sessions/*/messages", "/api/v1/sessions/*/messages/*/cancel", "/api/v1/me/bootstrap", "/api/v1/sessions", "/api/v1/sessions/*/document-versions", "/api/v1/sessions/*/challenge", "/api/v1/challenge-runs/*/submit", "/api/v1/sessions/*/evaluations", "/api/v1/evaluations/*/retry").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/v1/sessions/*/draft", "/api/v1/challenge-runs/*/reviews").authenticated()
                 .anyRequest().denyAll())
             .exceptionHandling(c -> c

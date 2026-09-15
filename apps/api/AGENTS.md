@@ -26,3 +26,5 @@
 - 결과 발행은 ResultPublisher의 session → evaluation 잠금·최종 lease CAS 안에서 결과/관찰/리포트/세션을 원자 처리한다. 외부 후보는 ResultValidator를 통과해야 하며 실패를 성공으로 대체하지 않는다. F05B_EVALUATION_RESULTS.md의 정답 미확정·공개 투영 경계를 따른다.
 
 - AI 호출은 GeminiEvaluationAdapter에 격리한다. snapshot의 모델/프롬프트 버전을 사용하고 키를 저장하지 않는다. 외부 호출 전 DB 예산을 예약한다. SDK 재시도 1회·60초 HTTP timeout·도구 비활성화를 유지한다. 실제 호출 검사는 명시적 npm run test:ai로 실행하며 기본 검사는 AI 비활성화다. 일반 실행의 AI_EVALUATION_ENABLED=true는 실제 worker 호출을 허용한다.
+
+- 학습용 채팅은 GeminiChatAdapter로 격리하며 평가 adapter와 입력을 섞지 않는다. F03a의 공개 context·완료 대화·초안 opt-in·terminal CAS·예산·세션 잠금 규칙은 docs/F03A_LEARNING_CHAT.md를 따른다. 실제 호출은 npm run test:chat:ai, 기본 검사는 AI_CHAT_ENABLED=false다.

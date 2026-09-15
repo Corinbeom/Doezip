@@ -56,3 +56,10 @@ app:
     model: ${AI_EVALUATION_MODEL:gemini-3.5-flash-lite}
     daily-call-limit: ${AI_EVALUATION_DAILY_CALL_LIMIT:10}
     global-daily-call-limit: ${AI_EVALUATION_GLOBAL_DAILY_CALL_LIMIT:50}
+
+  chat:
+    enabled: ${AI_CHAT_ENABLED:false}
+    api-key: ${GEMINI_API_KEY:}
+    model: ${AI_CHAT_MODEL:gemini-3.5-flash-lite}
+    daily-call-limit: ${AI_CHAT_DAILY_CALL_LIMIT:20}
+    global-daily-call-limit: ${AI_CHAT_GLOBAL_DAILY_CALL_LIMIT:100}
