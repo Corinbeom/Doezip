@@ -2,7 +2,7 @@
 
 AI 활용 역량 훈련 서비스.
 현재 저장소에는 Next.js 웹, Spring Boot API, PostgreSQL 개발 환경과 과제 조회·로그인·보고서 작성·최초 제출·검산 초안 열람·검토 저장·제출·Gemini INITIAL 평가·결과 조회 기능이 구성되어 있다.
-이 브랜치는 보고서·구현 과제의 훈련/모의 전형, 내 결과물 검증, 제출 후 직접 설명과 근거 중심 피드백·재연습을 연결한다. 현재 흐름과 경계는 [P01 기록](docs/P01_LEARNING_FLOW.md), 이전 통합은 [I02 기록](docs/I02_UNIFIED_WORKSPACE.md)을 따른다.
+이 브랜치는 보고서·구현 과제의 훈련/모의 전형, 내 결과물 검증, 제출 후 직접 설명과 근거 중심 피드백·재연습을 연결한다. 단계형 화면과 훈련 안내 기준은 [P02 기록](docs/P02_GUIDED_WORKSPACE.md), 핵심 흐름과 경계는 [P01 기록](docs/P01_LEARNING_FLOW.md), 이전 통합은 [I02 기록](docs/I02_UNIFIED_WORKSPACE.md)을 따른다.
 제품 기능의 구현 범위와 진행 상태는 [개발 계획](docs/FEATURE_BACKLOG.md)을 참고한다.
 
 ## 로컬 실행
@@ -13,7 +13,7 @@ Git이 필요하다. 아래 명령은 macOS/Linux/WSL 셸 기준이다. Windows�
 ```bash
 git clone https://github.com/Corinbeom/Doezip.git
 cd Doezip
-# 공유된 I02 기준 브랜치. P01은 아직 로컬 구현/검증 중이다.
+# 공유된 I02 기준 브랜치. P01·P02는 로컬 작업이며 원격 공유 전이다.
 git switch feature/I02-unified-workspace
 # nvm을 사용하는 경우
 nvm install
@@ -23,6 +23,8 @@ cp .env.example .env
 npm run db:up
 npm run dev
 ```
+
+현재 사용자 확인 환경은 **http://localhost:3189/learn**으로 고정한다. 아래 3000/8080은 새 clone의 기본값이며, 기존 로컬 `.env`를 덮어쓰지 않는다.
 
 현재 로컬 checkout에서는 `npm install`부터 실행한다. CI와 lockfile 그대로 재설치할 때는 `npm ci`를 쓴다.
 P01 작업 공간에서는 http://localhost:3000/learn 에서 새 과제를 시작한다. API·PostgreSQL 연결 확인은 http://localhost:3000/environment 다.

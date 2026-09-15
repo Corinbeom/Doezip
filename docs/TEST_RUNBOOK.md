@@ -193,3 +193,6 @@ F05a: SessionIntegrationTest의 평가·lease 검사와 tests/e2e/evaluation.spe
 
 ## P01 새 수행 흐름
 `npm run check`에 두 과제×두 모드의 실제 저장/인용/제출/직접 설명/평가 미설정 복원 E2E, API 소유권·CAS·불변 snapshot·비동기 평가 token·재연습 검사와 피드백 근거 검증을 포함한다. 기본 검사는 실제 AI를 호출하지 않는다. `npm run test:learning:ai`는 별도 가상 공개 입력 4회 실제 호출이다. [P01 명세](P01_LEARNING_FLOW.md)를 따른다.
+
+## P02 UI 회귀
+P01과 같은 전체 check 명령을 별도 테스트 DB에서 실행한다. 새 learning-flow E2E는 네 모드·유형 조합의 단계 이동·저장·제출을 확인하며, 추가 사례는 미저장 코드/질문/검증 버퍼의 단계·모바일 탭 전환 보존, 가로 넘침, reduced-motion 및 이동만으로 제출되지 않음을 확인한다. 실제 Google·AI는 기본 검사에 포함하지 않는다.

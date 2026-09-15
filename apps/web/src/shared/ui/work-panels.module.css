@@ -1,0 +1,15 @@
+.workspace { min-width:0; }
+.columns { display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); gap:16px; height:clamp(460px,65dvh,820px); }
+.side { display:flex; flex-direction:column; min-height:0; min-width:0; }
+.scroll,.artifact { overflow:auto; min-width:0; min-height:0; overscroll-behavior:contain; scrollbar-gutter:stable; }
+.scroll { flex:1; }
+.scroll[hidden] { display:none; }
+.desktopTabs,.mobileTabs { display:flex; gap:8px; padding:0 0 10px; flex-shrink:0; }
+.desktopTabs button[aria-pressed=false],.mobileTabs button[aria-pressed=false] { background:var(--soft);color:var(--green); }
+.mobileTabs { display:none; }
+@media(max-width:800px) {
+ .columns { display:block; height:65dvh; min-height:360px; }
+ .side,.artifact { height:100%; }
+ .mobileTabs { display:flex; }
+ .desktopTabs,.mobileHidden { display:none; }
+}

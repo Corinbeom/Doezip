@@ -41,3 +41,5 @@ contracts/openapi.yaml, docs/sources/ERD.md, docs/TEST_RUNBOOK.md.
 
 ## P01 새 과제 흐름
 최신 사용자 합의는 docs/P01_LEARNING_FLOW.md를 따른다. /learn은 두 과제·두 모드의 새 버전이며 기존 세션·제출본을 변경하지 않는다. 별도 검산을 새 과제의 필수 단계로 연결하지 않는다. 결과물 검증·사용자 자기 보고·관찰된 행동을 구분하고 점수나 실력 인증으로 바꾸지 않는다.
+
+P02 단계형 화면 기준은 docs/P02_GUIDED_WORKSPACE.md. 사용자 확인은 3189/8389와 기존 통합 DB로 고정하며 새 worktree마다 로그인 포트를 늘리지 않는다. 자동 검증은 별도 포트·테스트 DB에서 실행한다.
