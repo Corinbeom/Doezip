@@ -22,7 +22,8 @@
     "test:ai": "node scripts/ai-smoke.mjs",
     "test:flow:ai": "node scripts/ai-flow.mjs",
     "test:chat:ai": "node scripts/chat-smoke.mjs",
-    "test:coding:ai": "node scripts/coding-smoke.mjs"
+    "test:coding:ai": "node scripts/coding-smoke.mjs",
+    "test:learning:ai": "node scripts/learning-quality.mjs"
   },
   "devDependencies": {
     "@apidevtools/swagger-parser": "12.1.0",

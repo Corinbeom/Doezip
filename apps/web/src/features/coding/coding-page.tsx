@@ -24,17 +24,18 @@ function Lobby({userId}:{userId:string}){
  async function start(){setBusy(true);setError('');const c=new AbortController();controller.current=c;try{const w=await mutate('','POST',{},c.signal);if(!c.signal.aborted)router.push(`/coding/${w.id}`);}catch(e){if(!c.signal.aborted)setError(message(e));}finally{if(!c.signal.aborted)setBusy(false);}}
  return <section className={styles.panel}><div className={styles.buttons}><button disabled={busy} onClick={()=>void start()}>{busy?'준비 중…':'새 구현 과제 시작'}</button></div>{error&&<p role="alert" className={styles.error}>{error}</p>}<h2>내 작업 이어하기</h2>{list.isPending?<p>불러오는 중…</p>:list.isError?<button onClick={()=>void list.refetch()}>목록 다시 불러오기</button>:list.data.length===0?<p>아직 시작한 작업이 없습니다.</p>:<ul>{list.data.map((id,i)=><li key={id}><Link href={`/coding/${id}`}>작업 {list.data.length-i} 열기</Link></li>)}</ul>}</section>;
 }
-function LoadWorkspace({id,userId}:{id:string;userId:string}){
+export function LoadWorkspace({id,userId,flow=false,onReady}:{id:string;userId:string;flow?:boolean;onReady?:(ready:boolean,version:number,value:string)=>void}){
  const query=useQuery({queryKey:['coding',userId,id],queryFn:({signal})=>getWorkspace(id,signal),meta:{private:true},retry:false});
- return query.isPending?<p>코드를 불러오는 중…</p>:query.isError?<div role="alert"><p>{message(query.error)}</p><button onClick={()=>void query.refetch()}>다시 불러오기</button></div>:<Editor initial={query.data} userId={userId}/>;
+ return query.isPending?<p>코드를 불러오는 중…</p>:query.isError?<div role="alert"><p>{message(query.error)}</p><button onClick={()=>void query.refetch()}>다시 불러오기</button></div>:<Editor initial={query.data} userId={userId} flow={flow} onReady={onReady}/>;
 }
-function Editor({initial,userId}:{initial:Workspace;userId:string}){
+function Editor({initial,userId,flow=false,onReady}:{initial:Workspace;userId:string;flow?:boolean;onReady?:(ready:boolean,version:number,value:string)=>void}){
  const cache=useQueryClient();const [saved,setSaved]=useState(initial);const [code,setCode]=useState(initial.code);const [undo,setUndo]=useState<string|null>(null);
  const [instruction,setInstruction]=useState('');const [explanation,setExplanation]=useState(initial.explanation??'');const [busy,setBusy]=useState('');const [error,setError]=useState('');
  const active=useRef<AbortController|null>(null);const retryAsk=useRef<{requestKey:string;expectedVersion:number;instruction:string}|null>(null);
  useEffect(()=>()=>active.current?.abort(),[]);
  const query=useQuery({queryKey:['coding',userId,initial.id],queryFn:({signal})=>getWorkspace(initial.id,signal),initialData:initial,meta:{private:true},refetchInterval:q=>q.state.data?.turns.some(t=>t.status==='RUNNING')?1500:false});
  const view=query.data;const dirty=code!==saved.code;const locked=!!view.submittedAt;const waiting=view.turns.some(t=>t.status==='RUNNING');
+ useEffect(()=>{onReady?.(!dirty&&!busy&&!waiting&&!!view.lastRun&&view.lastRun.version===saved.version,saved.version,saved.code);},[dirty,busy,waiting,view.lastRun,saved.version,saved.code,onReady]);
  function update(w:Workspace){setSaved(w);cache.setQueryData(['coding',userId,w.id],w);}
  async function work(label:string,fn:(signal:AbortSignal)=>Promise<Workspace>){
   if(busy)return;const c=new AbortController();active.current=c;setBusy(label);setError('');
@@ -53,9 +54,10 @@ function Editor({initial,userId}:{initial:Workspace;userId:string}){
  <div className={styles.grid}><section className={styles.panel}><h2>코드 작성과 검증</h2><label htmlFor="code">solution.js</label><textarea id="code" className={styles.code} spellCheck={false} maxLength={20000} value={code} disabled={locked||!!busy||waiting} onChange={e=>setCode(e.target.value)}/>
  <div className={styles.buttons}><button disabled={locked||!!busy||waiting||!dirty} onClick={()=>void work('저장 중',save)}>코드 저장</button><button disabled={locked||!!busy||waiting} onClick={()=>void work('테스트 실행 중',run)}>저장하고 테스트</button><button disabled={locked||!!busy||waiting||undo===null} onClick={()=>{if(undo!==null){const previous=code;setCode(undo);setUndo(previous);}}}>AI 변경 되돌리기</button></div>
  <h2>공개 테스트 결과</h2><p className={styles.note}>브라우저에서 실제 코드를 실행한 연습 결과입니다. 서버에서 검증한 채점 결과는 아닙니다.</p>{dirty&&view.lastRun&&<p>코드가 변경되었습니다. 다시 테스트하세요.</p>}{view.lastRun?view.lastRun.results.map((r,i)=><div key={i} className={styles.result}><strong>{r.passed?'통과':'실패'} · {r.name}</strong><p>{r.detail}</p></div>):<p>아직 실행하지 않았습니다.</p>}
- <label htmlFor="reason">구현과 검증 설명</label><textarea id="reason" value={explanation} maxLength={4000} disabled={locked||!!busy||waiting} onChange={e=>setExplanation(e.target.value)} placeholder="원인, 수정한 이유, 확인한 테스트와 남은 한계를 설명하세요."/>
+ {!flow&&<><label htmlFor="reason">구현과 검증 설명</label><textarea id="reason" value={explanation} maxLength={4000} disabled={locked||!!busy||waiting} onChange={e=>setExplanation(e.target.value)} placeholder="원인, 수정한 이유, 확인한 테스트와 남은 한계를 설명하세요."/>
  {!locked&&<div className={styles.buttons}><button disabled={!!busy||waiting||dirty||!view.lastRun||!explanation.trim()} onClick={()=>{if(window.confirm('현재 코드와 테스트 기록, 설명을 제출할까요? 제출 후에는 수정할 수 없습니다.'))void work('제출 중',signal=>mutate(`/${initial.id}/submit`,'POST',{expectedVersion:saved.version,explanation},signal));}}>최종 코드 제출</button></div>}
  {locked&&<section><h2>제출 확인</h2><p>코드, 대화, 마지막 테스트 기록과 설명이 저장되었습니다.</p><p>제출된 실행 기록: {view.lastRun?.results.filter(r=>r.passed).length} / {view.lastRun?.results.length}개 통과</p><p className={styles.note}>구현 과제의 AI 역량 평가는 아직 연결되지 않았습니다. 테스트 통과 수를 역량 점수로 사용하지 않습니다.</p></section>}
+ </>}
  </section><section className={styles.panel}><h2>AI와 함께 수정하기</h2><p className={styles.note}>질문을 보내면 현재 코드가 저장되고, 코드·최근 대화·공개 테스트 결과가 AI에 전달됩니다. 수정안은 직접 확인한 뒤 적용하세요.</p>
  <label htmlFor="instruction">AI에게 요청</label><textarea id="instruction" value={instruction} maxLength={4000} disabled={locked||!!busy||waiting} onChange={e=>setInstruction(e.target.value)} placeholder="실패한 테스트를 보고 원인을 설명하고 수정해 줘."/>
  <div className={styles.buttons}><button disabled={locked||!!busy||waiting||!instruction.trim()} onClick={()=>void work('AI 수정안 생성 중',ask)}>AI에게 요청하기</button></div>

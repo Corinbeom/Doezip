@@ -281,3 +281,6 @@ F05c 오류/호출 설정은 [AI 설정](AI_SETUP.md)을 따른다. 공개 Evalu
 
 `/coding-workspaces`와 Coding* 계약을 추가한다. 기존 보고서 세션 API는 변경하지 않는다.
 코드 버전 CAS, AI 요청 key/예산, 브라우저 보고 실행 결과와 제출 잠금은 [F08a](F08A_CODING_WORKSPACE.md)를 따른다.
+
+## P01 버전별 수행 흐름
+`/learning-flows`의 생성/목록/상세, notes/hints/submit/answers/feedback/practice를 추가했다. 모두 인증·소유권이 필요하고 개인 응답은 no-store다. feedback 요청은 비동기 상태를 반환하고 GET으로 조회한다. 모드·단계·버전 및 고정 근거 인터페이스는 OpenAPI와 [P01 명세](P01_LEARNING_FLOW.md)를 따른다. 기존 세션·코딩 계약은 보존하며 새 흐름에 속한 작업의 단독 제출 우회는 409다.

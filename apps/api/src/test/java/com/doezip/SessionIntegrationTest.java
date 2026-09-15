@@ -147,7 +147,7 @@ class SessionIntegrationTest {
       }
     }
     @BeforeEach void setup() throws Exception {
-        database.update("DELETE FROM evaluation_call_budgets"); database.update("DELETE FROM feedback_reports"); database.update("DELETE FROM evaluation_evidence"); database.update("DELETE FROM dimension_evaluations"); database.update("DELETE FROM evaluation_runs"); database.update("DELETE FROM evidence_links"); database.update("DELETE FROM fault_attempts"); database.update("DELETE FROM challenge_runs"); database.update("DELETE FROM challenge_statements"); database.update("DELETE FROM challenge_templates"); database.update("DELETE FROM document_versions"); database.update("DELETE FROM chat_messages"); database.update("DELETE FROM learning_sessions"); database.update("DELETE FROM materials");
+        database.update("DELETE FROM learning_flow_events");database.update("DELETE FROM learning_flows");database.update("DELETE FROM evaluation_call_budgets"); database.update("DELETE FROM feedback_reports"); database.update("DELETE FROM evaluation_evidence"); database.update("DELETE FROM dimension_evaluations"); database.update("DELETE FROM evaluation_runs"); database.update("DELETE FROM evidence_links"); database.update("DELETE FROM fault_attempts"); database.update("DELETE FROM challenge_runs"); database.update("DELETE FROM challenge_statements"); database.update("DELETE FROM challenge_templates"); database.update("DELETE FROM document_versions"); database.update("DELETE FROM chat_messages"); database.update("DELETE FROM learning_sessions"); database.update("DELETE FROM materials");
         database.update("DELETE FROM rubric_dimensions"); database.update("DELETE FROM tasks"); database.update("DELETE FROM users");
         database.update("INSERT INTO tasks(id,task_code,title,description_markdown,status,published_at) VALUES (?,'test-writing','Test','Public task','PUBLISHED',now())", taskId);
         alice=token("alice",c->{}); bob=token("bob",c->{});bootstrap(alice,"{}");bootstrap(bob,"{}");
@@ -856,5 +856,65 @@ class SessionIntegrationTest {
       var response=http.exchange(path(id)+"/messages",HttpMethod.POST,new HttpEntity<>(chatBody(UUID.randomUUID(),"질문",false),headers),String.class);
       assertThat(response.getStatusCode().value()).isEqualTo(503);assertThat(response.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_JSON);assertThat(json(response).get("code").asText()).isEqualTo("CHAT_NOT_CONFIGURED");
       var invalid=http.exchange(path(id)+"/messages",HttpMethod.POST,new HttpEntity<>("{}",headers),String.class);assertThat(invalid.getStatusCode().value()).isEqualTo(400);assertThat(invalid.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_JSON);
+    }
+
+    @org.springframework.test.context.bean.override.mockito.MockitoBean com.doezip.learning.adapter.FlowFeedbackAi flowAi;
+    @Autowired com.doezip.learning.service.FlowService flows;
+    JsonNode newFlow(String kind,String mode)throws Exception {
+      if(kind.equals("REPORT")){
+       UUID tid=com.doezip.learning.service.FlowTasks.REPORT_ID;
+       database.update("INSERT INTO tasks(id,task_code,title,description_markdown,status) VALUES (?,'flow-test','Scenario','Public','PUBLISHED') ON CONFLICT DO NOTHING",tid);
+       material(UUID.randomUUID(),tid,"INITIAL","Flow material","confirmed line\nunknown cause");
+      }
+      var r=request("/api/v1/learning-flows",HttpMethod.POST,alice,mapper.writeValueAsString(Map.of("requestKey",UUID.randomUUID(),"kind",kind,"mode",mode)));
+      assertThat(r.getStatusCode().value()).as(r.getBody()).isEqualTo(200);return json(r);
+    }
+    JsonNode flowNotes(JsonNode f)throws Exception {return json(request("/api/v1/learning-flows/"+f.path("id").asText()+"/notes",HttpMethod.PUT,alice,mapper.writeValueAsString(Map.of("version",f.path("version").asLong(),"notes",Map.of("explanation","I chose this with limits","verification","Not yet verified; need more evidence","citations",List.of())))));}
+    JsonNode sealFlow(JsonNode f)throws Exception {
+      String artifact="function addItem(items,item){return [...items,item];}";long version;
+      if(f.path("kind").asText().equals("REPORT")){artifact="The cause remains unknown.";var saved=json(save(f.path("sessionId").asText(),alice,artifact,0));version=saved.path("lockVersion").asLong();}
+      else {String cp="/api/v1/coding-workspaces/"+f.path("codingId").asText();var saved=json(request(cp,HttpMethod.PUT,alice,mapper.writeValueAsString(Map.of("code",artifact,"expectedVersion",0))));version=saved.path("version").asLong();request(cp+"/runs",HttpMethod.POST,alice,mapper.writeValueAsString(Map.of("version",version,"suite","duplicate-items-v1","results",List.of(Map.of("name","duplicate","passed",false,"detail","still duplicated")))));}
+      f=flowNotes(f);var r=request("/api/v1/learning-flows/"+f.path("id").asText()+"/submit",HttpMethod.POST,alice,mapper.writeValueAsString(Map.of("version",f.path("version").asLong(),"artifactVersion",version,"artifactHash",com.doezip.session.service.SessionService.hash(artifact))));assertThat(r.getStatusCode().value()).as(r.getBody()).isEqualTo(200);return json(r);
+    }
+    @Test void learningFlowsPreserveLegacyAndSeparateModesWithStrictOwnership()throws Exception {
+      for(String kind:List.of("REPORT","CODING"))for(String mode:List.of("TRAINING","SIMULATION")){
+       var f=newFlow(kind,mode);String p="/api/v1/learning-flows/"+f.path("id").asText();
+       assertThat(request(p,HttpMethod.GET,bob,null).getStatusCode().value()).isEqualTo(404);
+       assertThat(request(p+"/answers",HttpMethod.POST,alice,"{\"decision\":\"x\",\"change\":\"y\"}").getStatusCode().value()).isEqualTo(409);
+       assertThat(request(p+"/hints",HttpMethod.POST,alice,"{\"index\":0}").getStatusCode().value()).isEqualTo(mode.equals("TRAINING")?200:409);
+       var sealed=sealFlow(f);assertThat(sealed.path("stage").asText()).isEqualTo("EXPLAIN");assertThat(sealed.path("snapshot").path("records").size()).isGreaterThan(3);
+       assertThat(request(p+"/feedback",HttpMethod.POST,alice,"{}").getStatusCode().value()).isEqualTo(409);
+       assertThat(request(p+"/notes",HttpMethod.PUT,alice,"{\"version\":2,\"notes\":{\"explanation\":\"x\",\"verification\":\"x\",\"citations\":[]}}").getStatusCode().value()).isEqualTo(409);
+       if(kind.equals("REPORT"))assertThat(save(f.path("sessionId").asText(),alice,"late",1).getStatusCode().value()).isEqualTo(409);
+       assertThat(json(request(p+"/answers",HttpMethod.POST,alice,"{\"decision\":\"I cannot explain this yet\",\"change\":\"I need another test\"}")).path("stage").asText()).isEqualTo("FEEDBACK");
+       assertThat(request(p+"/answers",HttpMethod.POST,alice,"{\"decision\":\"changed\",\"change\":\"changed\"}").getStatusCode().value()).isEqualTo(409);
+       assertThat(request(p+"/feedback",HttpMethod.POST,alice,"{}").getStatusCode().value()).isEqualTo(503);
+      }
+    }
+    @Test void learningFlowRejectsStaleArtifactsAndForeignCitations()throws Exception {
+      var f=newFlow("REPORT","TRAINING");String p="/api/v1/learning-flows/"+f.path("id").asText();String sid=f.path("sessionId").asText();
+      var bad=request(p+"/notes",HttpMethod.PUT,alice,mapper.writeValueAsString(Map.of("version",0,"notes",Map.of("explanation","x","verification","x","citations",List.of(Map.of("materialId",hiddenId,"lineStart",1,"lineEnd",1))))));assertThat(bad.getStatusCode().value()).isEqualTo(404);
+      var saved=json(save(sid,alice,"first",0));save(sid,alice,"second",1);f=flowNotes(f);
+      var r=request(p+"/submit",HttpMethod.POST,alice,mapper.writeValueAsString(Map.of("version",f.path("version").asLong(),"artifactVersion",1,"artifactHash",saved.path("contentHash").asText())));assertThat(r.getStatusCode().value()).isEqualTo(409);assertThat(json(request(p,HttpMethod.GET,alice,null)).path("snapshot").isNull()).isTrue();
+      assertThat(request(path(sid)+"/document-versions",HttpMethod.POST,alice,mapper.writeValueAsString(Map.of("checkpoint","INITIAL","expectedDraftLockVersion",2,"expectedContentHash",com.doezip.session.service.SessionService.hash("second")))).getStatusCode().value()).isEqualTo(409);
+    }
+    @Test void learningFeedbackUsesFrozenEvidenceAndCreatesSeparatePractice()throws Exception {
+      var f=sealFlow(newFlow("CODING","TRAINING"));String p="/api/v1/learning-flows/"+f.path("id").asText();UUID id=UUID.fromString(f.path("id").asText());
+      request(p+"/answers",HttpMethod.POST,alice,"{\"decision\":\"I checked the duplicate test\",\"change\":\"I would test updated titles\"}");
+      doReturn(true).when(aiSettings).available();
+      when(flowAi.evaluate(anyString(),any())).thenAnswer(call->{JsonNode input=call.getArgument(1);assertThat(input.path("records").toString()).contains("I checked the duplicate test").doesNotContain("Never leak");var result=mapper.createObjectNode().put("practiceArea","VERIFY");var items=result.putArray("items");for(String area:List.of("REQUEST","VERIFY","IMPROVE","EXPLAIN"))items.addObject().put("area",area).put("observation","This is a submitted record, not proof of ability").put("nextAction","Verify one claim").putArray("recordIds").add("artifact");return result;});
+      assertThat(request(p+"/feedback",HttpMethod.POST,alice,"{}").getStatusCode().value()).isEqualTo(200);
+      JsonNode completed=null;for(int i=0;i<100;i++){completed=json(request(p,HttpMethod.GET,alice,null));if(completed.path("feedbackStatus").asText().equals("SUCCEEDED"))break;Thread.sleep(25);}
+      assertThat(completed.path("feedbackStatus").asText()).isEqualTo("SUCCEEDED");assertThat(completed.path("feedback").path("items").get(0).path("sources").get(0).path("text")).isEqualTo(f.path("snapshot").path("artifact"));
+      var child=json(request(p+"/practice",HttpMethod.POST,alice,"{}"));assertThat(child.path("parentId").asText()).isEqualTo(id.toString());assertThat(child.path("codingId")).isNotEqualTo(f.path("codingId"));assertThat(child.path("stage").asText()).isEqualTo("WORKING");assertThat(json(request(p+"/practice",HttpMethod.POST,alice,"{}")).path("id")).isEqualTo(child.path("id"));
+      assertThatThrownBy(()->database.update("UPDATE learning_flows SET snapshot='{}'::jsonb WHERE id=?",id)).isInstanceOf(org.springframework.dao.DataAccessException.class);
+      request(p+"/feedback",HttpMethod.POST,alice,"{}");verify(flowAi,times(1)).evaluate(anyString(),any());
+    }
+    @Test void learningFeedbackFailureAndExpiredLeaseDoNotPublishSuccess()throws Exception {
+      var f=sealFlow(newFlow("REPORT","TRAINING"));UUID id=UUID.fromString(f.path("id").asText());UUID user=database.queryForObject("SELECT user_id FROM learning_flows WHERE id=?",UUID.class,id);flows.answer(user,id,new com.doezip.learning.dto.FlowDtos.Answers("reason","new condition"));doReturn(true).when(aiSettings).available();
+      var r=flows.reserve(user,id);assertThatThrownBy(()->flows.reserve(user,id)).isInstanceOf(com.doezip.session.service.SessionFailure.class);
+      database.update("UPDATE learning_flows SET feedback_started_at=now()-interval '2 minutes' WHERE id=?",id);assertThat(flows.get(user,id).feedbackStatus()).isEqualTo("FAILED");assertThat(flows.finish(user,id,r.token(),mapper.createObjectNode()).feedbackStatus()).isEqualTo("FAILED");
+      when(flowAi.evaluate(anyString(),any())).thenThrow(new IllegalStateException("PRIVATE_PROVIDER_FAILURE"));request("/api/v1/learning-flows/"+id+"/feedback",HttpMethod.POST,alice,"{}");
+      for(int i=0;i<100;i++){if(flows.get(user,id).feedbackStatus().equals("FAILED"))break;Thread.sleep(25);}assertThat(flows.get(user,id).feedbackStatus()).isEqualTo("FAILED");assertThat(flows.get(user,id).feedback().isNull()).isTrue();
     }
 }

@@ -40,7 +40,7 @@ class EnvironmentIntegrationTest {
         try (var connection = dataSource.getConnection(); var statement = connection.createStatement()) {
             assertThat(connection.getMetaData().getDatabaseProductName()).isEqualTo("PostgreSQL");
             try (var rows = statement.executeQuery("select count(*) from information_schema.tables where table_schema='public' and table_name <> 'flyway_schema_history'")) {
-                rows.next(); assertThat(rows.getInt(1)).isEqualTo(19);
+                rows.next(); assertThat(rows.getInt(1)).isEqualTo(21);
             }
         }
     }

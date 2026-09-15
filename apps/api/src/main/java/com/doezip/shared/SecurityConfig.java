@@ -59,6 +59,9 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/api/v1/coding-workspaces/*/turns",coding);
         source.registerCorsConfiguration("/api/v1/coding-workspaces/*/runs",coding);
         source.registerCorsConfiguration("/api/v1/coding-workspaces/*/submit",coding);
+        source.registerCorsConfiguration("/api/v1/learning-flows",coding);
+        source.registerCorsConfiguration("/api/v1/learning-flows/*",coding);
+        source.registerCorsConfiguration("/api/v1/learning-flows/*/*",coding);
         org.springframework.security.web.AuthenticationEntryPoint unauthorized = (request, response, exception) -> {
             response.setStatus(401); response.setContentType("application/json");
             response.setHeader("WWW-Authenticate", "Bearer");
@@ -66,6 +69,9 @@ public class SecurityConfig {
             mapper.writeValue(response.getOutputStream(), new ApiError("UNAUTHORIZED", "인증이 필요합니다.", RequestIdFilter.id(request)));
         };
         return http.csrf(c -> c.ignoringRequestMatchers(
+                org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/learning-flows"),
+                org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/learning-flows/*/*"),
+                org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.PUT, "/api/v1/learning-flows/*/notes"),
                 org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/sessions/*/messages"),
                 org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/sessions/*/messages/*/cancel"),org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/me/bootstrap"),
                 org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/v1/coding-workspaces"),
@@ -93,6 +99,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET,"/api/v1/coding-workspaces","/api/v1/coding-workspaces/*").authenticated()
                 .requestMatchers(HttpMethod.PUT,"/api/v1/coding-workspaces/*").authenticated()
                 .requestMatchers(HttpMethod.POST,"/api/v1/coding-workspaces","/api/v1/coding-workspaces/*/turns","/api/v1/coding-workspaces/*/runs","/api/v1/coding-workspaces/*/submit").authenticated()
+                .requestMatchers(HttpMethod.GET,"/api/v1/learning-flows","/api/v1/learning-flows/*").authenticated()
+                .requestMatchers(HttpMethod.POST,"/api/v1/learning-flows","/api/v1/learning-flows/*/hints","/api/v1/learning-flows/*/submit","/api/v1/learning-flows/*/answers","/api/v1/learning-flows/*/feedback","/api/v1/learning-flows/*/practice").authenticated()
+                .requestMatchers(HttpMethod.PUT,"/api/v1/learning-flows/*/notes").authenticated()
                 .anyRequest().denyAll())
             .exceptionHandling(c -> c
                 .authenticationEntryPoint(unauthorized)

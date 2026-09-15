@@ -190,3 +190,6 @@ F05a: SessionIntegrationTest의 평가·lease 검사와 tests/e2e/evaluation.spe
 
 ## I02 한 로그인 통합
 보고서 채팅과 구현 작업을 함께 검사한다. 새 환경의 V14/V15 순서 및 한 로그인 이동·저장 복원 검사는 [I02 기록](I02_UNIFIED_WORKSPACE.md)을 따른다.
+
+## P01 새 수행 흐름
+`npm run check`에 두 과제×두 모드의 실제 저장/인용/제출/직접 설명/평가 미설정 복원 E2E, API 소유권·CAS·불변 snapshot·비동기 평가 token·재연습 검사와 피드백 근거 검증을 포함한다. 기본 검사는 실제 AI를 호출하지 않는다. `npm run test:learning:ai`는 별도 가상 공개 입력 4회 실제 호출이다. [P01 명세](P01_LEARNING_FLOW.md)를 따른다.

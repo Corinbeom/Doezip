@@ -1,0 +1,72 @@
+{
+  "case" : "coding-verified",
+  "model" : "gemini-3.5-flash-lite",
+  "input" : {
+    "promptVersion" : "learning-feedback-v1",
+    "task" : {
+      "kind" : "CODING",
+      "title" : "중복 없이 항목 추가하기",
+      "situation" : "목록에 항목을 추가하면 같은 id가 중복되고 원래 배열도 변경됩니다. AI와 원인을 분석하고 addItem 함수를 수정하세요.",
+      "requirements" : [ "유효한 id·title 문자열을 가진 항목을 처리합니다.", "같은 id는 기존 항목과 순서를 유지하고 새 id만 뒤에 추가합니다.", "입력 배열과 기존 항목을 변경하지 않습니다.", "JavaScript 단일 함수만 지원하며 DOM·네트워크·패키지는 사용할 수 없습니다." ],
+      "deliverable" : "코드, 현재 코드의 공개 테스트 기록, 변경 이유와 남은 한계",
+      "questions" : [ "핵심 선택 하나를 왜 채택했고 어떻게 확인했나요? 설명하기 어렵다면 그 부분을 적어도 됩니다.", "같은 id의 새 title로 기존 항목을 갱신해야 한다면 어떤 코드와 테스트를 다시 확인하겠나요?" ],
+      "hints" : [ ]
+    },
+    "mode" : "TRAINING",
+    "hints" : [ ],
+    "records" : [ {
+      "id" : "artifact",
+      "label" : "제출 결과물",
+      "text" : "function addItem(items,item){return items.some(x=>x.id===item.id)?items.slice():[...items,item];}"
+    }, {
+      "id" : "explanation",
+      "label" : "사용자 자기 보고",
+      "text" : "원인 또는 수정안을 바로 확정하지 않고 자료와 테스트로 확인했습니다."
+    }, {
+      "id" : "verification",
+      "label" : "검증 설명 · 자기 보고",
+      "text" : "중복 id와 입력 보존 테스트를 실행했습니다."
+    }, {
+      "id" : "public-run",
+      "label" : "브라우저 보고 공개 테스트 · 독립 채점 아님",
+      "text" : "중복 id 통과, 입력 보존 통과"
+    }, {
+      "id" : "request-1",
+      "label" : "사용자 요청",
+      "text" : "중복을 막고 입력 배열을 바꾸지 않게 수정하고 테스트 방법을 제안해 줘."
+    }, {
+      "id" : "decision",
+      "label" : "직접 설명",
+      "text" : "입력 배열 보존을 위해 복사본을 반환했습니다. 공개 테스트 이외 입력은 검증하지 못했습니다."
+    }, {
+      "id" : "change",
+      "label" : "조건 변경 답변",
+      "text" : "title 갱신 요구가 생기면 같은 id의 갱신과 입력 보존 테스트를 추가해야 합니다."
+    } ],
+    "artifact" : "function addItem(items,item){return items.some(x=>x.id===item.id)?items.slice():[...items,item];}"
+  },
+  "candidate" : {
+    "practiceArea" : "REQUEST",
+    "items" : [ {
+      "area" : "REQUEST",
+      "observation" : "목록 중복 방지와 입력 배열 비변경을 요청했습니다.",
+      "nextAction" : "요구사항을 처리할 함수 형태와 제약 조건을 구체화하여 요청해 보세요.",
+      "recordIds" : [ "request-1" ]
+    }, {
+      "area" : "VERIFY",
+      "observation" : "중복 id와 입력 보존 테스트를 실행했다고 기록했습니다.",
+      "nextAction" : "제안된 코드가 모든 예외 상황을 만족하는지 추가 테스트를 구성해 검증하세요.",
+      "recordIds" : [ "verification", "public-run" ]
+    }, {
+      "area" : "IMPROVE",
+      "observation" : "입력 배열을 복사하여 반환하고 기존 항목 순서를 유지하도록 구현했습니다.",
+      "nextAction" : "title 갱신 요구사항이 추가될 때의 변경 범위를 코드로 직접 작성해 보세요.",
+      "recordIds" : [ "artifact", "change" ]
+    }, {
+      "area" : "EXPLAIN",
+      "observation" : "입력 배열 보존 이유를 설명했으나 공개 테스트 이외 범위는 확인하지 못했습니다.",
+      "nextAction" : "선택한 구현 방식의 한계와 검증하지 못한 영역을 명확히 정리해 설명해 보세요.",
+      "recordIds" : [ "explanation", "decision" ]
+    } ]
+  }
+}

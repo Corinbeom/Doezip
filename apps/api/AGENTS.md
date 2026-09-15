@@ -30,3 +30,5 @@
 - 학습용 채팅은 GeminiChatAdapter로 격리하며 평가 adapter와 입력을 섞지 않는다. F03a의 공개 context·완료 대화·초안 opt-in·terminal CAS·예산·세션 잠금 규칙은 docs/F03A_LEARNING_CHAT.md를 따른다. 실제 호출은 npm run test:chat:ai, 기본 검사는 AI_CHAT_ENABLED=false다.
 
 - coding 코드를 API 프로세스에서 실행하지 않는다. AI 예약은 DB 트랜잭션, 외부 호출은 트랜잭션 밖, 결과는 terminal CAS다. 브라우저가 보고한 실행 결과는 신뢰된 채점으로 승격하지 않는다.
+
+- P01 learning-flows는 소유권·flow CAS·artifact version/hash·직접 설명 선행을 서버에서 검사한다. 저장 이벤트와 제출 snapshot은 같은 artifact 잠금을 공유한다. flow 행은 NO KEY UPDATE로 잠가 artifact 저장의 event FK 잠금과 역순 경합을 피한다. 발행 원문은 snapshot record ID에서만 복원하며 의미 정확성과 구분한다. 새 지침은 새 프롬프트 버전으로 추가한다.

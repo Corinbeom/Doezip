@@ -27,7 +27,9 @@
 .footer > a { font-size: 18px; color: var(--green); font-weight: 750; letter-spacing: -1px; }
 .footerNote { margin-left: auto; }
 @media (max-width: 640px) {
- .headerInner { height: 64px; padding: 0 18px; gap: 16px; }
+ .headerInner { height: auto; min-height: 64px; padding: 10px 18px 0; gap: 0 16px; flex-wrap: wrap; }
+ .navigation { order: 3; flex-basis: 100%; min-height: 42px; gap: 24px; }
+ .navigation a { white-space: nowrap; }
  .brand svg { width: 25px; height: 25px; } .brand > span { font-size: 23px; } .brand small, .tagline, .footerNote { display: none; }
  .navigation a { font-size: 12px; } .footer { padding: 21px 18px; gap: 12px; font-size: 10px; flex-wrap: wrap; }
 }

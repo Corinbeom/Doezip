@@ -4,6 +4,150 @@
  */
 
 export interface paths {
+    "/learning-flows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listLearningFlows"];
+        put?: never;
+        post: operations["createLearningFlow"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/learning-flows/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["learningFlowCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/learning-flows/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getLearningFlow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/learning-flows/{id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["learningFlowNotes"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/learning-flows/{id}/hints": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["learningFlowHints"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/learning-flows/{id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["learningFlowSubmit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/learning-flows/{id}/answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["learningFlowAnswers"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/learning-flows/{id}/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["learningFlowFeedback"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/learning-flows/{id}/practice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["learningFlowPractice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/coding-workspaces": {
         parameters: {
             query?: never;
@@ -507,6 +651,127 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        FlowCreate: {
+            /** Format: uuid */
+            requestKey: string;
+            /** @enum {string} */
+            kind: "REPORT" | "CODING";
+            /** @enum {string} */
+            mode: "TRAINING" | "SIMULATION";
+        };
+        FlowCitation: {
+            /** Format: uuid */
+            materialId: string;
+            lineStart: number;
+            lineEnd: number;
+        };
+        FlowNotes: {
+            explanation: string;
+            verification: string;
+            citations: components["schemas"]["FlowCitation"][];
+        };
+        FlowSave: {
+            version: number;
+            notes: components["schemas"]["FlowNotes"];
+        };
+        FlowSubmit: {
+            version: number;
+            artifactVersion: number;
+            artifactHash: string;
+        };
+        FlowAnswers: {
+            decision: string;
+            change: string;
+        };
+        FlowHint: {
+            index: number;
+        };
+        FlowTask: {
+            kind: string;
+            title: string;
+            situation: string;
+            requirements: string[];
+            deliverable: string;
+            questions: string[];
+            hints: string[];
+        };
+        FlowRecord: {
+            id: string;
+            label: string;
+            text: string;
+        };
+        FlowFeedback: {
+            /** @enum {string} */
+            practiceArea: "REQUEST" | "VERIFY" | "IMPROVE" | "EXPLAIN";
+            items: {
+                /** @enum {string} */
+                area: "REQUEST" | "VERIFY" | "IMPROVE" | "EXPLAIN";
+                observation: string;
+                nextAction: string;
+                recordIds: string[];
+                sources: components["schemas"]["FlowRecord"][];
+            }[];
+        };
+        FlowSnapshot: {
+            artifact: string;
+            records: components["schemas"]["FlowRecord"][];
+            notes: components["schemas"]["FlowNotes"];
+            citations: {
+                /** Format: uuid */
+                materialId: string;
+                lineStart: number;
+                lineEnd: number;
+                quote: string;
+            }[];
+            artifactVersion: number;
+            artifactHash: string;
+            flowVersion: number;
+            task: components["schemas"]["FlowTask"];
+            mode: string;
+            hints: {
+                index: number;
+                text: string;
+            }[];
+            cutoff: string;
+            publicRun?: components["schemas"]["CodingRun"];
+        };
+        LearningFlow: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            kind: "REPORT" | "CODING";
+            /** @enum {string} */
+            mode: "TRAINING" | "SIMULATION";
+            flowVersion: string;
+            /** Format: uuid */
+            sessionId: string | null;
+            /** Format: uuid */
+            codingId: string | null;
+            /** Format: uuid */
+            parentId: string | null;
+            /** @enum {string} */
+            stage: "WORKING" | "EXPLAIN" | "FEEDBACK";
+            version: number;
+            notes: components["schemas"]["FlowNotes"];
+            hints: {
+                index: number;
+                text: string;
+            }[];
+            snapshot: components["schemas"]["FlowSnapshot"] | null;
+            answers: components["schemas"]["FlowAnswers"] | null;
+            feedback: components["schemas"]["FlowFeedback"] | null;
+            /** @enum {string} */
+            feedbackStatus: "READY" | "RUNNING" | "FAILED" | "SUCCEEDED";
+            task: components["schemas"]["FlowTask"];
+            comparison: {
+                label: string;
+                previousArtifact: string;
+                currentArtifact: string;
+                changed: boolean;
+                previousVerification: components["schemas"]["FlowNotes"];
+                currentVerification: components["schemas"]["FlowNotes"];
+            }[];
+        };
         CodingResult: {
             name: string;
             passed: boolean;
@@ -998,6 +1263,240 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    listLearningFlows: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Versioned private learning flow; no-store. Browser tests are not independent grading. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearningFlow"][];
+                };
+            };
+        };
+    };
+    createLearningFlow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FlowCreate"];
+            };
+        };
+        responses: {
+            /** @description Versioned private learning flow; no-store. Browser tests are not independent grading. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearningFlow"];
+                };
+            };
+        };
+    };
+    learningFlowCatalog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Versioned private learning flow; no-store. Browser tests are not independent grading. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FlowTask"][];
+                };
+            };
+        };
+    };
+    getLearningFlow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Versioned private learning flow; no-store. Browser tests are not independent grading. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearningFlow"];
+                };
+            };
+        };
+    };
+    learningFlowNotes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FlowSave"];
+            };
+        };
+        responses: {
+            /** @description Versioned private learning flow; no-store. Browser tests are not independent grading. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearningFlow"];
+                };
+            };
+        };
+    };
+    learningFlowHints: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FlowHint"];
+            };
+        };
+        responses: {
+            /** @description Versioned private learning flow; no-store. Browser tests are not independent grading. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearningFlow"];
+                };
+            };
+        };
+    };
+    learningFlowSubmit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FlowSubmit"];
+            };
+        };
+        responses: {
+            /** @description Versioned private learning flow; no-store. Browser tests are not independent grading. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearningFlow"];
+                };
+            };
+        };
+    };
+    learningFlowAnswers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FlowAnswers"];
+            };
+        };
+        responses: {
+            /** @description Versioned private learning flow; no-store. Browser tests are not independent grading. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearningFlow"];
+                };
+            };
+        };
+    };
+    learningFlowFeedback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Versioned private learning flow; no-store. Browser tests are not independent grading. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearningFlow"];
+                };
+            };
+        };
+    };
+    learningFlowPractice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Versioned private learning flow; no-store. Browser tests are not independent grading. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearningFlow"];
+                };
+            };
+        };
+    };
     listCodingWorkspaces: {
         parameters: {
             query?: never;

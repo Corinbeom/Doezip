@@ -15,6 +15,9 @@ it('allows only known task/coding lists and workspace UUID details as return pat
   expect(safeReturnPath('/sessions/61111111-1111-4111-8111-111111111111')).toBe('/sessions/61111111-1111-4111-8111-111111111111');
   expect(safeReturnPath('/sessions')).toBe('/tasks');
   expect(safeReturnPath('/coding')).toBe('/coding');
+  expect(safeReturnPath('/learn')).toBe('/learn');
+  expect(safeReturnPath('/learn/61111111-1111-4111-8111-111111111111')).toBe('/learn/61111111-1111-4111-8111-111111111111');
+  expect(safeReturnPath('/learn/../auth')).toBe('/tasks');
   expect(safeReturnPath('/coding/61111111-1111-4111-8111-111111111111')).toBe('/coding/61111111-1111-4111-8111-111111111111');
   expect(safeReturnPath('/tasks/61111111-1111-4111-8111-111111111111')).toBe('/tasks/61111111-1111-4111-8111-111111111111');
 });

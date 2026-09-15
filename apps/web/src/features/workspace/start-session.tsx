@@ -20,6 +20,7 @@ function AuthenticatedStart({taskId}:{taskId:string}){
 }
 export function StartSession({taskId}:{taskId:string}){
  const auth=useAuth();
+ if(taskId==='71111111-1111-4111-8111-111111111111')return <Link className={styles.button} href="/learn">훈련·모의 전형 선택하기</Link>;
  if(auth.status==='loading')return <p role="status">로그인 상태를 확인하는 중…</p>;
  if(!auth.user||auth.status!=='connected')return <Link className={styles.button} href={`/login?returnTo=${encodeURIComponent(`/tasks/${taskId}`)}`}>로그인하고 과제 시작하기</Link>;
  return <AuthenticatedStart key={`${auth.user.id}:${taskId}`} taskId={taskId}/>;

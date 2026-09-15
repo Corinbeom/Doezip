@@ -38,3 +38,6 @@ contracts/openapi.yaml, docs/sources/ERD.md, docs/TEST_RUNBOOK.md.
 디자인 상태는 docs/design/README.md. templates/는 원본 참고용, 실제 설정은 루트와 apps/api.
 
 - F08a 코딩 작업은 docs/F08A_CODING_WORKSPACE.md를 따른다. 코드 실행/공개 연습 테스트와 독립 서버 채점·역량 평가를 구분한다.
+
+## P01 새 과제 흐름
+최신 사용자 합의는 docs/P01_LEARNING_FLOW.md를 따른다. /learn은 두 과제·두 모드의 새 버전이며 기존 세션·제출본을 변경하지 않는다. 별도 검산을 새 과제의 필수 단계로 연결하지 않는다. 결과물 검증·사용자 자기 보고·관찰된 행동을 구분하고 점수나 실력 인증으로 바꾸지 않는다.

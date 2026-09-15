@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 @Service
 public class CodingService {
+ @org.springframework.beans.factory.annotation.Autowired private com.doezip.learning.repository.FlowRepository flowRecords;
  private final CodingRepository repo;private final String starter;
  public CodingService(CodingRepository repo){this.repo=repo;try(var in=new ClassPathResource("coding/starter.js").getInputStream()){starter=new String(in.readAllBytes(),StandardCharsets.UTF_8);}catch(Exception e){throw new IllegalStateException(e);}}
  @Transactional public Workspace create(UUID user){
@@ -24,13 +25,13 @@ public class CodingService {
  @Transactional public Workspace save(UUID user,UUID id,Save body){
   writable(user,id,body.expectedVersion());idle(id);String code=body.code().replace("\r\n","\n").replace('\r','\n');
   if(code.contains("\0")||code.codePoints().anyMatch(c->c>=0xD800&&c<=0xDFFF))throw SessionFailure.invalid();
-  repo.save(id,code);return repo.view(id,user);
+  repo.save(id,code);flowRecords.event(id,"CODE_SAVED",Map.of("code",code,"version",body.expectedVersion()+1));return repo.view(id,user);
  }
  @Transactional public Workspace run(UUID user,UUID id,Run body){
   writable(user,id,body.version());idle(id);
   if(!body.suite().equals("duplicate-items-v1"))throw SessionFailure.invalid();
   // Browser-reported public practice checks, never trusted server grading.
-  repo.run(id,body);return repo.view(id,user);
+  repo.run(id,body);flowRecords.event(id,"PUBLIC_TEST",body);return repo.view(id,user);
  }
  @Transactional public Workspace submit(UUID user,UUID id,Submit body){
   var existing=repo.owned(id,user,true);
