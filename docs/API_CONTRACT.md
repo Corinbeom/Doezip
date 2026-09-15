@@ -137,6 +137,8 @@ reviews[]
 
 ## 5. 채팅 SSE
 
+F03a의 현재 구현 범위는 ACTIVE/WRITING이다. includeCurrentDraft는 서버에 저장된 초안만 선택적으로 포함하며 기본 false다. 세션당 20회 요청을 허용하므로 기본 목록 50개로 현재 전체 이력을 복원한다. 조회 페이지네이션 계약도 처리한다. 자세한 제한·검증은 [F03a](F03A_LEARNING_CHAT.md)를 따른다.
+
 ### 5.1 정상 응답
 
 `Content-Type: text/event-stream`, `Cache-Control: no-store`. 프론트 `fetch` streaming parser 사용.
@@ -274,3 +276,8 @@ F05a 구현과 미구현 평가기 경계는 [F05a 기록](F05A_EVALUATION_LIFEC
 F05b GET /reports/{id}는 성공 평가의 소유자만 조회하며 no-store, 타인/없는 ID는 REPORT_NOT_FOUND(404)다. 공개 결과 스키마는 기존 계약을 사용한다. INITIAL 및 DOCUMENT_VERSION/FAULT_ATTEMPT 관찰만 발행하며 FINAL·기타 관찰 대상은 미지원이다. [결과 검증 경계](F05B_EVALUATION_RESULTS.md)를 따른다.
 
 F05c 오류/호출 설정은 [AI 설정](AI_SETUP.md)을 따른다. 공개 Evaluation/Report 계약은 유지하며 원문 제공자 오류나 키를 응답에 넣지 않는다.
+
+## F08a 구현 연습
+
+`/coding-workspaces`와 Coding* 계약을 추가한다. 기존 보고서 세션 API는 변경하지 않는다.
+코드 버전 CAS, AI 요청 key/예산, 브라우저 보고 실행 결과와 제출 잠금은 [F08a](F08A_CODING_WORKSPACE.md)를 따른다.

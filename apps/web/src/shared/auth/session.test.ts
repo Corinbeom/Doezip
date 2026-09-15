@@ -9,11 +9,13 @@ beforeEach(() => {
   window.history.replaceState(null, '', '/auth/callback');
 });
 afterEach(() => vi.unstubAllEnvs());
-it('allows only task list and task/session UUID details as return paths', async () => {
+it('allows only known task/coding lists and workspace UUID details as return paths', async () => {
   const { safeReturnPath } = await import('./session');
-  for (const value of ['https://evil.test', '//evil.test', '/tasks?next=evil', '/tasks/../auth', '/tasks%2Fevil']) expect(safeReturnPath(value)).toBe('/tasks');
+  for (const value of ['https://evil.test', '//evil.test', '/tasks?next=evil', '/tasks/../auth', '/tasks%2Fevil', '/coding?next=evil', '/coding/../auth', '/coding%2Fevil', '/coding/not-a-uuid']) expect(safeReturnPath(value)).toBe('/tasks');
   expect(safeReturnPath('/sessions/61111111-1111-4111-8111-111111111111')).toBe('/sessions/61111111-1111-4111-8111-111111111111');
   expect(safeReturnPath('/sessions')).toBe('/tasks');
+  expect(safeReturnPath('/coding')).toBe('/coding');
+  expect(safeReturnPath('/coding/61111111-1111-4111-8111-111111111111')).toBe('/coding/61111111-1111-4111-8111-111111111111');
   expect(safeReturnPath('/tasks/61111111-1111-4111-8111-111111111111')).toBe('/tasks/61111111-1111-4111-8111-111111111111');
 });
 it('does not initialize an SDK client without configuration', async () => {

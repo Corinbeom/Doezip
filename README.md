@@ -2,6 +2,7 @@
 
 AI 활용 역량 훈련 서비스.
 현재 저장소에는 Next.js 웹, Spring Boot API, PostgreSQL 개발 환경과 과제 조회·로그인·보고서 작성·최초 제출·검산 초안 열람·검토 저장·제출·Gemini INITIAL 평가·결과 조회 기능이 구성되어 있다.
+이 브랜치는 보고서 작성 중 AI 대화와 구현 과제를 한 웹·API·로그인으로 통합한다. 통합 범위와 확인 방법은 [I02 기록](docs/I02_UNIFIED_WORKSPACE.md)을 따른다.
 제품 기능의 구현 범위와 진행 상태는 [개발 계획](docs/FEATURE_BACKLOG.md)을 참고한다.
 
 ## 로컬 실행
@@ -12,8 +13,8 @@ Git이 필요하다. 아래 명령은 macOS/Linux/WSL 셸 기준이다. Windows�
 ```bash
 git clone https://github.com/Corinbeom/Doezip.git
 cd Doezip
-# 통합된 개발 환경을 checkout한다.
-git switch develop
+# I02 통합 브랜치를 checkout한다(develop에는 아직 미반영).
+git switch feature/I02-unified-workspace
 # nvm을 사용하는 경우
 nvm install
 nvm use
@@ -48,6 +49,7 @@ Ctrl+C는 이 실행기가 시작한 프로세스만 종료한다. DB와 영속 
 | `npm run check:api` | JUnit·실제 PostgreSQL Testcontainers·JAR build |
 | `npm run test:e2e` | 빌드된 실제 웹·API 서버를 시작해 Playwright 검사 |
 | `npm run check` | 계약·웹·API·E2E 전체 검사(AI 비활성) |
+| `npm run test:chat:ai` | 가상 자료로 실제 AI 대화·PostgreSQL 저장/복원 검사(키 필요) |
 | `npm run test:flow:ai` | 가상 과제의 실제 AI 평가·결과 복원 브라우저 검사(키 필요) |
 
 ## 검증
@@ -117,3 +119,9 @@ DB를 멈출 때는 `docker compose --env-file .env -f compose.local.yml stop db
 AI 평가 설정과 실행은 [AI_SETUP](docs/AI_SETUP.md), 구현·검증 구분은 [F05c 기록](docs/F05C_AI_EVALUATION.md)을 따른다. `npm run test:ai`는 기본 CI와 분리한 명시적 실제 호출 검사다.
 
 웹과 API는 같은 checkout에서 npm run dev로 실행한다. 이전의 F04c 웹/F05c API 분리 실행은 통합 전 기록이다. 새 기능은 통합된 develop에서 새 feature 브랜치로 시작한다.
+
+## 서비스 내 구현 연습 (F08a)
+
+`/coding`에서 JavaScript 코드 편집, AI 수정안 적용, 공개 테스트 실행, 저장·복원·제출을 제공한다.
+설정과 실행 경계는 [F08a 작업 기록](docs/F08A_CODING_WORKSPACE.md)을 따른다.
+구현 과제의 AI 역량 평가와 범용 개발 환경은 아직 연결하지 않았다.
