@@ -11,6 +11,7 @@ import {execute} from './execute';
 import {formatTestResultDetail} from './test-result-copy';
 import styles from './coding.module.css';
 import {WorkPanels} from '@/shared/ui/work-panels';
+import {CodingAssistant} from './coding-assistant';
 function message(e:unknown){
  const messages:Record<string,string>={CODING_VERSION_CONFLICT:'다른 창에서 저장한 변경이 있습니다. 입력은 유지됩니다. 서버 저장본을 확인하세요.',CODING_AI_NOT_CONFIGURED:'AI 연결이 설정되지 않았습니다. 직접 편집과 테스트는 사용할 수 있습니다.',CODING_AI_FAILED:'AI 응답을 받지 못했습니다. 요청 상태를 확인한 뒤 다시 시도하세요.',CODING_AI_RUNNING:'AI가 응답 중입니다. 완료 후 다시 시도하세요.',CODING_TEST_REQUIRED:'현재 코드를 저장하고 테스트한 뒤 제출하세요.',CODING_AI_LIMIT:'오늘 또는 이 과제의 AI 요청 한도에 도달했습니다.',CODING_SUBMITTED:'이미 제출한 작업입니다. 제출본을 다시 확인하세요.'};
  return e instanceof ApiError?(messages[e.code]??e.message):e instanceof Error?e.message:'요청 처리에 실패했습니다.';
@@ -61,11 +62,7 @@ function Editor({initial,userId,flow=false,onReady}:{initial:Workspace;userId:st
  {locked&&<section><h2>제출 확인</h2><p>코드, 대화, 마지막 테스트 기록과 설명이 저장되었습니다.</p><p>제출된 실행 기록: {view.lastRun?.results.filter(r=>r.passed).length} / {view.lastRun?.results.length}개 통과</p><p className={styles.note}>구현 과제의 AI 역량 평가는 아직 연결되지 않았습니다. 테스트 통과 수를 역량 점수로 사용하지 않습니다.</p></section>}
  </>}
  </section>;
- const assistant=<section className={styles.panel}><h2>AI와 함께 수정하기</h2><p className={styles.note}>질문을 보내면 현재 코드가 저장되고, 코드·최근 대화·공개 테스트 결과가 AI에 전달됩니다. 수정안은 직접 확인한 뒤 적용하세요.</p>
- <label htmlFor="instruction">AI에게 요청</label><textarea id="instruction" value={instruction} maxLength={4000} disabled={locked||!!busy||waiting} onChange={e=>setInstruction(e.target.value)} placeholder="실패한 테스트를 보고 원인을 설명하고 수정해 줘."/>
- <div className={styles.buttons}><button disabled={locked||!!busy||waiting||!instruction.trim()} onClick={()=>void work('AI 수정안 생성 중',ask)}>AI에게 요청하기</button></div>
- {view.turns.length===0&&<p>먼저 테스트하고, 실패한 이유를 AI에게 물어보세요.</p>}{view.turns.map(turn=><article className={styles.turn} key={turn.id}><strong>나의 요청</strong><p style={{whiteSpace:'pre-wrap'}}>{turn.instruction}</p><strong>AI 응답</strong><p style={{whiteSpace:'pre-wrap'}}>{turn.status==='RUNNING'?'수정안을 준비하고 있습니다…':turn.explanation}</p>{turn.proposedCode!==null&&<><details><summary>변경 전 코드</summary><pre>{turn.baseCode}</pre></details><details open><summary>제안된 코드 전체</summary><pre>{turn.proposedCode}</pre></details><button disabled={locked||!!busy||waiting||dirty||saved.version!==turn.baseVersion} onClick={()=>apply(turn)}>이 수정안 적용</button></>}</article>)}
- </section>;
+ const assistant=<CodingAssistant turns={view.turns} instruction={instruction} locked={locked} waiting={waiting} busy={!!busy} onInstruction={setInstruction} onAsk={()=>void work('AI 수정안 생성 중',ask)} onApply={apply} canApply={turn=>!locked&&!busy&&!waiting&&!dirty&&saved.version===turn.baseVersion}/>;
  return <>{!flow&&<p><Link href="/coding">내 구현 과제 목록</Link></p>}<p role="status">{locked?'제출 완료 · 읽기 전용':busy||waiting?'처리 중…':dirty?'저장하지 않은 변경이 있습니다.':'저장됨'}</p>{error&&<div role="alert" className={styles.error}>{error}<div className={styles.buttons}><button disabled={!!busy} onClick={()=>{if(window.confirm('저장하지 않은 변경을 버리고 서버 저장본을 불러올까요?'))window.location.reload();}}>서버 저장본 불러오기</button></div></div>}
 {flow?<WorkPanels artifact={artifact} assistant={assistant}/>:<div className={styles.grid}>{artifact}{assistant}</div>}</>;
 }

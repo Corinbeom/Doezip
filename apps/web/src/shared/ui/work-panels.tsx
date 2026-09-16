@@ -18,7 +18,7 @@ export function WorkPanels({reference,assistant,artifact}:{reference?:ReactNode;
      <button type="button" aria-pressed={left==='assistant'} onClick={()=>setLeft('assistant')}>AI 대화</button>
     </nav>
     {reference&&<div className={styles.scroll} hidden={left!=='reference'} tabIndex={0} aria-label="자료 패널">{reference}</div>}
-    <div className={styles.scroll} hidden={left!=='assistant'} tabIndex={0} aria-label="AI 대화 패널">{assistant}</div>
+    <div className={`${styles.scroll} ${styles.assistantScroll}`} hidden={left!=='assistant'} tabIndex={0} aria-label="AI 대화 패널">{assistant}</div>
    </aside>
    <div className={`${styles.artifact} ${mobile!=='artifact'?styles.mobileHidden:''}`} tabIndex={0} aria-label="결과물 패널">{artifact}</div>
   </div>

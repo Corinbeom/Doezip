@@ -16,8 +16,6 @@
 .page :focus-visible { outline:3px solid #9aab50; outline-offset:3px; }
 .note { color:var(--muted); font-size:14px; }
 .error { color:#a12b25; padding:12px; background:#fff2ed; border-radius:8px; overflow-wrap:anywhere; }
-.turn { border-top:1px solid var(--line); margin-top:20px; padding-top:18px; overflow-wrap:anywhere; }
-.turn pre { overflow:auto; max-height:250px; font:13px/1.6 ui-monospace,monospace; padding:12px; background:var(--soft); }
 .result { padding:10px 0; border-bottom:1px solid var(--line); }
 .codeHeading { display:flex; align-items:center; justify-content:space-between; gap:12px; }.codeHeading h2 { margin:0; }
 .expandButton { display:none; }

@@ -15,8 +15,16 @@ it('preserves failed input and retries the same key; a completed reply restores 
  await waitFor(()=>expect(screen.getByRole('button',{name:'같은 요청 다시 확인'})).toBeEnabled());expect(screen.getByLabelText('AI에게 질문하기')).toHaveValue('내 질문');fireEvent.click(screen.getByRole('button',{name:'같은 요청 다시 확인'}));
  await waitFor(()=>expect(screen.getByText(answer.contentText)).toBeVisible());expect(container.querySelector('script')).toBeNull();expect(vi.mocked(sendMessage).mock.calls[0][1].clientMessageKey).toBe(vi.mocked(sendMessage).mock.calls[1][1].clientMessageKey);expect(client.getQueryCache().getAll()[0].meta?.private).toBe(true);
 });
+it('looks and behaves like a conversation before the first request',async()=>{
+ mount();await waitFor(()=>expect(screen.getByRole('button',{name:'대화 새로 불러오기'})).toBeEnabled());
+ expect(screen.getByRole('region',{name:'AI와 분석하기'})).toBeVisible();expect(screen.getByRole('log',{name:'AI 대화 기록'})).toBeVisible();expect(screen.getByText(/어떤 판단이 필요한지 알려 주세요/)).toBeVisible();
+ fireEvent.click(screen.getByRole('button',{name:'자료에서 확인된 사실과 아직 모르는 점을 나눠 줘.'}));expect(screen.getByLabelText('AI에게 질문하기')).toHaveValue('자료에서 확인된 사실과 아직 모르는 점을 나눠 줘.');
+});
 it('requires a saved draft for opt-in and never includes it by default',async()=>{
  mount(false);await waitFor(()=>expect(screen.getByRole('button',{name:'대화 새로 불러오기'})).toBeEnabled());fireEvent.change(screen.getByLabelText('AI에게 질문하기'),{target:{value:'질문'}});expect(screen.getByLabelText('저장된 내 보고서 초안도 AI에게 전달')).not.toBeChecked();fireEvent.click(screen.getByLabelText('저장된 내 보고서 초안도 AI에게 전달'));expect(screen.getByRole('button',{name:'질문 보내기'})).toBeDisabled();expect(sendMessage).not.toHaveBeenCalled();
+});
+it('does not let Enter bypass a disabled send action after history loading fails',async()=>{
+ vi.mocked(listMessages).mockRejectedValue(new Error('offline'));mount();await screen.findByText(/저장된 대화를 불러오지 못했습니다/);const input=screen.getByLabelText('AI에게 질문하기');fireEvent.change(input,{target:{value:'보내면 안 되는 질문'}});fireEvent.keyDown(input,{key:'Enter'});expect(sendMessage).not.toHaveBeenCalled();
 });
 it('restores a running request, can cancel it, and preserves terminal state',async()=>{
  vi.mocked(listMessages).mockResolvedValue({items:[{...answer,status:'STREAMING',completedAt:null}],nextAfterSeq:null});vi.mocked(cancelMessage).mockImplementation(async()=>{vi.mocked(listMessages).mockResolvedValue({items:[{...answer,status:'CANCELLED'}],nextAfterSeq:null});return {...answer,status:'CANCELLED'};});mount();fireEvent.click(await screen.findByRole('button',{name:'응답 생성 중지'}));expect(await screen.findByText('생성 중지')).toBeVisible();expect(cancelMessage).toHaveBeenCalledWith('session',id);expect(screen.queryByRole('button',{name:'응답 생성 중지'})).not.toBeInTheDocument();

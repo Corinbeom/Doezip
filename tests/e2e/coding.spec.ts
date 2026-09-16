@@ -12,7 +12,7 @@ test('code practice executes real code, persists results, restores and seals sub
  await expect(page.getByText(/예상: 항목 1개 \(a · 기존\)/).first()).toBeVisible();
  await expect(page.getByText(/\[\{"id"/)).toHaveCount(0);
  await page.getByRole('textbox',{name:'AI에게 요청',exact:true}).fill('실패 원인을 설명하고 수정해 줘');
- await page.getByRole('button',{name:'AI에게 요청하기'}).click();
+ await page.getByRole('button',{name:'질문 보내기',exact:true}).click();
  await expect(page.getByRole('main').getByRole('alert')).toContainText('AI 연결이 설정되지 않았습니다');
  await page.getByRole('textbox',{name:'solution.js'}).fill(fixed);
  await page.getByRole('button',{name:'저장하고 테스트'}).click();

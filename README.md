@@ -2,7 +2,7 @@
 
 AI 활용 역량 훈련 서비스.
 현재 저장소에는 Next.js 웹, Spring Boot API, PostgreSQL 개발 환경과 과제 조회·로그인·보고서 작성·최초 제출·검산 초안 열람·검토 저장·제출·Gemini INITIAL 평가·결과 조회 기능이 구성되어 있다.
-이 브랜치는 보고서·구현 과제의 훈련/모의 전형, 내 결과물 검증, 제출 후 직접 설명과 근거 중심 피드백·재연습을 연결한다. 힌트·원문 선택·피드백 읽기 기준은 [P03 기록](docs/P03_FEEDBACK_EXPERIENCE.md), 단계형 화면과 훈련 안내 기준은 [P02 기록](docs/P02_GUIDED_WORKSPACE.md), 핵심 흐름과 경계는 [P01 기록](docs/P01_LEARNING_FLOW.md), 이전 통합은 [I02 기록](docs/I02_UNIFIED_WORKSPACE.md)을 따른다.
+이 브랜치는 보고서·구현 과제의 훈련/모의 전형, 내 결과물 검증, 제출 후 직접 설명과 근거 중심 피드백·재연습을 연결한다. AI 대화 화면은 [P05 기록](docs/P05_AI_WORKSPACE.md), 브라우저 품질 점검은 [P04 기록](docs/P04_PRODUCT_QUALITY.md), 힌트·원문 선택·피드백 읽기 기준은 [P03 기록](docs/P03_FEEDBACK_EXPERIENCE.md), 단계형 화면과 훈련 안내 기준은 [P02 기록](docs/P02_GUIDED_WORKSPACE.md), 핵심 흐름과 경계는 [P01 기록](docs/P01_LEARNING_FLOW.md), 이전 통합은 [I02 기록](docs/I02_UNIFIED_WORKSPACE.md)을 따른다.
 제품 기능의 구현 범위와 진행 상태는 [개발 계획](docs/FEATURE_BACKLOG.md)을 참고한다.
 
 ## 로컬 실행
@@ -27,7 +27,7 @@ npm run dev
 현재 사용자 확인 환경은 **http://localhost:3189/learn**으로 고정한다. 아래 3000/8080은 새 clone의 기본값이며, 기존 로컬 `.env`를 덮어쓰지 않는다.
 
 현재 로컬 checkout에서는 `npm install`부터 실행한다. CI와 lockfile 그대로 재설치할 때는 `npm ci`를 쓴다.
-P01 작업 공간에서는 http://localhost:3000/learn 에서 새 과제를 시작한다. API·PostgreSQL 연결 확인은 http://localhost:3000/environment 다.
+새 clone의 기본 웹에서는 http://localhost:3000/learn 에서 과제를 시작한다. API·PostgreSQL 연결 확인은 http://localhost:3000/environment 다.
 API 운영 health: http://localhost:8080/actuator/health (`UP`: 200 / DB 장애 `DOWN`: 503, 상세 비공개).
 웹 http://localhost:3000/tasks 에서 로컬 조회용 가상 과제의 설명과 공개 루브릭을 확인한다.
 공개 과제 조회 외에 인증된 사용자 연결 POST `/api/v1/me/bootstrap`, 조회 GET `/api/v1/me`를 제공한다. 과제 시작·공개 자료 열람·보고서 저장/복원 API도 제공한다. [F02b 범위](docs/F02B_REPORT_DRAFT.md)를 참고한다. 저장한 초안의 최초 제출·불변 제출본 조회는 [F02c 범위](docs/F02C_INITIAL_SUBMISSION.md)를 따른다. [F04a 검산 시작·열람](docs/F04A_CHALLENGE_START.md)을 제공하며 [F04b 검토 저장·제출](docs/F04B_CHALLENGE_REVIEW.md)도 제공한다. INITIAL 평가 요청·상태 조회와 저장된 결과 조회도 제공한다. FINAL 등 미구현 경로는 차단된다.
