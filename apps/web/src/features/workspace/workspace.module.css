@@ -3,3 +3,4 @@
 .container button:focus-visible,.container a:focus-visible{outline:3px solid var(--green);outline-offset:3px}.container [role=alert]{color:#a73f31}
 
 .submission{margin-top:24px;padding:24px;background:var(--surface);border:1px solid var(--line);border-radius:16px}.submission h2{font-size:21px;font-weight:650}.submission p{margin:12px 0;line-height:1.7}.submission button{margin:8px 12px 8px 0}.document{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.8;font:inherit;padding:20px;background:var(--soft);border-radius:10px;margin-top:12px}.metadata{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;margin:18px 0;font-size:14px}.metadata dt{color:var(--muted)}.metadata dd{overflow-wrap:anywhere}.submission summary{cursor:pointer;color:var(--green)}
+.flowReportPanel{display:flex;flex-direction:column;height:100%;box-sizing:border-box}.flowReportPanel textarea{flex:1;min-height:160px;resize:none}
