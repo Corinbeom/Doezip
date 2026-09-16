@@ -4,7 +4,7 @@ import { parseEnv } from 'node:util';
 const env = { ...(existsSync('.env') ? parseEnv(readFileSync('.env', 'utf8')) : {}), ...process.env };
 export const apiBase = `http://localhost:${env.API_PORT ?? '8080'}/api/v1`;
 export const sampleTaskId = '61111111-1111-4111-8111-111111111113';
-export async function testIdentity(request: APIRequestContext, user: 'alice' | 'bob' = 'alice') {
+export async function testIdentity(request: APIRequestContext, user: 'alice' | 'bob' | `flow-${string}` = 'alice') {
   const response = await request.get(`http://127.0.0.1:${env.E2E_AUTH_PORT ?? '8799'}/session?user=${user}`);
   if (!response.ok()) throw new Error('Local fixture issuer unavailable');
   const session = await response.json();

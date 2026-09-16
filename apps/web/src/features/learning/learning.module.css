@@ -12,9 +12,9 @@
 .detailPage .flowHeader { margin:12px 0; padding:0; }
 .flowHeader h1 { font-size:23px; margin:4px 0; }
 .flowHeader p,.flowHeader strong { font-size:13px; }
-.hints { margin:8px 0; padding:10px 14px; background:var(--soft); border-radius:10px; }
-.hints summary { cursor:pointer; }
 .page fieldset:has(> div > nav[aria-label="작업 패널 선택"]) { border:0; padding:0; margin:0; min-width:0; }
 
 .detailPage .flowHeader p { margin:4px 0; }
 .detailPage .flowHeader h1 { font-size:21px; margin:6px 0; }
+.feedbackStage { margin:24px 0; }
+.feedbackTitle { max-width:980px; margin:0 auto; font-size:14px; color:var(--muted); }
