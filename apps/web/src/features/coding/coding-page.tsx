@@ -8,6 +8,7 @@ import {LearningShell} from '@/shared/ui/learning-shell';
 import {ApiError} from '@/shared/api/client';
 import {getWorkspace,listWorkspaces,mutate,type Workspace,type Turn} from './api';
 import {execute} from './execute';
+import {formatTestResultDetail} from './test-result-copy';
 import styles from './coding.module.css';
 import {WorkPanels} from '@/shared/ui/work-panels';
 function message(e:unknown){
@@ -31,11 +32,12 @@ export function LoadWorkspace({id,userId,flow=false,onReady}:{id:string;userId:s
 }
 function Editor({initial,userId,flow=false,onReady}:{initial:Workspace;userId:string;flow?:boolean;onReady?:(ready:boolean,version:number,value:string)=>void}){
  const cache=useQueryClient();const [saved,setSaved]=useState(initial);const [code,setCode]=useState(initial.code);const [undo,setUndo]=useState<string|null>(null);
- const [instruction,setInstruction]=useState('');const [explanation,setExplanation]=useState(initial.explanation??'');const [busy,setBusy]=useState('');const [error,setError]=useState('');
+ const [instruction,setInstruction]=useState('');const [explanation,setExplanation]=useState(initial.explanation??'');const [busy,setBusy]=useState('');const [error,setError]=useState('');const [expanded,setExpanded]=useState(false);
  const active=useRef<AbortController|null>(null);const retryAsk=useRef<{requestKey:string;expectedVersion:number;instruction:string}|null>(null);
  useEffect(()=>()=>active.current?.abort(),[]);
  const query=useQuery({queryKey:['coding',userId,initial.id],queryFn:({signal})=>getWorkspace(initial.id,signal),initialData:initial,meta:{private:true},refetchInterval:q=>q.state.data?.turns.some(t=>t.status==='RUNNING')?1500:false});
  const view=query.data;const dirty=code!==saved.code;const locked=!!view.submittedAt;const waiting=view.turns.some(t=>t.status==='RUNNING');
+ useEffect(()=>{if(!expanded)return;const previous=document.body.style.overflow;const close=(event:KeyboardEvent)=>{if(event.key==='Escape')setExpanded(false);};document.body.style.overflow='hidden';window.addEventListener('keydown',close);return()=>{document.body.style.overflow=previous;window.removeEventListener('keydown',close);};},[expanded]);
  useEffect(()=>{onReady?.(!dirty&&!busy&&!waiting&&!!view.lastRun&&view.lastRun.version===saved.version,saved.version,saved.code);},[dirty,busy,waiting,view.lastRun,saved.version,saved.code,onReady]);
  function update(w:Workspace){setSaved(w);cache.setQueryData(['coding',userId,w.id],w);}
  async function work(label:string,fn:(signal:AbortSignal)=>Promise<Workspace>){
@@ -51,9 +53,9 @@ function Editor({initial,userId,flow=false,onReady}:{initial:Workspace;userId:st
   const previous=retryAsk.current;const body=previous&&previous.expectedVersion===w.version&&previous.instruction===instruction?previous:{requestKey:crypto.randomUUID(),expectedVersion:w.version,instruction};retryAsk.current=body;
   const result=await mutate(`/${w.id}/turns`,'POST',body,signal);if(!signal.aborted){retryAsk.current=null;setInstruction('');}return result;
  }
- const artifact=<section className={styles.panel}><h2>코드 작성과 검증</h2><label htmlFor="code">solution.js</label><textarea id="code" className={styles.code} spellCheck={false} maxLength={20000} value={code} disabled={locked||!!busy||waiting} onChange={e=>setCode(e.target.value)}/>
- <div className={styles.buttons}><button disabled={locked||!!busy||waiting||!dirty} onClick={()=>void work('저장 중',save)}>코드 저장</button><button disabled={locked||!!busy||waiting} onClick={()=>void work('테스트 실행 중',run)}>저장하고 테스트</button><button disabled={locked||!!busy||waiting||undo===null} onClick={()=>{if(undo!==null){const previous=code;setCode(undo);setUndo(previous);}}}>AI 변경 되돌리기</button></div>
- <h2>공개 테스트 결과</h2><p className={styles.note}>브라우저에서 실제 코드를 실행한 연습 결과입니다. 서버에서 검증한 채점 결과는 아닙니다.</p>{dirty&&view.lastRun&&<p>코드가 변경되었습니다. 다시 테스트하세요.</p>}{view.lastRun?view.lastRun.results.map((r,i)=><div key={i} className={styles.result}><strong>{r.passed?'통과':'실패'} · {r.name}</strong><p>{r.detail}</p></div>):<p>아직 실행하지 않았습니다.</p>}
+ const artifact=<section className={styles.panel}><div className={`${styles.codeWorkspace} ${expanded?styles.codeWorkspaceExpanded:''}`}><div className={styles.codeHeading}><h2>코드 작성과 검증</h2><button type="button" className={styles.expandButton} aria-pressed={expanded} onClick={()=>setExpanded(value=>!value)}>{expanded?'편집기 닫기':'편집기 크게 보기'}</button></div><label htmlFor="code">solution.js</label><textarea id="code" className={styles.code} spellCheck={false} maxLength={20000} value={code} disabled={locked||!!busy||waiting} onChange={e=>setCode(e.target.value)}/>
+ <div className={styles.buttons}><button disabled={locked||!!busy||waiting||!dirty} onClick={()=>void work('저장 중',save)}>코드 저장</button><button disabled={locked||!!busy||waiting} onClick={()=>void work('테스트 실행 중',run)}>저장하고 테스트</button><button disabled={locked||!!busy||waiting||undo===null} onClick={()=>{if(undo!==null){const previous=code;setCode(undo);setUndo(previous);}}}>AI 변경 되돌리기</button></div></div>
+ <h2>공개 테스트 결과</h2><p className={styles.note}>브라우저에서 실제 코드를 실행한 연습 결과입니다. 서버에서 검증한 채점 결과는 아닙니다.</p>{dirty&&view.lastRun&&<p>코드가 변경되었습니다. 다시 테스트하세요.</p>}{view.lastRun?view.lastRun.results.map((r,i)=><div key={i} className={styles.result}><strong>{r.passed?'통과':'실패'} · {r.name}</strong><p>{formatTestResultDetail(r.detail)}</p></div>):<p>아직 실행하지 않았습니다.</p>}
  {!flow&&<><label htmlFor="reason">구현과 검증 설명</label><textarea id="reason" value={explanation} maxLength={4000} disabled={locked||!!busy||waiting} onChange={e=>setExplanation(e.target.value)} placeholder="원인, 수정한 이유, 확인한 테스트와 남은 한계를 설명하세요."/>
  {!locked&&<div className={styles.buttons}><button disabled={!!busy||waiting||dirty||!view.lastRun||!explanation.trim()} onClick={()=>{if(window.confirm('현재 코드와 테스트 기록, 설명을 제출할까요? 제출 후에는 수정할 수 없습니다.'))void work('제출 중',signal=>mutate(`/${initial.id}/submit`,'POST',{expectedVersion:saved.version,explanation},signal));}}>최종 코드 제출</button></div>}
  {locked&&<section><h2>제출 확인</h2><p>코드, 대화, 마지막 테스트 기록과 설명이 저장되었습니다.</p><p>제출된 실행 기록: {view.lastRun?.results.filter(r=>r.passed).length} / {view.lastRun?.results.length}개 통과</p><p className={styles.note}>구현 과제의 AI 역량 평가는 아직 연결되지 않았습니다. 테스트 통과 수를 역량 점수로 사용하지 않습니다.</p></section>}

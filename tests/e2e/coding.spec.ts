@@ -9,6 +9,8 @@ test('code practice executes real code, persists results, restores and seals sub
  await page.getByRole('button',{name:'저장하고 테스트'}).click();
  await expect(page.getByText('실패 · 같은 id 중복 방지')).toBeVisible();
  await expect(page.getByText('실패 · 원본 배열 보존')).toBeVisible();
+ await expect(page.getByText(/예상: 항목 1개 \(a · 기존\)/).first()).toBeVisible();
+ await expect(page.getByText(/\[\{"id"/)).toHaveCount(0);
  await page.getByRole('textbox',{name:'AI에게 요청',exact:true}).fill('실패 원인을 설명하고 수정해 줘');
  await page.getByRole('button',{name:'AI에게 요청하기'}).click();
  await expect(page.getByRole('main').getByRole('alert')).toContainText('AI 연결이 설정되지 않았습니다');
@@ -25,6 +27,7 @@ test('code practice executes real code, persists results, restores and seals sub
  const id=page.url().split('/').at(-1);const bob=await testIdentity(request,'bob');
  expect((await request.get(`${apiBase}/coding-workspaces/${id}`,{headers:bob.headers})).status()).toBe(404);
  await page.setViewportSize({width:375,height:850});
+ await page.getByRole('button',{name:'편집기 크게 보기'}).click();await expect(page.getByRole('button',{name:'편집기 닫기'})).toBeVisible();await page.getByRole('button',{name:'편집기 닫기'}).click();
  await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
  await page.screenshot({path:info.outputPath('coding-mobile.png'),fullPage:true});
 });

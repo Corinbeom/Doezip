@@ -1,11 +1,12 @@
 'use client';
 import {useEffect,useRef,useState,type ReactNode} from 'react';
+import {storeLearningStep,useLearningStep} from './learning-step';
 import styles from './work-stages.module.css';
 const steps=['과제 이해','작업','검증·제출'];
-export function WorkStages({brief,work,verification,busy,training,kind}:{brief:ReactNode;work:ReactNode;verification:ReactNode;busy:boolean;training:boolean;kind:'REPORT'|'CODING'}) {
- const [step,setStep]=useState(0);const [back,setBack]=useState(false);const title=useRef<HTMLHeadingElement>(null);const root=useRef<HTMLElement>(null);
+export function WorkStages({brief,work,verification,busy,training,kind,storageKey}:{brief:ReactNode;work:ReactNode;verification:ReactNode;busy:boolean;training:boolean;kind:'REPORT'|'CODING';storageKey?:string}) {
+ const storedStep=useLearningStep(storageKey);const [temporaryStep,setTemporaryStep]=useState(0);const step=storageKey?storedStep:temporaryStep;const [back,setBack]=useState(false);const title=useRef<HTMLHeadingElement>(null);const root=useRef<HTMLElement>(null);
  useEffect(()=>{const node=root.current;const header=node?.closest('main')?.parentElement?.querySelector('header');if(!node||!header||typeof ResizeObserver==='undefined')return;const update=()=>node.style.setProperty('--shell-header-offset',`${header.getBoundingClientRect().height}px`);update();const observer=new ResizeObserver(update);observer.observe(header);return()=>observer.disconnect();},[]);
- function move(next:number){setBack(next<step);setStep(next);requestAnimationFrame(()=>title.current?.focus({preventScroll:true}));}
+ function move(next:number){setBack(next<step);if(storageKey)storeLearningStep(storageKey,next);else setTemporaryStep(next);requestAnimationFrame(()=>title.current?.focus({preventScroll:true}));}
  const guides=kind==='REPORT'?[
   '먼저 누구에게 무엇을 설명할 보고서인지 정하세요. 자료에서 확인한 사실과 아직 모르는 것을 나누면 AI에게 요청할 범위도 분명해집니다.',
   'AI의 제안을 그대로 옮기기 전에 자료 탭에서 주장 하나의 근거를 찾아보세요. 원인을 확정할 수 없다면 그 한계를 보고서에 남기세요.',

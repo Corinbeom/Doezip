@@ -1,4 +1,4 @@
-import {fireEvent,render,screen} from '@testing-library/react';
+import {fireEvent,render,screen,waitFor} from '@testing-library/react';
 import {expect,it} from 'vitest';
 import {WorkStages} from './work-stages';
 it('keeps unsaved work and verification inputs mounted across stage navigation',()=>{
@@ -11,4 +11,11 @@ it('keeps unsaved work and verification inputs mounted across stage navigation',
 it('does not show training coaching in simulation and disables navigation during submit',()=>{
  render(<WorkStages brief={<p>조건</p>} work={<p>편집</p>} verification={<p>검증</p>} training={false} kind="REPORT" busy/>);
  expect(screen.queryByLabelText('훈련 안내')).not.toBeInTheDocument();expect(screen.getByRole('button',{name:'2. 작업'})).toBeDisabled();
+});
+it('restores the last visited stage for the same learning flow',async()=>{
+ localStorage.setItem('doezip:learning-step:flow-1','2');
+ render(<WorkStages brief={<p>조건</p>} work={<p>편집</p>} verification={<p>검증 화면</p>} training kind="REPORT" busy={false} storageKey="flow-1"/>);
+ await waitFor(()=>expect(screen.getByText('검증 화면')).toBeVisible());
+ expect(screen.getByRole('button',{name:'3. 검증·제출'})).toHaveAttribute('aria-current','step');
+ localStorage.removeItem('doezip:learning-step:flow-1');
 });

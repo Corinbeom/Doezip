@@ -1,6 +1,7 @@
 'use client';
 
 import {useMemo,useRef,useState} from 'react';
+import {formatTestResultDetail} from '@/features/coding/test-result-copy';
 import type {Flow} from './api';
 import styles from './feedback-review.module.css';
 
@@ -21,7 +22,7 @@ function readableSourceText(text:string) {
     if(value&&typeof value==='object'&&'quote' in value&&typeof value.quote==='string')return value.quote;
     if(value&&typeof value==='object'&&'results' in value&&Array.isArray(value.results)) {
       const results=value.results.filter((entry):entry is {name:string;passed:boolean;detail?:string}=>!!entry&&typeof entry==='object'&&'name' in entry&&typeof entry.name==='string'&&'passed' in entry&&typeof entry.passed==='boolean');
-      if(results.length>0)return results.map(result=>`${result.passed?'통과':'확인 필요'} · ${result.name}${result.detail?`\n${result.detail}`:''}`).join('\n\n');
+      if(results.length>0)return results.map(result=>`${result.passed?'통과':'확인 필요'} · ${result.name}${result.detail?`\n${formatTestResultDetail(result.detail)}`:''}`).join('\n\n');
     }
   } catch {}
   return text;
@@ -29,8 +30,8 @@ function readableSourceText(text:string) {
 
 function sourceLabel(label:string){return label==='PUBLIC_TEST'?'공개 테스트 기록':label.replace(/^브라우저 보고\s*/,'');}
 function Source({source}:{source:Item['sources'][number]}) {
-  const text=readableSourceText(source.text);const preview=text.replace(/\s+/g,' ').trim();
-  return <details className={styles.source}><summary><span>{sourceLabel(source.label)}</span><small>{preview.length>84?`${preview.slice(0,84)}…`:preview}</small></summary><p>{text}</p></details>;
+  const text=readableSourceText(source.text);
+  return <details className={styles.source}><summary><span>{sourceLabel(source.label)}</span><small>내용 펼쳐 보기</small></summary><p>{text}</p></details>;
 }
 
 export function FeedbackReview({feedback,onPractice,busy}:{feedback:NonNullable<Flow['feedback']>;onPractice:()=>void;busy:boolean}) {
@@ -50,10 +51,10 @@ export function FeedbackReview({feedback,onPractice,busy}:{feedback:NonNullable<
       <div className={styles.controls}><button type="button" onClick={()=>move(index-1)}>이전 피드백</button><nav aria-label="피드백 항목 이동">{items.map((entry,itemIndex)=><button type="button" key={entry.area} aria-current={itemIndex===index?'step':undefined} aria-label={`${itemIndex+1}. ${copy[entry.area].title}`} onClick={()=>move(itemIndex)}><span>{itemIndex+1}</span><em>{copy[entry.area].short}</em></button>)}</nav><button type="button" onClick={()=>move(index+1)}>다음 피드백</button></div>
     </section>
     <section className={styles.priority} aria-labelledby="priority-heading"><div><p>가장 먼저 다시 연습할 부분</p><h2 id="priority-heading">{priority&&copy[priority.area].title}</h2><p>{priority?.nextAction}</p></div><button type="button" disabled={busy} onClick={onPractice}>이 피드백으로 재연습하기</button></section>
-    <section className={styles.archive} aria-labelledby="feedback-archive-heading">
-      <div className={styles.archiveHeading}><div><p>나중에도 다시 보는 기록</p><h2 id="feedback-archive-heading">전체 피드백</h2></div><span>4가지 관점</span></div>
-      <p>이 수행에서 관찰된 기록을 한 화면에 모았습니다. 관찰되지 않은 항목은 능력 부족을 뜻하지 않습니다.</p>
-      <div className={styles.grid}>{items.map((entry,itemIndex)=><article key={entry.area}><span>0{itemIndex+1}</span><h3>{copy[entry.area].title}</h3><p>{entry.observation}</p><div><strong>다음 행동</strong><p>{entry.nextAction}</p></div><details><summary>판단 근거 {entry.sources.length}개 보기</summary>{entry.sources.map(source=><Source key={source.id} source={source}/>)}</details><button type="button" onClick={()=>{move(itemIndex);document.getElementById('feedback-focus-heading')?.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'});}}>집중해서 보기</button></article>)}</div>
-    </section>
+    <details className={styles.archive}>
+      <summary className={styles.archiveHeading}><div><p>나중에도 다시 보는 기록</p><h2 id="feedback-archive-heading">전체 피드백</h2></div><span>4가지 관점 · 펼쳐 보기</span></summary>
+      <div className={styles.archiveContent}><p>이 수행에서 관찰된 기록을 한 화면에 모았습니다. 관찰되지 않은 항목은 능력 부족을 뜻하지 않습니다.</p>
+      <div className={styles.grid}>{items.map((entry,itemIndex)=><article key={entry.area}><span>0{itemIndex+1}</span><h3>{copy[entry.area].title}</h3><p>{entry.observation}</p><div><strong>다음 행동</strong><p>{entry.nextAction}</p></div><details><summary>판단 근거 {entry.sources.length}개 보기</summary>{entry.sources.map(source=><Source key={source.id} source={source}/>)}</details><button type="button" onClick={()=>{move(itemIndex);document.getElementById('feedback-focus-heading')?.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'});}}>집중해서 보기</button></article>)}</div></div>
+    </details>
   </>;
 }

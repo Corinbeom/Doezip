@@ -20,7 +20,7 @@
 .brand > span { font-size: 25px; font-weight: 800; letter-spacing: -1.2px; display: flex; gap: 9px; align-items: baseline; }
 .brand small { font-size: 12px; letter-spacing: -.1px; font-weight: 550; color: var(--muted); }
 .navigation { display: flex; align-self: stretch; gap: 18px; }
-.navigation a { display: flex; align-items: center; position: relative; color: var(--green); font-size: 14px; font-weight: 650; }
+.navigation a { display: flex; align-items: center; min-height:44px; position: relative; color: var(--green); font-size: 14px; font-weight: 650; }
 .navigation a::after { content: ''; height: 3px; position: absolute; bottom: -1px; left: 50%; right: 50%; background: var(--green); border-radius: 2px; transition:left .16s ease,right .16s ease; }
 .navigation a:is(:hover,[aria-current='page'])::after { left:0; right:0; }
 .navigation a[aria-current='page'] { font-weight:800; }
