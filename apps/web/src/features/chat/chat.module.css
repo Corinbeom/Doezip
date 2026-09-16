@@ -1,7 +1,12 @@
 .srOnly { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-.quickPrompts { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:10px; }
-.quickPrompts>span { flex-basis:100%; color:var(--muted); font-size:11px; font-weight:700; }
-.quickPrompts button { min-height:36px!important; padding:6px 9px!important; border:1px solid var(--line)!important; background:var(--surface)!important; color:var(--green)!important; font-size:11px!important; text-align:left; }
+.quickPrompts { margin:0 0 9px; color:var(--muted); font-size:11px; }
+.quickPrompts summary { display:flex; align-items:center; justify-content:space-between; min-height:32px; color:var(--green); cursor:pointer; font-weight:750; list-style:none; }
+.quickPrompts summary::-webkit-details-marker { display:none; }
+.quickPrompts summary::before { content:'▸'; margin-right:6px; transition:transform .15s ease; }
+.quickPrompts[open] summary::before { transform:rotate(90deg); }
+.quickPrompts summary span { margin-left:auto; color:var(--muted); font-weight:500; }
+.quickPrompts>div { display:flex; flex-wrap:wrap; gap:7px; padding:2px 0 5px; }
+.quickPrompts button { min-height:34px!important; padding:5px 9px!important; border:1px solid var(--line)!important; background:var(--surface)!important; color:var(--green)!important; font-size:11px!important; text-align:left; }
 .inputRow { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:end; gap:8px; }
 .inputRow>button { min-width:92px; }
 .composerMeta { display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:28px; margin-top:5px; color:var(--muted); font-size:11px; }
@@ -15,3 +20,4 @@
 .readonly { margin:0; color:var(--muted); font-size:13px; }
 .end { height:1px; padding:0; }
 @media(max-width:480px){.inputRow{grid-template-columns:1fr}.inputRow>button{width:100%}.quickPrompts button{width:100%}}
+@media(prefers-reduced-motion:reduce){.quickPrompts summary::before{transition:none}}

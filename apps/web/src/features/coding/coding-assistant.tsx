@@ -1,5 +1,5 @@
 'use client';
-import {useEffect,useRef} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import {AiConversationPanel,AiMessage,MessageContent} from '@/shared/ui/ai-conversation';
 import type {Turn} from './api';
 import styles from './coding-assistant.module.css';
@@ -22,10 +22,11 @@ export function CodingAssistant({turns,instruction,locked,waiting,busy,onInstruc
  canApply:(turn:Turn)=>boolean;
 }){
  const end=useRef<HTMLLIElement|null>(null);
+ const [suggestionsPreference,setSuggestionsPreference]=useState<boolean|null>(null);
  useEffect(()=>{end.current?.scrollIntoView?.({block:'end'});},[turns.length,waiting]);
- const disabled=locked||busy||waiting;
- const composer=locked?<p className={styles.readonly}>제출이 끝나 이전 대화와 수정안만 확인할 수 있습니다.</p>:<form onSubmit={event=>{event.preventDefault();if(disabled||!instruction.trim())return;onAsk();}}>
-  {turns.length===0&&!waiting&&<div className={styles.quickPrompts} aria-label="질문 예시"><span>이렇게 시작해 보세요</span>{quickPrompts.map(prompt=><button key={prompt} type="button" onClick={()=>onInstruction(prompt)}>{prompt}</button>)}</div>}
+ const disabled=locked||busy||waiting;const suggestionsOpen=suggestionsPreference??turns.length===0;
+ const composer=locked?<p className={styles.readonly}>제출이 끝나 이전 대화와 수정안만 확인할 수 있습니다.</p>:<form onSubmit={event=>{event.preventDefault();if(disabled||!instruction.trim())return;setSuggestionsPreference(false);onAsk();}}>
+  <details className={styles.quickPrompts} open={suggestionsOpen} onToggle={event=>setSuggestionsPreference(event.currentTarget.open)}><summary>질문 예시 <span>{suggestionsOpen?'접기':'펼치기'}</span></summary><div aria-label="질문 예시">{quickPrompts.map(prompt=><button key={prompt} type="button" disabled={disabled} onClick={()=>onInstruction(prompt)}>{prompt}</button>)}</div></details>
   <label className={styles.srOnly} htmlFor="instruction">AI에게 요청</label>
   <div className={styles.inputRow}><textarea id="instruction" value={instruction} maxLength={4000} disabled={disabled} onChange={event=>onInstruction(event.target.value)} onKeyDown={event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.nativeEvent.isComposing){event.preventDefault();event.currentTarget.form?.requestSubmit();}}} placeholder="코드와 테스트 결과에 관해 질문하세요. Shift+Enter로 줄바꿈"/><button type="submit" disabled={disabled||!instruction.trim()}>질문 보내기</button></div>
   <div className={styles.composerMeta}><span>{Array.from(instruction).length.toLocaleString()} / 4,000자</span><span>현재 코드와 최근 테스트 결과가 함께 전달됩니다.</span></div>

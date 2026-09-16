@@ -13,11 +13,12 @@ it('preserves failed input and retries the same key; a completed reply restores 
  const {container,client}=mount();await waitFor(()=>expect(screen.getByRole('button',{name:'대화 새로 불러오기'})).toBeEnabled());
  fireEvent.change(screen.getByLabelText('AI에게 질문하기'),{target:{value:'내 질문'}});fireEvent.click(screen.getByRole('button',{name:'질문 보내기'}));
  await waitFor(()=>expect(screen.getByRole('button',{name:'같은 요청 다시 확인'})).toBeEnabled());expect(screen.getByLabelText('AI에게 질문하기')).toHaveValue('내 질문');fireEvent.click(screen.getByRole('button',{name:'같은 요청 다시 확인'}));
- await waitFor(()=>expect(screen.getByText(answer.contentText)).toBeVisible());expect(container.querySelector('script')).toBeNull();expect(vi.mocked(sendMessage).mock.calls[0][1].clientMessageKey).toBe(vi.mocked(sendMessage).mock.calls[1][1].clientMessageKey);expect(client.getQueryCache().getAll()[0].meta?.private).toBe(true);
+ await waitFor(()=>expect(screen.getByText(answer.contentText)).toBeVisible());expect(screen.getByText('질문 예시').closest('details')).not.toHaveAttribute('open');expect(container.querySelector('script')).toBeNull();expect(vi.mocked(sendMessage).mock.calls[0][1].clientMessageKey).toBe(vi.mocked(sendMessage).mock.calls[1][1].clientMessageKey);expect(client.getQueryCache().getAll()[0].meta?.private).toBe(true);
 });
 it('looks and behaves like a conversation before the first request',async()=>{
  mount();await waitFor(()=>expect(screen.getByRole('button',{name:'대화 새로 불러오기'})).toBeEnabled());
  expect(screen.getByRole('region',{name:'AI와 분석하기'})).toBeVisible();expect(screen.getByRole('log',{name:'AI 대화 기록'})).toBeVisible();expect(screen.getByText(/어떤 판단이 필요한지 알려 주세요/)).toBeVisible();
+ expect(screen.getByText('질문 예시').closest('details')).toHaveAttribute('open');
  fireEvent.click(screen.getByRole('button',{name:'자료에서 확인된 사실과 아직 모르는 점을 나눠 줘.'}));expect(screen.getByLabelText('AI에게 질문하기')).toHaveValue('자료에서 확인된 사실과 아직 모르는 점을 나눠 줘.');
 });
 it('requires a saved draft for opt-in and never includes it by default',async()=>{

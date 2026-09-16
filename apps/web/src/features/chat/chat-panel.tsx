@@ -13,17 +13,17 @@ const quickPrompts=[
 ];
 
 export function ChatPanel({sessionId,userId,allowed,draftReady,onBusy}:{sessionId:string;userId:string;allowed:boolean;draftReady:boolean;onBusy:(busy:boolean)=>void}){
- const [text,setText]=useState('');const [include,setInclude]=useState(false);const [busy,setBusy]=useState(false);const [live,setLive]=useState('');const [activeId,setActiveId]=useState<string|null>(null);const [error,setError]=useState('');const [retry,setRetry]=useState<'same'|'new'|null>(null);const [stopping,setStopping]=useState(false);
+ const [text,setText]=useState('');const [include,setInclude]=useState(false);const [busy,setBusy]=useState(false);const [live,setLive]=useState('');const [activeId,setActiveId]=useState<string|null>(null);const [error,setError]=useState('');const [retry,setRetry]=useState<'same'|'new'|null>(null);const [stopping,setStopping]=useState(false);const [suggestionsPreference,setSuggestionsPreference]=useState<boolean|null>(null);
  const pending=useRef<ChatRequest|null>(null);const cancelled=useRef<Message|null>(null);const controller=useRef<AbortController|null>(null);const mounted=useRef(true);const end=useRef<HTMLLIElement|null>(null);
  const query=useQuery({queryKey:['messages',userId,sessionId],queryFn:({signal})=>listMessages(sessionId,signal),meta:{private:true},retry:false,refetchOnMount:'always',refetchInterval:q=>q.state.data?.items.some(m=>m.status==='STREAMING')?1500:false});
- const messages=query.data?.items??[];const running=messages.find(m=>m.status==='STREAMING');const waiting=busy||!!running;
+ const messages=query.data?.items??[];const running=messages.find(m=>m.status==='STREAMING');const waiting=busy||!!running;const suggestionsOpen=suggestionsPreference??messages.length===0;
  useEffect(()=>{onBusy(waiting);return()=>onBusy(false);},[waiting,onBusy]);
  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;controller.current?.abort();};},[]);
  useEffect(()=>{end.current?.scrollIntoView?.({block:'end'});},[messages.length,live,waiting]);
  function cancellationResult():Message|null{return cancelled.current;}
  async function send(fresh=false){
   if(waiting||query.isPending||query.isError||!allowed||!text.trim()||Array.from(text).length>4000||(include&&!draftReady))return;
-  const body=!fresh&&pending.current&&pending.current.contentText===text&&pending.current.includeCurrentDraft===include?pending.current:{clientMessageKey:crypto.randomUUID(),contentText:text,includeCurrentDraft:include};pending.current=body;cancelled.current=null;
+  setSuggestionsPreference(false);const body=!fresh&&pending.current&&pending.current.contentText===text&&pending.current.includeCurrentDraft===include?pending.current:{clientMessageKey:crypto.randomUUID(),contentText:text,includeCurrentDraft:include};pending.current=body;cancelled.current=null;
   const abort=new AbortController();controller.current=abort;setBusy(true);setLive('');setActiveId(null);setError('');setRetry(null);
   try{await sendMessage(sessionId,body,event=>{
    if(!mounted.current)return;
@@ -40,7 +40,7 @@ export function ChatPanel({sessionId,userId,allowed,draftReady,onBusy}:{sessionI
  }
  async function stop(){const id=activeId??running?.id;if(!id)return;setStopping(true);setError('');try{const result=await cancelMessage(sessionId,id);cancelled.current=result;if(mounted.current){controller.current?.abort();await query.refetch();}}catch{if(mounted.current)setError('중지 결과를 확인하지 못했습니다. 대화를 새로 불러와 확인하세요.');}finally{if(mounted.current)setStopping(false);}}
  const composer=!allowed?<p className={styles.readonly}>제출이 끝나 이전 대화만 확인할 수 있습니다.</p>:<form onSubmit={event=>{event.preventDefault();void send();}}>
-  {query.isSuccess&&messages.length===0&&!waiting&&<div className={styles.quickPrompts} aria-label="질문 예시"><span>이렇게 시작해 보세요</span>{quickPrompts.map(prompt=><button key={prompt} type="button" onClick={()=>setText(prompt)}>{prompt}</button>)}</div>}
+  {query.isSuccess&&<details className={styles.quickPrompts} open={suggestionsOpen} onToggle={event=>setSuggestionsPreference(event.currentTarget.open)}><summary>질문 예시 <span>{suggestionsOpen?'접기':'펼치기'}</span></summary><div aria-label="질문 예시">{quickPrompts.map(prompt=><button key={prompt} type="button" disabled={waiting} onClick={()=>setText(prompt)}>{prompt}</button>)}</div></details>}
   <label className={styles.srOnly} htmlFor="chat-input">AI에게 질문하기</label>
   <div className={styles.inputRow}><textarea id="chat-input" value={text} onChange={event=>setText(event.target.value)} onKeyDown={event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.nativeEvent.isComposing){event.preventDefault();event.currentTarget.form?.requestSubmit();}}} disabled={waiting} placeholder="AI 코치에게 질문하세요. Shift+Enter로 줄바꿈"/><button type="submit" disabled={waiting||query.isPending||query.isError||!text.trim()||Array.from(text).length>4000||(include&&!draftReady)}>{retry==='same'?'같은 요청 다시 확인':retry?'새 응답 요청':'질문 보내기'}</button></div>
   <div className={styles.composerMeta}><span>{Array.from(text).length.toLocaleString()} / 4,000자</span>{waiting&&<button type="button" className={styles.stop} onClick={()=>void stop()} disabled={stopping||!(activeId??running?.id)}>응답 생성 중지</button>}</div>
