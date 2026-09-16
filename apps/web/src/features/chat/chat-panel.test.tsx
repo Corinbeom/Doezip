@@ -18,7 +18,7 @@ it('preserves failed input and retries the same key; a completed reply restores 
 it('looks and behaves like a conversation before the first request',async()=>{
  mount();await waitFor(()=>expect(screen.getByRole('button',{name:'대화 새로 불러오기'})).toBeEnabled());
  expect(screen.getByRole('region',{name:'AI와 분석하기'})).toBeVisible();expect(screen.getByRole('log',{name:'AI 대화 기록'})).toBeVisible();expect(screen.getByText(/어떤 판단이 필요한지 알려 주세요/)).toBeVisible();
- expect(screen.getByText('질문 예시').closest('details')).toHaveAttribute('open');
+ expect(screen.getByText('질문 예시').closest('details')).not.toHaveAttribute('open');
  fireEvent.click(screen.getByRole('button',{name:'자료에서 확인된 사실과 아직 모르는 점을 나눠 줘.'}));expect(screen.getByLabelText('AI에게 질문하기')).toHaveValue('자료에서 확인된 사실과 아직 모르는 점을 나눠 줘.');
 });
 it('requires a saved draft for opt-in and never includes it by default',async()=>{

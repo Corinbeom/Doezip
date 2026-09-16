@@ -24,7 +24,7 @@ export function CodingAssistant({turns,instruction,locked,waiting,busy,onInstruc
  const end=useRef<HTMLLIElement|null>(null);
  const [suggestionsPreference,setSuggestionsPreference]=useState<boolean|null>(null);
  useEffect(()=>{end.current?.scrollIntoView?.({block:'end'});},[turns.length,waiting]);
- const disabled=locked||busy||waiting;const suggestionsOpen=suggestionsPreference??turns.length===0;
+ const disabled=locked||busy||waiting;const suggestionsOpen=suggestionsPreference??false;
  const composer=locked?<p className={styles.readonly}>제출이 끝나 이전 대화와 수정안만 확인할 수 있습니다.</p>:<form onSubmit={event=>{event.preventDefault();if(disabled||!instruction.trim())return;setSuggestionsPreference(false);onAsk();}}>
   <details className={styles.quickPrompts} open={suggestionsOpen} onToggle={event=>setSuggestionsPreference(event.currentTarget.open)}><summary>질문 예시 <span>{suggestionsOpen?'접기':'펼치기'}</span></summary><div aria-label="질문 예시">{quickPrompts.map(prompt=><button key={prompt} type="button" disabled={disabled} onClick={()=>onInstruction(prompt)}>{prompt}</button>)}</div></details>
   <label className={styles.srOnly} htmlFor="instruction">AI에게 요청</label>

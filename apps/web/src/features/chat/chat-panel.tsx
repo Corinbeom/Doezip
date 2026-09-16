@@ -16,7 +16,7 @@ export function ChatPanel({sessionId,userId,allowed,draftReady,onBusy}:{sessionI
  const [text,setText]=useState('');const [include,setInclude]=useState(false);const [busy,setBusy]=useState(false);const [live,setLive]=useState('');const [activeId,setActiveId]=useState<string|null>(null);const [error,setError]=useState('');const [retry,setRetry]=useState<'same'|'new'|null>(null);const [stopping,setStopping]=useState(false);const [suggestionsPreference,setSuggestionsPreference]=useState<boolean|null>(null);
  const pending=useRef<ChatRequest|null>(null);const cancelled=useRef<Message|null>(null);const controller=useRef<AbortController|null>(null);const mounted=useRef(true);const end=useRef<HTMLLIElement|null>(null);
  const query=useQuery({queryKey:['messages',userId,sessionId],queryFn:({signal})=>listMessages(sessionId,signal),meta:{private:true},retry:false,refetchOnMount:'always',refetchInterval:q=>q.state.data?.items.some(m=>m.status==='STREAMING')?1500:false});
- const messages=query.data?.items??[];const running=messages.find(m=>m.status==='STREAMING');const waiting=busy||!!running;const suggestionsOpen=suggestionsPreference??messages.length===0;
+ const messages=query.data?.items??[];const running=messages.find(m=>m.status==='STREAMING');const waiting=busy||!!running;const suggestionsOpen=suggestionsPreference??false;
  useEffect(()=>{onBusy(waiting);return()=>onBusy(false);},[waiting,onBusy]);
  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;controller.current?.abort();};},[]);
  useEffect(()=>{end.current?.scrollIntoView?.({block:'end'});},[messages.length,live,waiting]);
