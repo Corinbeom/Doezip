@@ -14,15 +14,24 @@ const copy:Record<Item['area'],{title:string;question:string;short:string}>={
 };
 
 function readableSourceText(text:string) {
-  if(!text.trimStart().startsWith('{'))return text;
+  const start=text.indexOf('{');
+  if(start<0)return text;
   try {
-    const value:unknown=JSON.parse(text);
+    const value:unknown=JSON.parse(text.slice(start));
     if(value&&typeof value==='object'&&'quote' in value&&typeof value.quote==='string')return value.quote;
+    if(value&&typeof value==='object'&&'results' in value&&Array.isArray(value.results)) {
+      const results=value.results.filter((entry):entry is {name:string;passed:boolean;detail?:string}=>!!entry&&typeof entry==='object'&&'name' in entry&&typeof entry.name==='string'&&'passed' in entry&&typeof entry.passed==='boolean');
+      if(results.length>0)return results.map(result=>`${result.passed?'통과':'확인 필요'} · ${result.name}${result.detail?`\n${result.detail}`:''}`).join('\n\n');
+    }
   } catch {}
   return text;
 }
 
-function Source({source}:{source:Item['sources'][number]}) {const text=source.label.includes('원문')?readableSourceText(source.text):source.text;return <blockquote><span>{source.label}</span><p>{text}</p></blockquote>;}
+function sourceLabel(label:string){return label==='PUBLIC_TEST'?'공개 테스트 기록':label.replace(/^브라우저 보고\s*/,'');}
+function Source({source}:{source:Item['sources'][number]}) {
+  const text=readableSourceText(source.text);const preview=text.replace(/\s+/g,' ').trim();
+  return <details className={styles.source}><summary><span>{sourceLabel(source.label)}</span><small>{preview.length>84?`${preview.slice(0,84)}…`:preview}</small></summary><p>{text}</p></details>;
+}
 
 export function FeedbackReview({feedback,onPractice,busy}:{feedback:NonNullable<Flow['feedback']>;onPractice:()=>void;busy:boolean}) {
   const items=useMemo(()=>[...feedback.items].sort((a,b)=>order.indexOf(a.area)-order.indexOf(b.area)),[feedback.items]);
