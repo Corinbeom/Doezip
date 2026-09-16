@@ -9,7 +9,7 @@
 ## 코드 구성
 
 - `apps/api/Dockerfile`: Java 21 다단계 API 이미지
-- `render.yaml`: Singapore API 1개와 PostgreSQL 1개, DB health check, 비밀값 입력 자리
+- `render.yaml`: Singapore API 1개와 PostgreSQL 17 한 개, DB health check, 비밀값 입력 자리
 - `application-demo.yml`: 기본 schema와 `db/demo`의 공개 가상 과제만 적용
 - `apps/web/vercel.json`: `apps/web`을 Vercel Root Directory로 선택했을 때 루트 lockfile을 사용하는 빌드
 - `npm run deploy:smoke`: 공개 경계와 연결 확인

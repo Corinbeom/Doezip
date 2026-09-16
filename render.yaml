@@ -74,5 +74,6 @@ databases:
   - name: doezip-db
     plan: free
     region: singapore
+    postgresMajorVersion: "17"
     databaseName: doezip
     user: doezip
