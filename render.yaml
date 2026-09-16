@@ -1,0 +1,78 @@
+services:
+  - type: web
+    name: doezip-api
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./apps/api/Dockerfile
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SERVER_ADDRESS
+        value: 0.0.0.0
+      - key: SERVER_PORT
+        value: 10000
+      - key: JAVA_TOOL_OPTIONS
+        value: -Xms128m -Xmx384m -XX:+UseSerialGC
+      - key: SPRING_PROFILES_ACTIVE
+        value: demo
+      - key: DATABASE_HOST
+        fromDatabase:
+          name: doezip-db
+          property: host
+      - key: DATABASE_PORT
+        fromDatabase:
+          name: doezip-db
+          property: port
+      - key: DATABASE_NAME
+        fromDatabase:
+          name: doezip-db
+          property: database
+      - key: DATABASE_USERNAME
+        fromDatabase:
+          name: doezip-db
+          property: user
+      - key: DATABASE_PASSWORD
+        fromDatabase:
+          name: doezip-db
+          property: password
+      - key: CORS_ALLOWED_ORIGIN
+        sync: false
+      - key: AUTH_ENABLED
+        value: "true"
+      - key: AUTH_ISSUER
+        sync: false
+      - key: AUTH_JWK_SET_URI
+        sync: false
+      - key: AUTH_AUDIENCE
+        value: authenticated
+      - key: AUTH_PROVIDER_ID
+        value: doezip-supabase
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: AI_EVALUATION_ENABLED
+        value: "true"
+      - key: AI_EVALUATION_MODEL
+        value: gemini-3.5-flash-lite
+      - key: AI_EVALUATION_DAILY_CALL_LIMIT
+        value: 10
+      - key: AI_EVALUATION_GLOBAL_DAILY_CALL_LIMIT
+        value: 50
+      - key: AI_CHAT_ENABLED
+        value: "true"
+      - key: AI_CHAT_MODEL
+        value: gemini-3.5-flash-lite
+      - key: AI_CHAT_DAILY_CALL_LIMIT
+        value: 20
+      - key: AI_CHAT_GLOBAL_DAILY_CALL_LIMIT
+        value: 100
+      - key: AI_CODING_ENABLED
+        value: "true"
+      - key: AI_CODING_MODEL
+        value: gemini-3.5-flash-lite
+
+databases:
+  - name: doezip-db
+    plan: free
+    region: singapore
+    databaseName: doezip
+    user: doezip

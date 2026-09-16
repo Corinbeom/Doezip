@@ -45,3 +45,6 @@ contracts/openapi.yaml, docs/sources/ERD.md, docs/TEST_RUNBOOK.md.
 P02 단계형 화면 기준은 docs/P02_GUIDED_WORKSPACE.md. 사용자 확인은 3189/8389와 기존 통합 DB로 고정하며 새 worktree마다 로그인 포트를 늘리지 않는다. 자동 검증은 별도 포트·테스트 DB에서 실행한다.
 
 P03 힌트·근거 연결·피드백 화면 기준은 docs/P03_FEEDBACK_EXPERIENCE.md. 힌트 열람 자체를 역량 증거로 사용하지 않고, 근거는 실제 원문 줄을 선택해 연결한다. 집중 피드백과 전체 기록은 같은 평가 결과를 서로 다른 방식으로 보여 주며 내용을 새로 생성하지 않는다.
+
+## D01 공개 데모 배포
+배포 기준과 수동 외부 설정은 docs/D01_DEPLOYMENT.md를 따른다. `local` 프로필과 로컬 DB를 배포에 사용하지 않는다. `demo`에는 공개 가상 자료만 두고 비공개 정답·실제 사용자 데이터를 seed하지 않는다. 웹에는 API base와 Supabase publishable 설정만 넣고 DB·Gemini·Google 비밀값은 API 호스팅 secret으로 관리한다. 배포 완료는 원격 CI, health/CORS/보호 경로 smoke, 실제 Google 로그인과 Gemini 호출을 모두 확인한 뒤에만 표시한다.

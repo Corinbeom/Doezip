@@ -13,8 +13,8 @@ Git이 필요하다. 아래 명령은 macOS/Linux/WSL 셸 기준이다. Windows�
 ```bash
 git clone https://github.com/Corinbeom/Doezip.git
 cd Doezip
-# 공유된 I02 기준 브랜치. P01·P02는 로컬 작업이며 원격 공유 전이다.
-git switch feature/I02-unified-workspace
+# 공개 데모와 현재 통합 기능 확인 브랜치. develop 반영 전이다.
+git switch feature/D01-demo-deployment
 # nvm을 사용하는 경우
 nvm install
 nvm use
@@ -51,6 +51,7 @@ Ctrl+C는 이 실행기가 시작한 프로세스만 종료한다. DB와 영속 
 | `npm run check:api` | JUnit·실제 PostgreSQL Testcontainers·JAR build |
 | `npm run test:e2e` | 빌드된 실제 웹·API 서버를 시작해 Playwright 검사 |
 | `npm run check` | 계약·웹·API·E2E 전체 검사(AI 비활성) |
+| `npm run deploy:smoke` | 배포 웹·API·DB health·CORS·보호 경로 확인 |
 | `npm run test:chat:ai` | 가상 자료로 실제 AI 대화·PostgreSQL 저장/복원 검사(키 필요) |
 | `npm run test:flow:ai` | 가상 과제의 실제 AI 평가·결과 복원 브라우저 검사(키 필요) |
 
@@ -73,6 +74,18 @@ AI 키·OAuth 계정은 검사에 필요 없다. 최신 통합 결과와 실제 
 DB를 멈출 때는 `docker compose --env-file .env -f compose.local.yml stop db`를 쓴다.
 볼륨 삭제 옵션은 일반 실행·검증 명령에 넣지 않는다.
 
+## 공개 데모 배포
+
+웹은 Vercel, API와 PostgreSQL은 Render를 기준으로 한다. 공개 데모는 `demo` 프로필의 검수된 가상 과제만 사용하며 로컬 DB나 `local` 프로필을 재사용하지 않는다. 배포 설정, 환경변수, OAuth 변경과 smoke 순서는 [D01 배포 기록](docs/D01_DEPLOYMENT.md)을 따른다.
+
+```bash
+DEPLOY_WEB_URL=https://<web-host> \
+DEPLOY_API_URL=https://<api-host> \
+npm run deploy:smoke
+```
+
+이 검사는 공개 웹·health·과제 조회·CORS·보호 경로 차단을 확인한다. 실제 Google 로그인과 Gemini 응답은 별도로 브라우저에서 확인한다.
+
 ## 설정·구조
 
 - `.env.example` → 로컬 `.env`. 실제 `.env`는 Git 제외. 루트 실행기가 명시적으로 파싱한다.
@@ -91,7 +104,7 @@ DB를 멈출 때는 `docker compose --env-file .env -f compose.local.yml stop db
   전체 ERD migration·학습 과제 패키지 seed는 후속 작업.
 - `contracts`, `docs`, `fixtures`, `templates`: 기존 기준 자료 보존. fixture는 웹에 import·배포하지 않는다.
   templates는 참고 예시이며 실제 앱 설정은 루트와 apps/api 아래에 있다.
-- `.github/workflows/ci.yml`: 로컬과 같은 `npm run check`. PR(main/develop), push(main/develop/feature/**).
+- `.github/workflows/ci.yml`: 로컬과 같은 `npm run check`와 배포 API 이미지 build. PR(main/develop), push(main/develop/feature/**).
 
 ## 문서
 

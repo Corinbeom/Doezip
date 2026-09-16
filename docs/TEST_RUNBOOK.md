@@ -199,3 +199,6 @@ P01과 같은 전체 check 명령을 별도 테스트 DB에서 실행한다. 새
 
 ## P03 피드백 경험 회귀
 `npm run check`에서 훈련 힌트의 주제 전환과 모의 전형 비노출, 실제 자료 줄 선택·연결·삭제, 네 과제 조합의 저장·제출 회귀를 검사한다. 성공 피드백은 계약 형태의 공개 가상 응답으로 집중 보기의 순서·원문 근거·이전/다음 이동과 전체 기록을 확인한다. 이 화면 검사는 실제 Gemini 품질 검증이 아니며, 실제 AI 호출은 별도 명시적 검사로 구분한다.
+
+## D01 배포 검사
+`apps/api/Dockerfile`을 저장소 루트 context에서 빌드하고 신규 PostgreSQL DB에 `SPRING_PROFILES_ACTIVE=demo`로 실행한다. CI도 같은 Dockerfile의 이미지 빌드를 검사한다. 비루트 UID, Flyway 1~17, health `UP`, 공개 가상 과제 1개, 보호 경로 401과 정확한 웹 origin CORS를 확인한다. 공개 배포 뒤에는 `DEPLOY_WEB_URL`과 `DEPLOY_API_URL`로 `npm run deploy:smoke`를 실행한다. 실제 Google 로그인과 Gemini 호출은 이 smoke가 대신하지 않는다.
