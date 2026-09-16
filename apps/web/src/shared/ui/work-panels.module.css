@@ -1,5 +1,5 @@
 .workspace { min-width:0; }
-.columns { display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); gap:16px; height:clamp(460px,65dvh,820px); }
+.columns { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr); gap:16px; height:clamp(460px,65dvh,820px); }
 .side { display:flex; flex-direction:column; min-height:0; min-width:0; }
 .scroll,.artifact { overflow:auto; min-width:0; min-height:0; overscroll-behavior:contain; scrollbar-gutter:stable; }
 .scroll { flex:1; }
