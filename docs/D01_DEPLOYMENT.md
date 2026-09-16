@@ -4,12 +4,17 @@
 
 오늘 배포는 기능 검증용 공개 데모다. Vercel 웹, Render의 단일 Spring API와 PostgreSQL, 기존 Supabase Google 인증, Gemini API를 연결한다. 전체 MVP·운영 안정성·실제 학습 콘텐츠 검수 완료를 뜻하지 않는다.
 
+- 공개 웹: <https://doezip.vercel.app>
+- 공개 API health: <https://doezip-api.onrender.com/actuator/health>
+- 배포 브랜치: `feature/D01-demo-deployment`
+- 배포 앱 커밋: `397f249d905f56f568b521ccf4aa83b89b7d4153`
+
 무료 Render API는 유휴 15분 뒤 중지될 수 있고 첫 요청 복구에 시간이 걸린다. 무료 PostgreSQL은 생성 후 30일에 만료되고 백업을 제공하지 않는다. 장기 시연 전에 유료 인스턴스와 백업 정책으로 전환한다.
 
 ## 코드 구성
 
 - `apps/api/Dockerfile`: Java 21 다단계 API 이미지
-- `render.yaml`: Singapore API 1개와 PostgreSQL 17 한 개, DB health check, 비밀값 입력 자리
+- `render.yaml`: Singapore API 1개와 신규 생성용 PostgreSQL 17 한 개, DB health check, 비밀값 입력 자리
 - `application-demo.yml`: 기본 schema와 `db/demo`의 공개 가상 과제만 적용
 - `apps/web/vercel.json`: `apps/web`을 Vercel Root Directory로 선택했을 때 루트 lockfile을 사용하는 빌드
 - `npm run deploy:smoke`: 공개 경계와 연결 확인
@@ -49,3 +54,13 @@
 - 재배포와 새로고침 후 사용자 상태 복원
 
 실패한 항목은 배포 완료로 표시하지 않는다. 외부 계정 설정과 실제 브라우저 검증 결과는 이 문서에 URL·커밋과 함께 추가한다.
+
+## 2026-09-16 실제 배포 기록
+
+- Vercel production과 Render API가 위 URL에서 응답한다.
+- Supabase Site URL은 공개 웹으로 지정했고, 공개 callback을 추가했다. 기존 `localhost:3129`, `localhost:3189` callback은 보존했다.
+- Render demo 프로필에서 Flyway 13개 migration이 스키마 버전 17까지 적용됐고, 공개 가상 과제 1개만 적재됐다.
+- 비로그인 상태에서 웹 200, DB health 200, 공개 과제 200, 보호 경로 401, Vercel origin CORS 200을 실제 운영 URL로 확인했다. 브라우저에서도 공개 가상 과제 카드가 표시됐다.
+- Render 최초 생성 DB는 PostgreSQL 18.6이다. 현재 migration은 적용됐지만 Flyway가 공식 확인한 최신 major는 17이라 경고를 남긴다. `render.yaml`은 이후 새 DB를 17로 만들도록 고쳤으며, 현재 DB 교체는 데이터 삭제 작업이므로 이번 배포에서 실행하지 않았다.
+- 무료 인스턴스의 첫 요청 지연과 무료 DB의 30일 만료 조건이 있다. 장기 공개 전에 DB 17 재생성 또는 지원 Flyway 버전 검토, 백업·유료 전환 결정을 한다.
+- Google OAuth는 공개 callback을 포함한 Google 계정 선택 화면까지 확인했다. 실제 계정 선택 이후 로그인, Gemini 대화·평가, 재로그인 후 복원은 사용자 계정으로 공개 도메인에서 확인해야 한다.

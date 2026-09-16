@@ -78,6 +78,9 @@ DB를 멈출 때는 `docker compose --env-file .env -f compose.local.yml stop db
 
 웹은 Vercel, API와 PostgreSQL은 Render를 기준으로 한다. 공개 데모는 `demo` 프로필의 검수된 가상 과제만 사용하며 로컬 DB나 `local` 프로필을 재사용하지 않는다. 배포 설정, 환경변수, OAuth 변경과 smoke 순서는 [D01 배포 기록](docs/D01_DEPLOYMENT.md)을 따른다.
 
+- 공개 웹: <https://doezip.vercel.app>
+- API health: <https://doezip-api.onrender.com/actuator/health>
+
 ```bash
 DEPLOY_WEB_URL=https://<web-host> \
 DEPLOY_API_URL=https://<api-host> \
