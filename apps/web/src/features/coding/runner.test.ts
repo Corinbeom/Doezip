@@ -9,6 +9,12 @@ describe('isolated JavaScript practice runner',()=>{
   expect((await runCode(flawed,undefined,'duplicate-items-v2')).map(x=>x.passed)).toEqual([true,false,false,true]);
   expect((await runCode(correct,undefined,'duplicate-items-v2')).every(r=>r.passed)).toBe(true);
  });
+ it('retry policy rejects broad 5xx logic and accepts the explicit safe policy',async()=>{
+  const broad='function shouldRetry(x){return x.status>=500&&x.attempt<3;}';
+  expect((await runCode(broad,undefined,'retry-policy-v1')).map(x=>x.passed)).toEqual([true,false,false,true,false,false,true]);
+  const safe='function shouldRetry(x){const temporary=[429,502,503,504].includes(x.status)||x.errorCode==="NETWORK_TIMEOUT";return temporary&&Number.isInteger(x.attempt)&&x.attempt>=0&&x.attempt<3&&typeof x.idempotencyKey==="string"&&x.idempotencyKey.trim().length>0;}';
+  expect((await runCode(safe,undefined,'retry-policy-v1')).every(result=>result.passed)).toBe(true);
+ });
  it('accepts semantically equal objects with a different key order',async()=>{expect((await runCode('function addItem(items,item){return (items.some(x=>x.id===item.id)?items:[...items,item]).map(x=>({title:x.title,id:x.id}));}')).every(r=>r.passed)).toBe(true);});
  it('limits infinite loops and reports syntax errors without hanging',async()=>{expect((await runCode('while(true){}')).every(r=>!r.passed)).toBe(true);expect((await runCode('function {')).every(r=>!r.passed)).toBe(true);});
  it('does not expose host globals or carry state across tests/runs',async()=>{expect((await runCode('fetch("https://example.com");'+correct)).every(r=>!r.passed)).toBe(true);expect((await runCode('process.exit();'+correct)).every(r=>!r.passed)).toBe(true);expect((await runCode('localStorage.clear();'+correct)).every(r=>!r.passed)).toBe(true);expect((await runCode(correct)).every(r=>r.passed)).toBe(true);});

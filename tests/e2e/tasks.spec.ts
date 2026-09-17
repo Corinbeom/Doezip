@@ -4,20 +4,25 @@ const legacyId='61111111-1111-4111-8111-111111111113';
 const legacyTitle='개발용 예시: 결제 API 장애 원인 분석';
 const reportTitle='결제 지연 대응안을 운영 리드에게 제안하기';
 const codingTitle='항목의 식별 기준을 바로잡기';
+const activationTitle='가입 후 활성화 하락 원인을 제품 리드에게 보고하기';
+const retryTitle='결제 요청의 안전한 재시도 조건 구현하기';
 
 test('unified catalog exposes report and coding tasks from the real API',async({page})=>{
   const listing=page.waitForResponse(response=>response.url().endsWith('/api/v1/learning-flows/catalog'));
   await page.goto('/tasks');
   expect((await listing).status()).toBe(200);
   await expect(page.getByRole('link',{name:reportTitle,exact:true})).toBeVisible();
+  await expect(page.getByRole('link',{name:activationTitle,exact:true})).toBeVisible();
   await expect(page.getByRole('link',{name:codingTitle,exact:true})).toBeVisible();
-  await expect(page.getByText('JavaScript',{exact:true})).toBeVisible();
+  await expect(page.getByRole('link',{name:retryTitle,exact:true})).toBeVisible();
+  await expect(page.getByText('JavaScript',{exact:true})).toHaveCount(2);
   await expect(page.getByRole('link',{name:'구현 연습',exact:true})).toHaveCount(0);
   await page.getByRole('button',{name:'구현',exact:true}).click();
   await expect(page.getByRole('link',{name:reportTitle,exact:true})).toHaveCount(0);
   await page.getByRole('link',{name:codingTitle,exact:true}).click();
   await expect(page).toHaveURL(/\/tasks\/item-identity-coding$/);
   await expect(page.getByRole('heading',{name:'완료 조건'})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'결과보다 판단 과정을 남겨요.'})).toBeVisible();
   await expect(page.getByText('약 30분',{exact:true})).toBeVisible();
 });
 

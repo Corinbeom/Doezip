@@ -1,5 +1,5 @@
 import { runCode } from './runner';
-self.onmessage = async (event: MessageEvent<{code:string;suite:'duplicate-items-v1'|'duplicate-items-v2'}>) => {
+self.onmessage = async (event: MessageEvent<{code:string;suite:'duplicate-items-v1'|'duplicate-items-v2'|'retry-policy-v1'}>) => {
   try {
     // Keep WASM binary out of JS minification; this is a same-origin, versioned static asset.
     const response = await fetch('/coding-runtime/quickjs-0.32.0.wasm', {credentials:'omit'});

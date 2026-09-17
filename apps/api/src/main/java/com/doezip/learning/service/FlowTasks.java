@@ -13,25 +13,31 @@ public final class FlowTasks {
  public static final String CURRENT_VERSION="learning-flow-v2";
  public static final String LEGACY_CODING_VERSION="duplicate-items-v1";
  public static final String CURRENT_CODING_VERSION="duplicate-items-v2";
+ public static final String ACTIVATION_VERSION="activation-drop-v1";
+ public static final String RETRY_VERSION="retry-policy-v1";
  public static final String REPORT_CATALOG_ID="payment-delay-report";
  public static final String CODING_CATALOG_ID="item-identity-coding";
+ public static final String ACTIVATION_CATALOG_ID="activation-drop-report";
+ public static final String RETRY_CATALOG_ID="retry-policy-coding";
  public static final UUID REPORT_ID=UUID.fromString("71111111-1111-4111-8111-111111111111");
  public static final UUID REPORT_V2_ID=UUID.fromString("72222222-2222-4222-8222-222222222222");
+ public static final UUID ACTIVATION_ID=UUID.fromString("73333333-3333-4333-8333-333333333333");
 
- public static List<Task> catalog(boolean hints){return List.of(get(REPORT_CATALOG_ID,CURRENT_VERSION,hints),get(CODING_CATALOG_ID,CURRENT_VERSION,hints));}
+ public static List<Task> catalog(boolean hints){return List.of(get(REPORT_CATALOG_ID,CURRENT_VERSION,hints),get(ACTIVATION_CATALOG_ID,ACTIVATION_VERSION,hints),get(CODING_CATALOG_ID,CURRENT_VERSION,hints),get(RETRY_CATALOG_ID,RETRY_VERSION,hints));}
 
  public static Task get(String catalogId,String version,boolean hints){
-  if(!version.equals(LEGACY_VERSION)&&!version.equals(CURRENT_VERSION))throw new TaskNotFoundException();
   return switch(catalogId){
-   case REPORT_CATALOG_ID -> report(version,hints);
-   case CODING_CATALOG_ID -> coding(version,hints);
+   case REPORT_CATALOG_ID -> {if(!version.equals(LEGACY_VERSION)&&!version.equals(CURRENT_VERSION))throw new TaskNotFoundException();yield report(version,hints);}
+   case CODING_CATALOG_ID -> {if(!version.equals(LEGACY_VERSION)&&!version.equals(CURRENT_VERSION))throw new TaskNotFoundException();yield coding(version,hints);}
+   case ACTIVATION_CATALOG_ID -> {if(!version.equals(ACTIVATION_VERSION))throw new TaskNotFoundException();yield activation(hints);}
+   case RETRY_CATALOG_ID -> {if(!version.equals(RETRY_VERSION))throw new TaskNotFoundException();yield retry(hints);}
    default -> throw new TaskNotFoundException();
   };
  }
 
  public static Kind kind(String catalogId,String version){return Kind.valueOf(get(catalogId,version,false).kind());}
- public static UUID reportTaskId(String catalogId,String version){if(kind(catalogId,version)!=Kind.REPORT)throw new TaskNotFoundException();return version.equals(LEGACY_VERSION)?REPORT_ID:REPORT_V2_ID;}
- public static String codingTaskVersion(String catalogId,String version){if(kind(catalogId,version)!=Kind.CODING)throw new TaskNotFoundException();return version.equals(LEGACY_VERSION)?LEGACY_CODING_VERSION:CURRENT_CODING_VERSION;}
+ public static UUID reportTaskId(String catalogId,String version){if(kind(catalogId,version)!=Kind.REPORT)throw new TaskNotFoundException();return catalogId.equals(ACTIVATION_CATALOG_ID)?ACTIVATION_ID:version.equals(LEGACY_VERSION)?REPORT_ID:REPORT_V2_ID;}
+ public static String codingTaskVersion(String catalogId,String version){if(kind(catalogId,version)!=Kind.CODING)throw new TaskNotFoundException();return catalogId.equals(RETRY_CATALOG_ID)?RETRY_VERSION:version.equals(LEGACY_VERSION)?LEGACY_CODING_VERSION:CURRENT_CODING_VERSION;}
 
  private static Task report(String version,boolean hints){
   if(version.equals(LEGACY_VERSION))return new Task(REPORT_CATALOG_ID,version,"REPORT","입문",25,List.of("자료 분석","보고서","근거 검증"),"결제 지연 상황을 동료에게 설명하기",
@@ -62,4 +68,18 @@ public final class FlowTasks {
    List.of("제목 대신 id를 기준으로 삼은 이유와 확인한 경계 조건을 설명해 보세요.","요구사항이 같은 id의 제목을 갱신하도록 바뀐다면 어떤 구현과 테스트를 다시 검토하겠나요?"),
    hints?List.of("시작 코드를 실행해 같은 id·다른 제목과 다른 id·같은 제목이 각각 어떻게 처리되는지 비교해 보세요.","AI에게 항목의 식별 기준과 입력 불변 조건을 명시하고, 제안이 두 조건을 모두 지키는지 따로 확인해 보세요.","통과한 테스트만 적지 말고 채택하지 않은 접근과 숨은 입력에서 남을 수 있는 한계도 설명해 보세요."):List.of());
  }
+
+ private static Task activation(boolean hints){return new Task(ACTIVATION_CATALOG_ID,ACTIVATION_VERSION,"REPORT","중급",40,List.of("퍼널 분석","CSV·JSON","VOC","제품 의사결정"),"가입 후 활성화 하락 원인을 제품 리드에게 보고하기",
+  "신규 가입자의 첫 주 활성화율이 하락했습니다. 퍼널 CSV, 실험 배정 JSON, 고객 문의 표본과 빠른 결론을 원하는 요청을 함께 검토해 제품 리드가 오늘 할 조치와 다음 분석을 결정할 수 있는 보고서를 작성하세요.",
+  List.of("전체 평균과 세그먼트 차이를 구분하고 비교 기준을 명시합니다.","실험군·대조군과 VOC가 뒷받침하는 범위 및 대표성 한계를 함께 적습니다.","경쟁하는 원인 가설을 최소 두 개 비교하고 성급한 단정을 피합니다.","오늘 실행할 조치, 다음에 확인할 데이터와 판단을 바꿀 조건을 제시합니다."),
+  "제품 리드용 의사결정 보고서, 수치 주장에 연결한 원자료, AI 제안 중 채택·보류한 판단과 검증 기록",
+  List.of("AI 제안 중 채택하거나 보류한 결론은 무엇이며, 어떤 수치와 한계 때문에 그렇게 판단했나요?","실험군과 대조군의 격차가 다음 주에도 없지만 모바일 웹만 회복되지 않는다면 원인 가설과 다음 조치를 어떻게 바꾸겠나요?"),
+  hints?List.of("각 자료가 전체 사용자, 특정 세그먼트, 자발적 문의 중 무엇을 대표하는지 먼저 표시해 보세요.","평균 하락과 모바일 웹 하락, 실험 배정 결과를 한 원인으로 묶기 전에 비교군과 표본 범위를 대조해 보세요.","결론마다 근거 수치와 반대 관찰을 붙이고, 오늘 할 조치와 결론을 바꿀 조건을 분리해 보세요."):List.of());}
+
+ private static Task retry(boolean hints){return new Task(RETRY_CATALOG_ID,RETRY_VERSION,"CODING","중급",35,List.of("JavaScript","재시도 정책","예외 처리","AI 제안 검증"),"결제 요청의 안전한 재시도 조건 구현하기",
+  "결제 요청 실패를 재시도할지 판단하는 함수가 모든 5xx를 다시 보내고 멱등성 키를 확인하지 않습니다. AI가 제안하는 일반적인 재시도 로직을 그대로 적용하지 말고 상태 코드, 네트워크 오류, 시도 횟수와 멱등성 조건을 함께 검증하세요.",
+  List.of("429·502·503·504 또는 NETWORK_TIMEOUT만 일시 오류로 재시도합니다.","attempt가 0~2일 때만 재시도하고 3 이상이면 중단합니다.","비어 있지 않은 idempotencyKey가 없으면 재시도하지 않습니다.","400·401·500·501과 알 수 없는 오류는 재시도하지 않습니다.","입력 객체를 변경하지 않는 JavaScript 단일 함수로 작성합니다."),
+  "shouldRetry 코드, 공개 경계 테스트 기록, AI 제안 중 채택·거절한 규칙과 남은 한계",
+  List.of("AI 제안에서 그대로 채택하지 않은 재시도 조건은 무엇이며 어떤 테스트로 확인했나요?","정책이 최대 5회와 지수 백오프를 요구하도록 바뀐다면 함수의 책임과 테스트를 어떻게 나누겠나요?"),
+  hints?List.of("시작 코드를 실행해 503, 일반 5xx, 최대 시도와 멱등성 키가 각각 어떻게 처리되는지 나눠 보세요.","AI에게 재시도 가능한 상태를 열거하고, 모든 5xx 재시도 같은 넓은 조건을 반례로 검토해 달라고 요청해 보세요.","통과 결과와 함께 입력 불변 여부, 시간 기반 백오프처럼 이 함수가 아직 검증하지 않는 범위를 적어 보세요."):List.of());}
 }
