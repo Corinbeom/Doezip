@@ -12,7 +12,7 @@ public class FlowController {
  private final FlowService flows;private final FlowFeedback feedback;private final CurrentUser user;
  public FlowController(FlowService flows,FlowFeedback feedback,CurrentUser user){this.flows=flows;this.feedback=feedback;this.user=user;}
  private <T> ResponseEntity<T> ok(T body){return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(body);}
- @GetMapping("/catalog") public ResponseEntity<List<Task>> catalog(){return ok(List.of(FlowTasks.get("REPORT",false),FlowTasks.get("CODING",false)));}
+ @GetMapping("/catalog") public ResponseEntity<List<Task>> catalog(){return ok(FlowTasks.catalog(false));}
  @GetMapping public ResponseEntity<List<View>> list(Authentication a){return ok(flows.list(user.id(a)));}
  @PostMapping public ResponseEntity<View> create(Authentication a,@Valid @RequestBody Create b){return ok(flows.create(user.id(a),b));}
  @GetMapping("/{id}") public ResponseEntity<View> get(Authentication a,@PathVariable UUID id){return ok(flows.get(user.id(a),id));}

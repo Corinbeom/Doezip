@@ -2307,17 +2307,20 @@ components:
       additionalProperties: false
       required:
       - requestKey
-      - kind
+      - catalogId
+      - version
       - mode
       properties:
         requestKey: &id001
           type: string
           format: uuid
-        kind:
+        catalogId:
           type: string
-          enum:
-          - REPORT
-          - CODING
+          pattern: ^[a-z0-9]+(-[a-z0-9]+)*$
+        version:
+          type: string
+          minLength: 1
+          maxLength: 40
         mode:
           type: string
           enum:
@@ -2563,6 +2566,7 @@ components:
       additionalProperties: false
       required:
       - id
+      - catalogId
       - kind
       - mode
       - flowVersion
@@ -2581,6 +2585,7 @@ components:
       - comparison
       properties:
         id: *id001
+        catalogId: *id003
         kind:
           type: string
           enum:

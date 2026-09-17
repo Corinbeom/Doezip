@@ -283,4 +283,4 @@ F05c 오류/호출 설정은 [AI 설정](AI_SETUP.md)을 따른다. 공개 Evalu
 코드 버전 CAS, AI 요청 key/예산, 브라우저 보고 실행 결과와 제출 잠금은 [F08a](F08A_CODING_WORKSPACE.md)를 따른다.
 
 ## P01 버전별 수행 흐름
-`/learning-flows`의 생성/목록/상세, notes/hints/submit/answers/feedback/practice를 추가했다. `GET /learning-flows/catalog`만 공개하며 안정적인 catalogId, 콘텐츠 version, 유형·난도·예상 시간·태그와 공개 문제 설명을 반환하고 힌트는 빈 목록이다. 나머지는 인증·소유권이 필요하고 개인 응답은 no-store다. feedback 요청은 비동기 상태를 반환하고 GET으로 조회한다. 모드·단계·버전 및 고정 근거 인터페이스는 OpenAPI와 [P01 명세](P01_LEARNING_FLOW.md)를 따른다. 기존 세션·코딩 계약은 보존하며 새 흐름에 속한 작업의 단독 제출 우회는 409다.
+`/learning-flows`의 생성/목록/상세, notes/hints/submit/answers/feedback/practice를 추가했다. `GET /learning-flows/catalog`만 공개하며 안정적인 catalogId, 콘텐츠 version, 유형·난도·예상 시간·태그와 공개 문제 설명을 반환하고 힌트는 빈 목록이다. 생성 요청은 `requestKey`, catalog 응답의 `catalogId`·`version`, 수행 `mode`를 보내며 서버가 등록된 조합에서 유형과 실제 콘텐츠를 결정한다. 알 수 없는 과제·버전 조합은 404이고 같은 requestKey를 다른 조합에 재사용하면 409다. 나머지는 인증·소유권이 필요하고 개인 응답은 no-store다. feedback 요청은 비동기 상태를 반환하고 GET으로 조회한다. 모드·단계·버전 및 고정 근거 인터페이스는 OpenAPI와 [P01 명세](P01_LEARNING_FLOW.md)를 따른다. 기존 세션·코딩 계약은 보존하며 새 흐름에 속한 작업의 단독 제출 우회는 409다.

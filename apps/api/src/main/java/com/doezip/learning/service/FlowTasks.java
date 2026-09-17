@@ -1,6 +1,8 @@
 package com.doezip.learning.service;
 
 import com.doezip.learning.dto.FlowDtos.Task;
+import com.doezip.learning.dto.FlowDtos.Kind;
+import com.doezip.task.service.TaskNotFoundException;
 import java.util.List;
 import java.util.UUID;
 
@@ -11,27 +13,34 @@ public final class FlowTasks {
  public static final String CURRENT_VERSION="learning-flow-v2";
  public static final String LEGACY_CODING_VERSION="duplicate-items-v1";
  public static final String CURRENT_CODING_VERSION="duplicate-items-v2";
+ public static final String REPORT_CATALOG_ID="payment-delay-report";
+ public static final String CODING_CATALOG_ID="item-identity-coding";
  public static final UUID REPORT_ID=UUID.fromString("71111111-1111-4111-8111-111111111111");
  public static final UUID REPORT_V2_ID=UUID.fromString("72222222-2222-4222-8222-222222222222");
 
- public static Task get(String kind,boolean hints){return get(kind,CURRENT_VERSION,hints);}
+ public static List<Task> catalog(boolean hints){return List.of(get(REPORT_CATALOG_ID,CURRENT_VERSION,hints),get(CODING_CATALOG_ID,CURRENT_VERSION,hints));}
 
- public static Task get(String kind,String version,boolean hints){
-  if(!version.equals(LEGACY_VERSION)&&!version.equals(CURRENT_VERSION))throw new IllegalArgumentException("Unknown learning flow version");
-  return kind.equals("CODING")?coding(version,hints):report(version,hints);
+ public static Task get(String catalogId,String version,boolean hints){
+  if(!version.equals(LEGACY_VERSION)&&!version.equals(CURRENT_VERSION))throw new TaskNotFoundException();
+  return switch(catalogId){
+   case REPORT_CATALOG_ID -> report(version,hints);
+   case CODING_CATALOG_ID -> coding(version,hints);
+   default -> throw new TaskNotFoundException();
+  };
  }
 
- public static UUID reportTaskId(String version){return version.equals(LEGACY_VERSION)?REPORT_ID:REPORT_V2_ID;}
- public static String codingTaskVersion(String version){return version.equals(LEGACY_VERSION)?LEGACY_CODING_VERSION:CURRENT_CODING_VERSION;}
+ public static Kind kind(String catalogId,String version){return Kind.valueOf(get(catalogId,version,false).kind());}
+ public static UUID reportTaskId(String catalogId,String version){if(kind(catalogId,version)!=Kind.REPORT)throw new TaskNotFoundException();return version.equals(LEGACY_VERSION)?REPORT_ID:REPORT_V2_ID;}
+ public static String codingTaskVersion(String catalogId,String version){if(kind(catalogId,version)!=Kind.CODING)throw new TaskNotFoundException();return version.equals(LEGACY_VERSION)?LEGACY_CODING_VERSION:CURRENT_CODING_VERSION;}
 
  private static Task report(String version,boolean hints){
-  if(version.equals(LEGACY_VERSION))return new Task("payment-delay-report",version,"REPORT","입문",25,List.of("자료 분석","보고서","근거 검증"),"결제 지연 상황을 동료에게 설명하기",
+  if(version.equals(LEGACY_VERSION))return new Task(REPORT_CATALOG_ID,version,"REPORT","입문",25,List.of("자료 분석","보고서","근거 검증"),"결제 지연 상황을 동료에게 설명하기",
    "당신은 서비스 운영 담당자입니다. 결제 지연 알림과 제한된 관측 자료를 받았습니다. 동료가 다음 조치를 결정할 수 있도록 현재 상황을 보고하세요. 원인을 확정할 자료가 충분한지도 판단해야 합니다.",
    List.of("시간대별로 확인된 사실을 자료의 줄과 연결합니다.","가능한 원인과 확인되지 않은 사항을 구분합니다.","다음 확인 방법과 대응 방안, 판단의 한계를 설명합니다.","자료에 없는 수치나 확정 원인을 만들어 넣지 않습니다."),
    "보고서, 핵심 주장에 연결한 자료 인용, 검증 설명과 남은 한계",
    List.of("핵심 선택 하나를 왜 채택했고 어떻게 확인했나요? 설명하기 어렵다면 그 부분을 적어도 됩니다.","추가 확인에서 결제 외 API에도 지연이 있었다면 어떤 가설과 대응을 다시 확인하겠나요?"),
    hints?List.of("자료에서 확인된 사실과 아직 모르는 것을 먼저 나눠 보세요.","AI가 제안한 원인에 직접적인 근거가 있는지 자료의 줄과 대조해 보세요.","보고서의 핵심 주장 하나에 자료를 연결하고, 추가로 확인할 방법을 적어 보세요."):List.of());
-  return new Task("payment-delay-report",version,"REPORT","중급",35,List.of("운영 분석","보고서","상충 근거","의사결정"),"결제 지연 대응안을 운영 리드에게 제안하기",
+  return new Task(REPORT_CATALOG_ID,version,"REPORT","중급",35,List.of("운영 분석","보고서","상충 근거","의사결정"),"결제 지연 대응안을 운영 리드에게 제안하기",
    "당신은 결제 서비스 운영 담당자입니다. 지연 지표, 배포 기록, 외부 사업자와 고객 문의 자료가 서로 다른 가능성을 가리킵니다. 운영 리드가 공지와 다음 조사를 결정할 수 있도록 확인된 사실, 가설, 미확인 사항을 구분해 보고하세요. 특정 원인을 단정해 달라는 요청도 근거에 맞게 다뤄야 합니다.",
    List.of("서로 다른 자료에서 일치하거나 충돌하는 내용을 구분합니다.","원인 가설마다 직접 근거와 반대 근거 또는 빈틈을 함께 적습니다.","지금 실행할 대응과 추가 확인 순서를 제안합니다.","자료에 없는 원인·수치·확정 표현을 만들지 않습니다."),
    "운영 리드용 보고서, 핵심 주장에 연결한 자료 인용, 검증 설명과 남은 한계",
@@ -40,13 +49,13 @@ public final class FlowTasks {
  }
 
  private static Task coding(String version,boolean hints){
-  if(version.equals(LEGACY_VERSION))return new Task("item-identity-coding",version,"CODING","입문",20,List.of("JavaScript","버그 수정","테스트"),"중복 없이 항목 추가하기",
+  if(version.equals(LEGACY_VERSION))return new Task(CODING_CATALOG_ID,version,"CODING","입문",20,List.of("JavaScript","버그 수정","테스트"),"중복 없이 항목 추가하기",
    "목록에 항목을 추가하면 같은 id가 중복되고 원래 배열도 변경됩니다. AI와 원인을 분석하고 addItem 함수를 수정하세요.",
    List.of("유효한 id·title 문자열을 가진 항목을 처리합니다.","같은 id는 기존 항목과 순서를 유지하고 새 id만 뒤에 추가합니다.","입력 배열과 기존 항목을 변경하지 않습니다.","JavaScript 단일 함수만 지원하며 DOM·네트워크·패키지는 사용할 수 없습니다."),
    "코드, 현재 코드의 공개 테스트 기록, 변경 이유와 남은 한계",
    List.of("핵심 선택 하나를 왜 채택했고 어떻게 확인했나요? 설명하기 어렵다면 그 부분을 적어도 됩니다.","같은 id의 새 title로 기존 항목을 갱신해야 한다면 어떤 코드와 테스트를 다시 확인하겠나요?"),
    hints?List.of("먼저 시작 코드를 실행하고 어떤 요구사항이 실패하는지 확인해 보세요.","AI에게 입력 보존과 중복 처리라는 제약을 함께 전달해 보세요.","수정안을 적용한 뒤 같은 테스트를 다시 실행하고 남은 한계를 적어 보세요."):List.of());
-  return new Task("item-identity-coding",version,"CODING","중급",30,List.of("JavaScript","디버깅","경계 조건","AI 제안 검증"),"항목의 식별 기준을 바로잡기",
+  return new Task(CODING_CATALOG_ID,version,"CODING","중급",30,List.of("JavaScript","디버깅","경계 조건","AI 제안 검증"),"항목의 식별 기준을 바로잡기",
    "목록의 중복을 막는 코드가 제목을 식별 기준으로 사용합니다. 그 결과 같은 제목의 새 항목은 빠지고, 같은 id의 제목 변경은 중복으로 추가됩니다. AI 제안을 그대로 적용하지 말고 요구사항과 공개 테스트를 대조해 addItem 함수를 수정하세요.",
    List.of("항목의 동일 여부는 title이 아니라 id로 판단합니다.","같은 id가 있으면 기존 항목과 순서를 유지합니다.","서로 다른 id는 title이 같아도 뒤에 추가합니다.","입력 배열과 기존 항목을 변경하지 않습니다.","JavaScript 단일 함수만 지원하며 DOM·네트워크·패키지는 사용할 수 없습니다."),
    "코드, 경계 조건을 포함한 공개 테스트 기록, AI 제안 중 채택·거절한 이유와 남은 한계",
