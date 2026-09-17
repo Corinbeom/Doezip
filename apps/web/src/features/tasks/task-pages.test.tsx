@@ -75,11 +75,11 @@ it('keeps the approved exploration shell honest about available capabilities', a
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ items: [task] })));
   render(<QueryProvider><TaskListPage /></QueryProvider>);
   await screen.findByRole('link', { name: task.title });
-  expect(screen.getByRole('link', { name: '되짚 홈' })).toHaveAttribute('href', '/learn');
+  expect(screen.getByRole('link', { name: '되짚 홈' })).toHaveAttribute('href', '/');
   expect(screen.getByRole('link', { name: '본문으로 바로가기' })).toHaveAttribute('href', '#task-main');
   expect(screen.getByRole('link', { name: '문제 살펴보기' })).toHaveAttribute('href', '#task-list');
   expect(screen.queryByText(/미승인/)).not.toBeInTheDocument();
-  expect(screen.queryByRole('link', { name: '내 학습' })).not.toBeInTheDocument();
+  expect(screen.getByRole('link', { name: '내 학습' })).toHaveAttribute('href', '/learn');
   expect(screen.queryByRole('button', { name: /시작하기/ })).not.toBeInTheDocument();
   expect(screen.getByText(/보고서 과제는 AI와 자료를 분석/)).toBeInTheDocument();
 });

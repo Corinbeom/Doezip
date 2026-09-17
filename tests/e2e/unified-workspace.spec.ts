@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { createWorkspace, installTestSession, testIdentity } from '../support/e2e-auth';
 
 test('one login navigates between report chat and coding without losing either saved workspace', async ({ page, context, request }) => {
-  const identity = await testIdentity(request);
+  const identity = await testIdentity(request, `flow-${crypto.randomUUID()}`);
   const report = await createWorkspace(request, identity.headers);
   await installTestSession(context, identity.session);
   const reportUrl = `/sessions/${report.session.id}`;
@@ -19,7 +19,7 @@ test('one login navigates between report chat and coding without losing either s
   await page.getByLabel('solution.js', { exact: true }).fill(code);
   await page.getByRole('button', { name: '저장하고 테스트' }).click();
   await expect(page.getByText('통과 · 같은 id 중복 방지')).toBeVisible();
-  await page.getByRole('navigation', { name: '주 메뉴' }).getByRole('link', { name: '문제 탐색' }).click();
+  await page.getByRole('navigation', { name: '주 메뉴' }).getByRole('link', { name: '과제 둘러보기' }).click();
   await expect(page.getByRole('link', { name: '구현 과제 시작하기' })).toHaveAttribute('href', '/coding');
   await expect(page.getByRole('button', { name: '로그아웃', exact: true })).toBeVisible();
   await page.goto(reportUrl);
