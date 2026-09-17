@@ -22,3 +22,7 @@ V10은 fault_attempts와 수동 검산용 evidence_links를 추가한다. claims
 V11은 evaluation_runs와 불변 입력·단일 active job·lease 제약을 추가한다. 결과/리포트 테이블은 후속이다.
 
 V20은 기존 learning flow를 유형별 안정적인 catalogId로 보정하고 이후 생성 기록에 `task_catalog_id + flow_version` 조합을 보존한다. 기존 flow_version 컬럼은 배포 중 이전 API가 계속 읽을 수 있도록 유지한다.
+
+V21은 `retry-policy-v1` coding workspace를 허용하고 이후 생성되는 learning flow의 평가 prompt 기본값을 `learning-feedback-v2`로 바꾼다. 기존 flow에 저장된 prompt version은 변경하지 않는다.
+
+local/demo V22는 공개 가상 `activation-drop` 보고서 과제와 퍼널·실험·VOC·이해관계자 요청 자료 네 개를 추가한다. 실제 사용자 자료, 비공개 정답과 평가 seed는 포함하지 않는다.
