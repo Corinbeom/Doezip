@@ -37,9 +37,10 @@ class TaskIntegrationTest {
         assertThat(jdbc.queryForObject("select status from tasks where id='61111111-1111-4111-8111-111111111111'", String.class)).isEqualTo("ARCHIVED");
         assertThat(jdbc.queryForObject("select description_markdown from tasks where id='61111111-1111-4111-8111-111111111111'", String.class)).contains("현재는 조회만 가능");
         assertThat(jdbc.queryForObject("select version_no from tasks where id=?::uuid", Integer.class, SAMPLE)).isEqualTo(3);
-        assertThat(jdbc.queryForObject("select count(*) from tasks", Integer.class)).isEqualTo(4);
+        assertThat(jdbc.queryForObject("select count(*) from tasks", Integer.class)).isEqualTo(5);
         assertThat(jdbc.queryForObject("select count(*) from rubric_dimensions", Integer.class)).isEqualTo(24);
-        assertThat(jdbc.queryForObject("select count(*) from materials", Integer.class)).isEqualTo(4);
+        assertThat(jdbc.queryForObject("select count(*) from materials", Integer.class)).isEqualTo(7);
+        assertThat(jdbc.queryForObject("select count(*) from materials where task_id='72222222-2222-4222-8222-222222222222'", Integer.class)).isEqualTo(3);
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> jdbc.update(
             "insert into tasks (id, task_code, title, description_markdown, version_no) values (?, 'invalid', 'test', 'test', 0)",
             UUID.randomUUID())).isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
@@ -57,7 +58,7 @@ class TaskIntegrationTest {
         var list = http.getForEntity("/api/v1/tasks", String.class);
         assertThat(list.getStatusCode()).isEqualTo(HttpStatus.OK);
         var items = mapper.readTree(list.getBody()).get("items");
-        assertThat(items.size()).isEqualTo(2);
+        assertThat(items.size()).isEqualTo(3);
         var response = http.getForEntity("/api/v1/tasks/" + SAMPLE, String.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         var task = mapper.readTree(response.getBody());

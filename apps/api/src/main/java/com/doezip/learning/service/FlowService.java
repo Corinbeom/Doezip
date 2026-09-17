@@ -22,16 +22,16 @@ public class FlowService {
  private UUID uuid(JsonNode n,String key){return n.path(key).isNull()?null:UUID.fromString(n.path(key).asText());}
  private SessionFailure conflict(){return new SessionFailure(409,"FLOW_STATE_CONFLICT");}
  private void working(JsonNode f,long version){if(!f.path("stage").asText().equals("WORKING")||f.path("version").asLong()!=version)throw conflict();}
- @Transactional public View create(UUID user,Create b){return create(user,b,null,null);}
- private View create(UUID user,Create b,UUID parent,String content){
+ @Transactional public View create(UUID user,Create b){return create(user,b,null,null,FlowTasks.CURRENT_VERSION);}
+ private View create(UUID user,Create b,UUID parent,String content,String flowVersion){
   repo.db().queryForObject("SELECT pg_advisory_xact_lock(hashtext(?))",Object.class,user.toString());
   var prior=repo.db().queryForList("SELECT id FROM learning_flows WHERE user_id=? AND request_key=?",UUID.class,user,b.requestKey());
   if(!prior.isEmpty()){var f=repo.owned(user,prior.getFirst(),false);if(!f.path("task_kind").asText().equals(b.kind().name())||!f.path("mode").asText().equals(b.mode().name())||!Objects.equals(uuid(f,"parent_id"),parent))throw conflict();return view(f);}
   if(repo.db().queryForObject("SELECT count(*) FROM learning_flows WHERE user_id=?",Integer.class,user)>=50)throw new SessionFailure(409,"FLOW_LIMIT");
   UUID session=null,code=null,id=UUID.randomUUID();
-  if(b.kind()==Kind.REPORT){var w=sessions.create(user,new SessionDtos.Create(FlowTasks.REPORT_ID));session=w.session().id();if(content!=null)sessions.save(user,session,new SessionDtos.Save(content,0));}
-  else {var w=coding.create(user);code=w.id();if(content!=null)coding.save(user,code,new CodingDtos.Save(content,0L));}
-  repo.db().update("INSERT INTO learning_flows(id,user_id,request_key,task_kind,mode,session_id,coding_id,parent_id) VALUES (?,?,?,?,?,?,?,?)",id,user,b.requestKey(),b.kind().name(),b.mode().name(),session,code,parent);
+  if(b.kind()==Kind.REPORT){var w=sessions.create(user,new SessionDtos.Create(FlowTasks.reportTaskId(flowVersion)));session=w.session().id();if(content!=null)sessions.save(user,session,new SessionDtos.Save(content,0));}
+  else {var w=coding.create(user,FlowTasks.codingTaskVersion(flowVersion));code=w.id();if(content!=null)coding.save(user,code,new CodingDtos.Save(content,0L));}
+  repo.db().update("INSERT INTO learning_flows(id,user_id,request_key,task_kind,mode,flow_version,session_id,coding_id,parent_id) VALUES (?,?,?,?,?,?,?,?,?)",id,user,b.requestKey(),b.kind().name(),b.mode().name(),flowVersion,session,code,parent);
   UUID resource=session==null?code:session;
   repo.event(resource,"INITIAL_ARTIFACT",Map.of("content",session==null?coding.get(user,code).code():sessions.get(user,session).draft().markdown()));
   return view(repo.owned(user,id,false));
@@ -45,7 +45,7 @@ public class FlowService {
    c.put("previousArtifact",old.path("snapshot").path("artifact").asText());c.put("currentArtifact",f.path("snapshot").path("artifact").asText());
    c.put("changed",!old.path("snapshot").path("artifact").equals(f.path("snapshot").path("artifact")));c.set("previousVerification",old.path("snapshot").path("notes"));c.set("currentVerification",f.path("snapshot").path("notes"));comparison.add(c);
   }}
-  return new View(uuid(f,"id"),f.path("task_kind").asText(),f.path("mode").asText(),f.path("flow_version").asText(),uuid(f,"session_id"),uuid(f,"coding_id"),parent,f.path("stage").asText(),f.path("version").asLong(),f.path("notes"),f.path("hints"),f.path("snapshot"),f.path("answers"),f.path("feedback"),f.path("feedback_status").asText(),FlowTasks.get(f.path("task_kind").asText(),false),comparison);
+  return new View(uuid(f,"id"),f.path("task_kind").asText(),f.path("mode").asText(),f.path("flow_version").asText(),uuid(f,"session_id"),uuid(f,"coding_id"),parent,f.path("stage").asText(),f.path("version").asLong(),f.path("notes"),f.path("hints"),f.path("snapshot"),f.path("answers"),f.path("feedback"),f.path("feedback_status").asText(),FlowTasks.get(f.path("task_kind").asText(),f.path("flow_version").asText(),false),comparison);
  }
  @Transactional public View save(UUID user,UUID id,Save b){var f=repo.owned(user,id,true);working(f,b.version());
   // Check material ownership/stage and ranges before saving references. Quotes are server-derived at sealing.
@@ -58,14 +58,14 @@ public class FlowService {
   }return result;
  }
  @Transactional public View hint(UUID user,UUID id,Hint b){var f=repo.owned(user,id,true);if(!f.path("mode").asText().equals("TRAINING")||!f.path("stage").asText().equals("WORKING"))throw conflict();
-  var hints=(ArrayNode)f.path("hints").deepCopy();if(!java.util.stream.StreamSupport.stream(hints.spliterator(),false).anyMatch(h->h.path("index").asInt()==b.index()))hints.addObject().put("index",b.index()).put("text",FlowTasks.get(f.path("task_kind").asText(),true).hints().get(b.index()));
+  var hints=(ArrayNode)f.path("hints").deepCopy();if(!java.util.stream.StreamSupport.stream(hints.spliterator(),false).anyMatch(h->h.path("index").asInt()==b.index()))hints.addObject().put("index",b.index()).put("text",FlowTasks.get(f.path("task_kind").asText(),f.path("flow_version").asText(),true).hints().get(b.index()));
   repo.db().update("UPDATE learning_flows SET hints=?::jsonb WHERE id=?",hints.toString(),id);return view(repo.owned(user,id,false));
  }
  @Transactional public View submit(UUID user,UUID id,Submit b){var f=repo.owned(user,id,true);
   if(!f.path("snapshot").isNull()) {var s=f.path("snapshot");if(s.path("flowVersion").asLong()==b.version()&&s.path("artifactVersion").asLong()==b.artifactVersion()&&s.path("artifactHash").asText().equals(b.artifactHash()))return view(f);throw conflict();}
   working(f,b.version());Notes notes;try{notes=repo.json().treeToValue(f.path("notes"),Notes.class);}catch(Exception e){throw SessionFailure.invalid();}
   if(notes.explanation().isBlank()||notes.verification().isBlank())throw new SessionFailure(422,"FLOW_NOTES_REQUIRED");
-  var snapshot=repo.json().createObjectNode();snapshot.put("flowVersion",b.version());snapshot.put("artifactVersion",b.artifactVersion());snapshot.put("artifactHash",b.artifactHash());snapshot.put("cutoff",java.time.Instant.now().toString());snapshot.set("notes",f.path("notes"));snapshot.set("hints",f.path("hints"));snapshot.set("task",repo.json().valueToTree(FlowTasks.get(f.path("task_kind").asText(),false)));snapshot.put("mode",f.path("mode").asText());
+  var snapshot=repo.json().createObjectNode();snapshot.put("flowVersion",b.version());snapshot.put("artifactVersion",b.artifactVersion());snapshot.put("artifactHash",b.artifactHash());snapshot.put("cutoff",java.time.Instant.now().toString());snapshot.set("notes",f.path("notes"));snapshot.set("hints",f.path("hints"));snapshot.set("task",repo.json().valueToTree(FlowTasks.get(f.path("task_kind").asText(),f.path("flow_version").asText(),false)));snapshot.put("mode",f.path("mode").asText());
   var records=snapshot.putArray("records");String artifact;
   if(uuid(f,"session_id")!=null){UUID sid=uuid(f,"session_id");var w=sessions.get(user,sid);
    // DocumentService takes the same session lock used by save/chat before sealing.
@@ -91,7 +91,7 @@ public class FlowService {
  }
  @Transactional public View practice(UUID user,UUID id){var f=repo.owned(user,id,true);if(!f.path("feedback_status").asText().equals("SUCCEEDED"))throw conflict();
   var child=repo.db().queryForList("SELECT id FROM learning_flows WHERE parent_id=?",UUID.class,id);if(!child.isEmpty())return view(repo.owned(user,child.getFirst(),false));
-  return create(user,new Create(UUID.randomUUID(),Kind.valueOf(f.path("task_kind").asText()),Mode.TRAINING),id,f.path("snapshot").path("artifact").asText());
+  return create(user,new Create(UUID.randomUUID(),Kind.valueOf(f.path("task_kind").asText()),Mode.TRAINING),id,f.path("snapshot").path("artifact").asText(),f.path("flow_version").asText());
  }
  public record Reservation(UUID token,String model,JsonNode input) {}
  @Transactional public Reservation reserve(UUID user,UUID id){var f=repo.owned(user,id,true);repo.expire(id);f=repo.owned(user,id,false);

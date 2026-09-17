@@ -10,13 +10,16 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class CodingService {
  @org.springframework.beans.factory.annotation.Autowired private com.doezip.learning.repository.FlowRepository flowRecords;
- private final CodingRepository repo;private final String starter;
- public CodingService(CodingRepository repo){this.repo=repo;try(var in=new ClassPathResource("coding/starter.js").getInputStream()){starter=new String(in.readAllBytes(),StandardCharsets.UTF_8);}catch(Exception e){throw new IllegalStateException(e);}}
- @Transactional public Workspace create(UUID user){
+ private final CodingRepository repo;private final Map<String,String> starters;
+ public CodingService(CodingRepository repo){this.repo=repo;starters=Map.of("duplicate-items-v1",starter("coding/starter.js"),"duplicate-items-v2",starter("coding/starter-v2.js"));}
+ private String starter(String path){try(var in=new ClassPathResource(path).getInputStream()){return new String(in.readAllBytes(),StandardCharsets.UTF_8);}catch(Exception e){throw new IllegalStateException(e);}}
+ @Transactional public Workspace create(UUID user){return create(user,"duplicate-items-v1");}
+ @Transactional public Workspace create(UUID user,String taskVersion){
   // Bound stored workspaces per learner; submissions remain available.
   repo.lockUser(user);
   if(repo.countWorkspaces(user)>=50)throw new SessionFailure(409,"CODING_WORKSPACE_LIMIT");
-  UUID id=UUID.randomUUID();repo.create(id,user,starter);return repo.view(id,user);
+  String starter=starters.get(taskVersion);if(starter==null)throw SessionFailure.invalid();
+  UUID id=UUID.randomUUID();repo.create(id,user,taskVersion,starter);return repo.view(id,user);
  }
  @Transactional(readOnly=true) public List<UUID> list(UUID user){return repo.list(user);}
  @Transactional public Workspace get(UUID user,UUID id){repo.owned(id,user,true);repo.expire(id);return repo.view(id,user);}
@@ -28,8 +31,8 @@ public class CodingService {
   repo.save(id,code);flowRecords.event(id,"CODE_SAVED",Map.of("code",code,"version",body.expectedVersion()+1));return repo.view(id,user);
  }
  @Transactional public Workspace run(UUID user,UUID id,Run body){
-  writable(user,id,body.version());idle(id);
-  if(!body.suite().equals("duplicate-items-v1"))throw SessionFailure.invalid();
+  var w=writable(user,id,body.version());idle(id);
+  if(!body.suite().equals(w.taskVersion()))throw SessionFailure.invalid();
   // Browser-reported public practice checks, never trusted server grading.
   repo.run(id,body);flowRecords.event(id,"PUBLIC_TEST",body);return repo.view(id,user);
  }

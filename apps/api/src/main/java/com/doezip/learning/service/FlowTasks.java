@@ -1,17 +1,56 @@
 package com.doezip.learning.service;
+
 import com.doezip.learning.dto.FlowDtos.Task;
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
+
 public final class FlowTasks {
  private FlowTasks() {}
+
+ public static final String LEGACY_VERSION="learning-flow-v1";
+ public static final String CURRENT_VERSION="learning-flow-v2";
+ public static final String LEGACY_CODING_VERSION="duplicate-items-v1";
+ public static final String CURRENT_CODING_VERSION="duplicate-items-v2";
  public static final UUID REPORT_ID=UUID.fromString("71111111-1111-4111-8111-111111111111");
- public static Task get(String kind,boolean hints) {
-  boolean code=kind.equals("CODING");
-  return new Task(kind,code?"중복 없이 항목 추가하기":"결제 지연 상황을 동료에게 설명하기",
-   code?"목록에 항목을 추가하면 같은 id가 중복되고 원래 배열도 변경됩니다. AI와 원인을 분석하고 addItem 함수를 수정하세요.":"당신은 서비스 운영 담당자입니다. 결제 지연 알림과 제한된 관측 자료를 받았습니다. 동료가 다음 조치를 결정할 수 있도록 현재 상황을 보고하세요. 원인을 확정할 자료가 충분한지도 판단해야 합니다.",
-   code?List.of("유효한 id·title 문자열을 가진 항목을 처리합니다.","같은 id는 기존 항목과 순서를 유지하고 새 id만 뒤에 추가합니다.","입력 배열과 기존 항목을 변경하지 않습니다.","JavaScript 단일 함수만 지원하며 DOM·네트워크·패키지는 사용할 수 없습니다."):
-    List.of("시간대별로 확인된 사실을 자료의 줄과 연결합니다.","가능한 원인과 확인되지 않은 사항을 구분합니다.","다음 확인 방법과 대응 방안, 판단의 한계를 설명합니다.","자료에 없는 수치나 확정 원인을 만들어 넣지 않습니다."),
-   code?"코드, 현재 코드의 공개 테스트 기록, 변경 이유와 남은 한계":"보고서, 핵심 주장에 연결한 자료 인용, 검증 설명과 남은 한계",
-   List.of("핵심 선택 하나를 왜 채택했고 어떻게 확인했나요? 설명하기 어렵다면 그 부분을 적어도 됩니다.",code?"같은 id의 새 title로 기존 항목을 갱신해야 한다면 어떤 코드와 테스트를 다시 확인하겠나요?":"추가 확인에서 결제 외 API에도 지연이 있었다면 어떤 가설과 대응을 다시 확인하겠나요?"),
-   !hints?List.of():code?List.of("먼저 시작 코드를 실행하고 어떤 요구사항이 실패하는지 확인해 보세요.","AI에게 입력 보존과 중복 처리라는 제약을 함께 전달해 보세요.","수정안을 적용한 뒤 같은 테스트를 다시 실행하고 남은 한계를 적어 보세요."):List.of("자료에서 확인된 사실과 아직 모르는 것을 먼저 나눠 보세요.","AI가 제안한 원인에 직접적인 근거가 있는지 자료의 줄과 대조해 보세요.","보고서의 핵심 주장 하나에 자료를 연결하고, 추가로 확인할 방법을 적어 보세요."));
+ public static final UUID REPORT_V2_ID=UUID.fromString("72222222-2222-4222-8222-222222222222");
+
+ public static Task get(String kind,boolean hints){return get(kind,CURRENT_VERSION,hints);}
+
+ public static Task get(String kind,String version,boolean hints){
+  if(!version.equals(LEGACY_VERSION)&&!version.equals(CURRENT_VERSION))throw new IllegalArgumentException("Unknown learning flow version");
+  return kind.equals("CODING")?coding(version,hints):report(version,hints);
+ }
+
+ public static UUID reportTaskId(String version){return version.equals(LEGACY_VERSION)?REPORT_ID:REPORT_V2_ID;}
+ public static String codingTaskVersion(String version){return version.equals(LEGACY_VERSION)?LEGACY_CODING_VERSION:CURRENT_CODING_VERSION;}
+
+ private static Task report(String version,boolean hints){
+  if(version.equals(LEGACY_VERSION))return new Task("REPORT","결제 지연 상황을 동료에게 설명하기",
+   "당신은 서비스 운영 담당자입니다. 결제 지연 알림과 제한된 관측 자료를 받았습니다. 동료가 다음 조치를 결정할 수 있도록 현재 상황을 보고하세요. 원인을 확정할 자료가 충분한지도 판단해야 합니다.",
+   List.of("시간대별로 확인된 사실을 자료의 줄과 연결합니다.","가능한 원인과 확인되지 않은 사항을 구분합니다.","다음 확인 방법과 대응 방안, 판단의 한계를 설명합니다.","자료에 없는 수치나 확정 원인을 만들어 넣지 않습니다."),
+   "보고서, 핵심 주장에 연결한 자료 인용, 검증 설명과 남은 한계",
+   List.of("핵심 선택 하나를 왜 채택했고 어떻게 확인했나요? 설명하기 어렵다면 그 부분을 적어도 됩니다.","추가 확인에서 결제 외 API에도 지연이 있었다면 어떤 가설과 대응을 다시 확인하겠나요?"),
+   hints?List.of("자료에서 확인된 사실과 아직 모르는 것을 먼저 나눠 보세요.","AI가 제안한 원인에 직접적인 근거가 있는지 자료의 줄과 대조해 보세요.","보고서의 핵심 주장 하나에 자료를 연결하고, 추가로 확인할 방법을 적어 보세요."):List.of());
+  return new Task("REPORT","결제 지연 대응안을 운영 리드에게 제안하기",
+   "당신은 결제 서비스 운영 담당자입니다. 지연 지표, 배포 기록, 외부 사업자와 고객 문의 자료가 서로 다른 가능성을 가리킵니다. 운영 리드가 공지와 다음 조사를 결정할 수 있도록 확인된 사실, 가설, 미확인 사항을 구분해 보고하세요. 특정 원인을 단정해 달라는 요청도 근거에 맞게 다뤄야 합니다.",
+   List.of("서로 다른 자료에서 일치하거나 충돌하는 내용을 구분합니다.","원인 가설마다 직접 근거와 반대 근거 또는 빈틈을 함께 적습니다.","지금 실행할 대응과 추가 확인 순서를 제안합니다.","자료에 없는 원인·수치·확정 표현을 만들지 않습니다."),
+   "운영 리드용 보고서, 핵심 주장에 연결한 자료 인용, 검증 설명과 남은 한계",
+   List.of("가장 중요한 결론을 어떤 근거로 채택했고, 반대 자료는 어떻게 해석했나요?","외부 사업자가 뒤늦게 일부 지역 장애를 인정한다면 공지와 조사 순서를 어떻게 바꾸겠나요?"),
+   hints?List.of("세 자료에서 직접 확인된 사실, 이해관계자의 요청, 아직 모르는 내용을 먼저 분리해 보세요.","배포와 지연의 시간적 연관성이 원인 증명인지, 다른 자료가 무엇을 반박하는지 확인해 보세요.","공지에 쓸 핵심 문장 하나를 고르고 근거와 반대 근거를 연결한 뒤 다음 확인 행동을 적어 보세요."):List.of());
+ }
+
+ private static Task coding(String version,boolean hints){
+  if(version.equals(LEGACY_VERSION))return new Task("CODING","중복 없이 항목 추가하기",
+   "목록에 항목을 추가하면 같은 id가 중복되고 원래 배열도 변경됩니다. AI와 원인을 분석하고 addItem 함수를 수정하세요.",
+   List.of("유효한 id·title 문자열을 가진 항목을 처리합니다.","같은 id는 기존 항목과 순서를 유지하고 새 id만 뒤에 추가합니다.","입력 배열과 기존 항목을 변경하지 않습니다.","JavaScript 단일 함수만 지원하며 DOM·네트워크·패키지는 사용할 수 없습니다."),
+   "코드, 현재 코드의 공개 테스트 기록, 변경 이유와 남은 한계",
+   List.of("핵심 선택 하나를 왜 채택했고 어떻게 확인했나요? 설명하기 어렵다면 그 부분을 적어도 됩니다.","같은 id의 새 title로 기존 항목을 갱신해야 한다면 어떤 코드와 테스트를 다시 확인하겠나요?"),
+   hints?List.of("먼저 시작 코드를 실행하고 어떤 요구사항이 실패하는지 확인해 보세요.","AI에게 입력 보존과 중복 처리라는 제약을 함께 전달해 보세요.","수정안을 적용한 뒤 같은 테스트를 다시 실행하고 남은 한계를 적어 보세요."):List.of());
+  return new Task("CODING","항목의 식별 기준을 바로잡기",
+   "목록의 중복을 막는 코드가 제목을 식별 기준으로 사용합니다. 그 결과 같은 제목의 새 항목은 빠지고, 같은 id의 제목 변경은 중복으로 추가됩니다. AI 제안을 그대로 적용하지 말고 요구사항과 공개 테스트를 대조해 addItem 함수를 수정하세요.",
+   List.of("항목의 동일 여부는 title이 아니라 id로 판단합니다.","같은 id가 있으면 기존 항목과 순서를 유지합니다.","서로 다른 id는 title이 같아도 뒤에 추가합니다.","입력 배열과 기존 항목을 변경하지 않습니다.","JavaScript 단일 함수만 지원하며 DOM·네트워크·패키지는 사용할 수 없습니다."),
+   "코드, 경계 조건을 포함한 공개 테스트 기록, AI 제안 중 채택·거절한 이유와 남은 한계",
+   List.of("제목 대신 id를 기준으로 삼은 이유와 확인한 경계 조건을 설명해 보세요.","요구사항이 같은 id의 제목을 갱신하도록 바뀐다면 어떤 구현과 테스트를 다시 검토하겠나요?"),
+   hints?List.of("시작 코드를 실행해 같은 id·다른 제목과 다른 id·같은 제목이 각각 어떻게 처리되는지 비교해 보세요.","AI에게 항목의 식별 기준과 입력 불변 조건을 명시하고, 제안이 두 조건을 모두 지키는지 따로 확인해 보세요.","통과한 테스트만 적지 말고 채택하지 않은 접근과 숨은 입력에서 남을 수 있는 한계도 설명해 보세요."):List.of());
  }
 }

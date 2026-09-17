@@ -48,7 +48,7 @@ function Editor({initial,userId,flow=false,onReady}:{initial:Workspace;userId:st
  }
  async function save(signal:AbortSignal){if(!dirty)return saved;return mutate(`/${initial.id}`,'PUT',{code,expectedVersion:saved.version},signal);}
  function apply(turn:Turn){if(dirty||saved.version!==turn.baseVersion){setError('수정안 생성 후 코드가 변경되었습니다. 현재 코드를 저장한 뒤 새 수정안을 요청하세요.');return;}setUndo(code);setCode(turn.proposedCode!);setError('');}
- async function run(signal:AbortSignal){const w=await save(signal);if(!signal.aborted)update(w);const results=await execute(w.code,signal);return mutate(`/${w.id}/runs`,'POST',{version:w.version,suite:'duplicate-items-v1',results},signal);}
+ async function run(signal:AbortSignal){const w=await save(signal);if(!signal.aborted)update(w);const results=await execute(w.code,w.taskVersion,signal);return mutate(`/${w.id}/runs`,'POST',{version:w.version,suite:w.taskVersion,results},signal);}
  async function ask(signal:AbortSignal){
   const w=await save(signal);if(!signal.aborted)update(w);
   const previous=retryAsk.current;const body=previous&&previous.expectedVersion===w.version&&previous.instruction===instruction?previous:{requestKey:crypto.randomUUID(),expectedVersion:w.version,instruction};retryAsk.current=body;

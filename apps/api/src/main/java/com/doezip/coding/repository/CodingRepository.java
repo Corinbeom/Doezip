@@ -20,7 +20,7 @@ public class CodingRepository {
 
  public void lockUser(UUID user){db.queryForObject("SELECT pg_advisory_xact_lock(hashtext(?))",Object.class,user.toString());}
  public int countWorkspaces(UUID user){return db.queryForObject("SELECT count(*) FROM coding_workspaces WHERE user_id=?",Integer.class,user);}
- public void create(UUID id,UUID user,String starter){db.update("INSERT INTO coding_workspaces(id,user_id,task_version,code) VALUES (?,?,'duplicate-items-v1',?)",id,user,starter);}
+ public void create(UUID id,UUID user,String taskVersion,String starter){db.update("INSERT INTO coding_workspaces(id,user_id,task_version,code) VALUES (?,?,?,?)",id,user,taskVersion,starter);}
  public List<UUID> list(UUID user){return db.queryForList("SELECT id FROM coding_workspaces WHERE user_id=? ORDER BY created_at DESC LIMIT 50",UUID.class,user);}
  public void save(UUID id,String code){db.update("UPDATE coding_workspaces SET code=?,version=version+1,last_run=NULL,updated_at=now() WHERE id=?",code,id);}
  public void run(UUID id,Run run){db.update("UPDATE coding_workspaces SET last_run=?::jsonb,updated_at=now() WHERE id=?",encode(run),id);}

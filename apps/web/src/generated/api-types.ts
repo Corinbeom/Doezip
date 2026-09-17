@@ -781,7 +781,7 @@ export interface components {
             /** Format: int64 */
             version: number;
             /** @enum {string} */
-            suite: "duplicate-items-v1";
+            suite: "duplicate-items-v1" | "duplicate-items-v2";
             results: components["schemas"]["CodingResult"][];
         };
         CodingTurn: {
@@ -802,7 +802,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             /** @enum {string} */
-            taskVersion: "duplicate-items-v1";
+            taskVersion: "duplicate-items-v1" | "duplicate-items-v2";
             code: string;
             /** Format: int64 */
             version: number;

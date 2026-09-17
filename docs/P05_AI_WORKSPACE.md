@@ -1,6 +1,6 @@
 # P05 AI 대화 작업 공간
 
-2026-09-16, `feature/P05-ai-workspace`. 현재 공개 흐름의 UI 품질 변경이 아직 `develop`에 통합되지 않아 `feature/P04-product-quality`의 `2218d44`를 기준으로 분기했다. P04 통합 뒤 이 브랜치의 변경을 검토한다.
+2026-09-16, `feature/P05-ai-workspace`. P04를 포함한 통합 기능 체인으로 구현했으며 2026-09-17 PR #4에서 `develop`에 squash merge했다.
 
 ## 목적과 범위
 

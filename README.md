@@ -1,8 +1,8 @@
 # Doezip
 
 AI 활용 역량 훈련 서비스.
-현재 저장소에는 Next.js 웹, Spring Boot API, PostgreSQL 개발 환경과 과제 조회·로그인·보고서 작성·최초 제출·검산 초안 열람·검토 저장·제출·Gemini INITIAL 평가·결과 조회 기능이 구성되어 있다.
-이 브랜치는 보고서·구현 과제의 훈련/모의 전형, 내 결과물 검증, 제출 후 직접 설명과 근거 중심 피드백·재연습을 연결한다. AI 대화 화면은 [P05 기록](docs/P05_AI_WORKSPACE.md), 브라우저 품질 점검은 [P04 기록](docs/P04_PRODUCT_QUALITY.md), 힌트·원문 선택·피드백 읽기 기준은 [P03 기록](docs/P03_FEEDBACK_EXPERIENCE.md), 단계형 화면과 훈련 안내 기준은 [P02 기록](docs/P02_GUIDED_WORKSPACE.md), 핵심 흐름과 경계는 [P01 기록](docs/P01_LEARNING_FLOW.md), 이전 통합은 [I02 기록](docs/I02_UNIFIED_WORKSPACE.md)을 따른다.
+현재 저장소에는 Next.js 웹, Spring Boot API, PostgreSQL 개발 환경과 Google 로그인, 보고서·구현 과제의 훈련/모의 전형, AI 대화, 결과물 검증, 직접 설명, Gemini 피드백과 재연습 흐름이 구성되어 있다.
+현재 통합본의 AI 대화 화면은 [P05 기록](docs/P05_AI_WORKSPACE.md), 과제 콘텐츠 v0.2는 [P06 기록](docs/P06_CONTENT_V2.md), 브라우저 품질 점검은 [P04 기록](docs/P04_PRODUCT_QUALITY.md)을 따른다.
 제품 기능의 구현 범위와 진행 상태는 [개발 계획](docs/FEATURE_BACKLOG.md)을 참고한다.
 
 ## 로컬 실행
@@ -13,8 +13,6 @@ Git이 필요하다. 아래 명령은 macOS/Linux/WSL 셸 기준이다. Windows�
 ```bash
 git clone https://github.com/Corinbeom/Doezip.git
 cd Doezip
-# 공개 데모와 현재 통합 기능 확인 브랜치. develop 반영 전이다.
-git switch feature/D01-demo-deployment
 # nvm을 사용하는 경우
 nvm install
 nvm use
@@ -103,7 +101,7 @@ npm run deploy:smoke
 - `apps/web/src/shared/api`: 공통 fetch·오류·Query Provider. `shared/ui`: 승인 디자인의 공통 화면 구성·스타일.
 - `apps/web/src/generated/api-types.ts`: 생성 타입. **손으로 수정하지 않는다.**
 - `apps/api`: Spring MVC·JPA·Validation·Security·Actuator·Flyway. DB 상세 비공개. health·과제 조회 GET은 공개다. 사용자·학습 세션·제출본·검산 경로는 JWT와 소유권을 확인하고, 미구현 경로는 차단한다.
-- `apps/api/src/main/resources/db/migration`: 과제·루브릭·사용자·학습 세션·자료·제출본·검산 템플릿·문장·실행 등 열두 테이블. `db/local`: 로컬 조회용 seed.
+- `apps/api/src/main/resources/db/migration`: 과제·루브릭·사용자·학습 세션·자료·제출본·검산·평가·채팅·구현·통합 학습 흐름의 현재 스키마. `db/local`: 로컬 공개 가상 seed.
   전체 ERD migration·학습 과제 패키지 seed는 후속 작업.
 - `contracts`, `docs`, `fixtures`, `templates`: 기존 기준 자료 보존. fixture는 웹에 import·배포하지 않는다.
   templates는 참고 예시이며 실제 앱 설정은 루트와 apps/api 아래에 있다.
@@ -142,4 +140,4 @@ AI 평가 설정과 실행은 [AI_SETUP](docs/AI_SETUP.md), 구현·검증 구�
 
 `/coding`에서 JavaScript 코드 편집, AI 수정안 적용, 공개 테스트 실행, 저장·복원·제출을 제공한다.
 설정과 실행 경계는 [F08a 작업 기록](docs/F08A_CODING_WORKSPACE.md)을 따른다.
-구현 과제의 AI 역량 평가와 범용 개발 환경은 아직 연결하지 않았다.
+통합 `/learn` 흐름에서는 구현 과제의 요청·코드·공개 테스트·검증 설명·직접 설명을 피드백 입력으로 사용한다. 독립 서버 채점과 범용 개발 환경은 아직 연결하지 않았다.
