@@ -1,10 +1,12 @@
-> **F00 범위 정정 (2026-09-06):** 최신 사용자 지시에 따라 이번 작업은 [개발 환경 구축](F00_ENVIRONMENT.md)만 수행한다. 기존 전체 MVP·ERD·seed·AI·배포 계획은 후속 작업이다. 현재 실행 명령은 [루트 README](../README.md)를 따른다.
+> **F00 당시 범위 (2026-09-06, 과거 기록):** 해당 작업은 [개발 환경 구축](F00_ENVIRONMENT.md)만 수행한다. 기존 전체 MVP·ERD·seed·AI·배포 계획은 후속 작업이다. 현재 실행 명령은 [루트 README](../README.md)를 따른다.
 
 # 테스트·배포·운영 런북
 
 이 문서는 **앱 구현 후 실행할 검증 절차**다. 문서의 형식 검사와 실제 서비스 테스트는 구분한다.
 
-## 1. D1 로컬 시작
+현재 실행 명령은 루트 README와 `npm run check`를 따른다. 과제 조회 검증은 [F02a 기록](F02A_TASK_BROWSE.md)에 있으며, 아래 초기 구축·전체 제품 검증 계획과 구분한다.
+
+## 1. D1 로컬 시작 (초기 계획)
 
 1. Node 24, Java 21, Docker, Git을 두 개발 환경에 동일하게 준비한다.
 2. 모노레포를 만들고 Node 의존성 lockfile과 Gradle wrapper/BOM을 고정한다.
@@ -155,3 +157,48 @@ D13에 처음으로 외부 도메인에서 스트리밍을 시도하지 않는�
 DB 20%와 초안 92%, 근거 없는 원인 단정 두 사례를 원본 자료와 함께 보여준다.
 새 정보 공개→실제 수정본→리포트 비교를 연결하되, 같은 검산을 재사용한 결과를 향상이라고 말하지 않는다.
 네트워크 실패 대비 영상은 실제 기능을 녹화하고, 재생 중인 것을 live라고 부르지 않는다.
+
+## F02b 실제 인증 경계·저장 검증
+
+현재 검사는 [F02b 기록](F02B_REPORT_DRAFT.md)을 따른다. `npm run check`는 테스트용 웹 설정을 사용하고 Playwright가 로컬 JWKS issuer·실제 API·웹을 실행한다. CI에서도 외부 Google 키 없이 실행한다. 타인 읽기/쓰기404, CAS409, 실패 초안 보존, 서버 저장본 복원, 모바일·안전한 텍스트 표시를 확인한다.
+
+F02c는 `tests/e2e/submission.spec.ts`와 SessionIntegrationTest에서 저장 후 제출·재조회, 실제 서버 저장 후 응답 유실 재시도, stale 버전·해시 차단, 동시 저장/제출 및 중복 제출, 소유권·DB UPDATE 차단·HTML 미실행을 검사한다. 실제 Google 계정 검증과 별개이며 [검증 기록](F02C_INITIAL_SUBMISSION.md)에 실행 결과를 남긴다.
+
+F04a 검산 시작/열람 검사는 `tests/e2e/challenge.spec.ts`와 SessionIntegrationTest에 있다. 안내 확인 전 미노출, 실제 배정·복원·응답 유실 재시도, 사용자 보고서 보존, 소유권, 동시 시작, 단계·해시 검사, 320px 화면을 확인한다. [F04a 실행 기록](F04A_CHALLENGE_START.md)을 참고한다.
+
+F04b 검토·인용·제출 검사는 SessionIntegrationTest와 tests/e2e/reviews.spec.ts에 있다. 실행 결과와 실제 Google 검증 구분은 [F04b](F04B_CHALLENGE_REVIEW.md)를 따른다.
+
+F05a: SessionIntegrationTest의 평가·lease 검사와 tests/e2e/evaluation.spec.ts를 실행한다. 실제 evaluator 미연결 실패가 정상이며 성공 점수를 기대하지 않는다. [기록](F05A_EVALUATION_LIFECYCLE.md).
+
+## F05b 결과 검증·저장·조회
+`npm run check`에 PostgreSQL 원자 발행/롤백/소유권 검사, 리포트 단위 검사, 브라우저 UI 경계 검사를 포함한다. 기본 검사의 worker는 AI 비활성 상태의 미연결 실패를 검증하며 sample GET 응답을 사용한 화면 검사를 실제 AI 성공으로 표시하지 않는다. 상세 검증과 미실행 범위는 [F05b 기록](F05B_EVALUATION_RESULTS.md)을 따른다.
+
+## F05c 실제 AI 검사
+기본 check는 외부 AI를 호출하지 않는다. SDK HTTP 경계와 PostgreSQL worker 통합 검사를 포함한다. 명시적 `npm run test:ai`는 가상 공개 데이터로 실제 Gemini를 1회 호출한다. 키가 없으면 실행 불가이며 성공/skip으로 대신하지 않는다. [AI 설정](AI_SETUP.md)과 [F05c 검증 기록](F05C_AI_EVALUATION.md)을 따른다.
+
+## I01 한 checkout 통합 검증
+기본 전체 검사는 npm run check, 선택적 실제 AI 브라우저 검사는 npm run test:flow:ai다. 가상 과제·테스트 JWT를 사용하며 실제 Gemini/DB/worker/결과 API는 대체하지 않는다. Google OAuth 공급자 화면의 실제 로그인과 모델 품질 평가는 별도다. 실행 결과와 이전 브랜치 관계는 [I01 기록](I01_INTEGRATION.md)을 따른다.
+
+## F03a 학습용 AI 대화
+기본 `npm run check`는 실제 AI를 비활성화한다. PostgreSQL의 대화 저장/소유권/멱등/취소 경합/단계/예산 검사, Google SDK HTTP 스트리밍 검사, 웹 SSE 파서와 화면 테스트를 포함한다. 브라우저 성공 채팅은 명시적 UI 경계 모의 응답이며 AI 미설정 오류와 보고서 보존은 실제 API로 검증한다. `npm run test:chat:ai`는 별도로 실제 Gemini+Testcontainers PostgreSQL을 검증한다. [실행 기록](F03A_LEARNING_CHAT.md).
+
+## F08a 코드 실행
+
+`npm run check`에 실제 WASM 실행 unit/E2E와 PostgreSQL 저장·AI 요청 상태 검사가 포함된다.
+`npm run test:coding:ai`는 키가 있을 때만 명시적으로 실행하는 Gemini 형식 검사다.
+브라우저 연습 결과를 독립 서버 채점이나 AI 역량 평가로 표시하지 않는다. [F08a 상세](F08A_CODING_WORKSPACE.md)
+
+## I02 한 로그인 통합
+보고서 채팅과 구현 작업을 함께 검사한다. 새 환경의 V14/V15 순서 및 한 로그인 이동·저장 복원 검사는 [I02 기록](I02_UNIFIED_WORKSPACE.md)을 따른다.
+
+## P01 새 수행 흐름
+`npm run check`에 두 과제×두 모드의 실제 저장/인용/제출/직접 설명/평가 미설정 복원 E2E, API 소유권·CAS·불변 snapshot·비동기 평가 token·재연습 검사와 피드백 근거 검증을 포함한다. 기본 검사는 실제 AI를 호출하지 않는다. `npm run test:learning:ai`는 별도 가상 공개 입력 4회 실제 호출이다. [P01 명세](P01_LEARNING_FLOW.md)를 따른다.
+
+## P02 UI 회귀
+P01과 같은 전체 check 명령을 별도 테스트 DB에서 실행한다. 새 learning-flow E2E는 네 모드·유형 조합의 단계 이동·저장·제출을 확인하며, 추가 사례는 미저장 코드/질문/검증 버퍼의 단계·모바일 탭 전환 보존, 가로 넘침, reduced-motion 및 이동만으로 제출되지 않음을 확인한다. 실제 Google·AI는 기본 검사에 포함하지 않는다.
+
+## P03 피드백 경험 회귀
+`npm run check`에서 훈련 힌트의 주제 전환과 모의 전형 비노출, 실제 자료 줄 선택·연결·삭제, 네 과제 조합의 저장·제출 회귀를 검사한다. 성공 피드백은 계약 형태의 공개 가상 응답으로 집중 보기의 순서·원문 근거·이전/다음 이동과 전체 기록을 확인한다. 이 화면 검사는 실제 Gemini 품질 검증이 아니며, 실제 AI 호출은 별도 명시적 검사로 구분한다.
+
+## D01 배포 검사
+`apps/api/Dockerfile`을 저장소 루트 context에서 빌드하고 신규 PostgreSQL DB에 `SPRING_PROFILES_ACTIVE=demo`로 실행한다. CI도 같은 Dockerfile의 이미지 빌드를 검사한다. 비루트 UID, Flyway 1~17, health `UP`, 공개 가상 과제 1개, 보호 경로 401과 정확한 웹 origin CORS를 확인한다. 공개 배포 뒤에는 `DEPLOY_WEB_URL`과 `DEPLOY_API_URL`로 `npm run deploy:smoke`를 실행한다. 실제 Google 로그인과 Gemini 호출은 이 smoke가 대신하지 않는다.

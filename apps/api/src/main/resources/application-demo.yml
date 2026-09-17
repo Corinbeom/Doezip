@@ -1,0 +1,4 @@
+# Public demo only. It loads reviewed synthetic content without enabling local-only fixtures.
+spring:
+  flyway:
+    locations: classpath:db/migration,classpath:db/demo

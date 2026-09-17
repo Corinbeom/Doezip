@@ -1,13 +1,16 @@
 server:
-  address: 127.0.0.1
+  address: ${SERVER_ADDRESS:127.0.0.1}
   port: ${SERVER_PORT:8080}
   error:
     include-message: never
     include-stacktrace: never
     include-binding-errors: never
 spring:
+  ai:
+    model:
+      chat: none # Construct the bounded evaluation adapter explicitly.
   datasource:
-    url: ${DATABASE_URL}
+    url: ${DATABASE_URL:jdbc:postgresql://${DATABASE_HOST:localhost}:${DATABASE_PORT:5432}/${DATABASE_NAME:doezip}}
     username: ${DATABASE_USERNAME}
     password: ${DATABASE_PASSWORD}
     hikari:
@@ -33,10 +36,36 @@ management:
     health:
       show-details: never
       show-components: never
+      probes:
+        enabled: false
   health:
     defaults:
       enabled: false
     db:
       enabled: true
 app:
+  coding:
+    enabled: ${AI_CODING_ENABLED:false}
+    api-key: ${GEMINI_API_KEY:}
+    model: ${AI_CODING_MODEL:gemini-3.5-flash-lite}
   cors-allowed-origin: ${CORS_ALLOWED_ORIGIN:http://localhost:3000}
+  auth:
+    enabled: ${AUTH_ENABLED:false}
+    issuer: ${AUTH_ISSUER:}
+    jwk-set-uri: ${AUTH_JWK_SET_URI:}
+    audience: ${AUTH_AUDIENCE:authenticated}
+    provider-id: ${AUTH_PROVIDER_ID:}
+
+  evaluation:
+    enabled: ${AI_EVALUATION_ENABLED:false}
+    api-key: ${GEMINI_API_KEY:}
+    model: ${AI_EVALUATION_MODEL:gemini-3.5-flash-lite}
+    daily-call-limit: ${AI_EVALUATION_DAILY_CALL_LIMIT:10}
+    global-daily-call-limit: ${AI_EVALUATION_GLOBAL_DAILY_CALL_LIMIT:50}
+
+  chat:
+    enabled: ${AI_CHAT_ENABLED:false}
+    api-key: ${GEMINI_API_KEY:}
+    model: ${AI_CHAT_MODEL:gemini-3.5-flash-lite}
+    daily-call-limit: ${AI_CHAT_DAILY_CALL_LIMIT:20}
+    global-daily-call-limit: ${AI_CHAT_GLOBAL_DAILY_CALL_LIMIT:100}

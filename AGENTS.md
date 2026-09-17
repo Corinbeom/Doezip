@@ -1,13 +1,15 @@
 # Doezip 협업 규칙
 
-AI 활용 역량 훈련 서비스. 2인이 약 2주 동안 기능별로 화면·API·DB·테스트를 함께 소유한다.
-현재 F00은 실행 환경만 구축한다. 제품 디자인·로그인·채팅·검산·평가·리포트·AI 호출,
-전체 22개 테이블 migration과 seed는 후속 작업이며 완료로 표시하지 않는다.
+AI 활용 역량 훈련 서비스. 현재 1인 개발로 진행하며 기능별로 화면·API·DB·테스트까지 함께 구현·검증한다.
+실행 환경, 과제 조회·로그인·보고서 작성/최초 제출·검산 검토·INITIAL AI 평가·결과 조회를 통합한다.
+디자인 기준은 docs/design/README.md, 통합·검증 범위는 docs/I01_INTEGRATION.md다.
+I02는 WRITING 단계 AI 대화와 JavaScript 구현 과제를 한 실행 환경에 연결한다(docs/I02_UNIFIED_WORKSPACE.md).
+대화의 평가 입력 연결·되묻기·FINAL 평가·비교 리포트, 전체 22개 테이블 migration/seed와 평가 품질 검수는 후속이며 완료로 표시하지 않는다.
 
 ## Git
 - main은 배포 기준, develop은 통합 기준이다. 두 브랜치에서 직접 기능 개발 금지.
 - feature/*는 develop에서 분기하며 PR 대상은 develop. 같은 기능의 web/api는 같은 브랜치.
-- 상대방 1명 리뷰·승인과 CI 통과 후 squash merge. squash한 기능 브랜치는 재사용하지 않는다.
+- 1인 개발 중에는 작성자의 diff 검토·실제 동작 확인과 CI 통과 후 squash merge. Codex 검토는 보조이며 작성자의 확인을 대신하지 않는다. squash한 기능 브랜치는 재사용하지 않는다.
 - develop → main은 배포 검증 후 merge commit. main 반영 결과는 develop에도 동기화.
 - 공유 브랜치 강제 push·임의 히스토리 재작성 금지. 동시 Codex는 별도 clone/worktree 사용.
 - 공통 UI·계약·의존성·DB 변경은 PR에 영향 범위와 리뷰 대상을 표시한다.
@@ -26,7 +28,7 @@ AI 활용 역량 훈련 서비스. 2인이 약 2주 동안 기능별로 화면·
 ## 실제 명령 (루트)
 Node 24.20.0, Java 21, Docker Compose v2를 준비한다.
 `npm install` → `cp .env.example .env` → `npm run db:up` → `npm run dev`.
-개별 실행: `npm run dev:web`, `npm run dev:api`. 전체 검증: `npm run check`.
+개별 실행: `npm run dev:web`, `npm run dev:api`. 전체 검증: `npm run check`. 실제 AI 전체 흐름은 키 설정 후 명시적으로 `npm run test:flow:ai` 실행(기본 CI 제외).
 DB 시작은 별도다. 볼륨 삭제를 일반 실행·검증에 넣지 않는다.
 
 ## 기준 문서
@@ -34,3 +36,15 @@ DB 시작은 별도다. 볼륨 삭제를 일반 실행·검증에 넣지 않는�
 docs/DEVELOPMENT_SPEC.md, docs/FEATURE_BACKLOG.md, docs/API_CONTRACT.md,
 contracts/openapi.yaml, docs/sources/ERD.md, docs/TEST_RUNBOOK.md.
 디자인 상태는 docs/design/README.md. templates/는 원본 참고용, 실제 설정은 루트와 apps/api.
+
+- F08a 코딩 작업은 docs/F08A_CODING_WORKSPACE.md를 따른다. 코드 실행/공개 연습 테스트와 독립 서버 채점·역량 평가를 구분한다.
+
+## P01 새 과제 흐름
+최신 사용자 합의는 docs/P01_LEARNING_FLOW.md를 따른다. /learn은 두 과제·두 모드의 새 버전이며 기존 세션·제출본을 변경하지 않는다. 별도 검산을 새 과제의 필수 단계로 연결하지 않는다. 결과물 검증·사용자 자기 보고·관찰된 행동을 구분하고 점수나 실력 인증으로 바꾸지 않는다.
+
+P02 단계형 화면 기준은 docs/P02_GUIDED_WORKSPACE.md. 사용자 확인은 3189/8389와 기존 통합 DB로 고정하며 새 worktree마다 로그인 포트를 늘리지 않는다. 자동 검증은 별도 포트·테스트 DB에서 실행한다.
+
+P03 힌트·근거 연결·피드백 화면 기준은 docs/P03_FEEDBACK_EXPERIENCE.md. 힌트 열람 자체를 역량 증거로 사용하지 않고, 근거는 실제 원문 줄을 선택해 연결한다. 집중 피드백과 전체 기록은 같은 평가 결과를 서로 다른 방식으로 보여 주며 내용을 새로 생성하지 않는다.
+
+## D01 공개 데모 배포
+배포 기준과 수동 외부 설정은 docs/D01_DEPLOYMENT.md를 따른다. `local` 프로필과 로컬 DB를 배포에 사용하지 않는다. `demo`에는 공개 가상 자료만 두고 비공개 정답·실제 사용자 데이터를 seed하지 않는다. 웹에는 API base와 Supabase publishable 설정만 넣고 DB·Gemini·Google 비밀값은 API 호스팅 secret으로 관리한다. 배포 완료는 원격 CI, health/CORS/보호 경로 smoke, 실제 Google 로그인과 Gemini 호출을 모두 확인한 뒤에만 표시한다.

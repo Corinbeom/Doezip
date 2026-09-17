@@ -1,0 +1,34 @@
+import { test, expect } from '@playwright/test';
+import { createWorkspace, installTestSession, testIdentity } from '../support/e2e-auth';
+
+test('one login navigates between report chat and coding without losing either saved workspace', async ({ page, context, request }) => {
+  const identity = await testIdentity(request);
+  const report = await createWorkspace(request, identity.headers);
+  await installTestSession(context, identity.session);
+  const reportUrl = `/sessions/${report.session.id}`;
+  await page.goto(reportUrl);
+  await expect(page.getByRole('region', { name: 'AI와 분석하기' })).toBeVisible();
+  await page.getByLabel('보고서 내용', { exact: true }).fill('통합 확인: 자료의 사실과 미확인을 구분했습니다.');
+  await expect(page.getByText('저장됨', { exact: true })).toBeVisible();
+  await page.getByRole('navigation', { name: '주 메뉴' }).getByRole('link', { name: '구현 연습' }).click();
+  await expect(page.getByRole('button', { name: '로그아웃', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '새 구현 과제 시작' }).click();
+  await expect(page).toHaveURL(/\/coding\/[0-9a-f-]+$/);
+  const codingUrl = page.url();
+  const code = 'function addItem(items,item){return items.some(x=>x.id===item.id)?items.slice():[...items,item];}';
+  await page.getByLabel('solution.js', { exact: true }).fill(code);
+  await page.getByRole('button', { name: '저장하고 테스트' }).click();
+  await expect(page.getByText('통과 · 같은 id 중복 방지')).toBeVisible();
+  await page.getByRole('navigation', { name: '주 메뉴' }).getByRole('link', { name: '문제 탐색' }).click();
+  await expect(page.getByRole('link', { name: '구현 과제 시작하기' })).toHaveAttribute('href', '/coding');
+  await expect(page.getByRole('button', { name: '로그아웃', exact: true })).toBeVisible();
+  await page.goto(reportUrl);
+  await expect(page.getByLabel('보고서 내용', { exact: true })).toHaveValue('통합 확인: 자료의 사실과 미확인을 구분했습니다.');
+  await expect(page.getByRole('region', { name: 'AI와 분석하기' })).toBeVisible();
+  await page.goto(codingUrl);
+  await expect(page.getByLabel('solution.js', { exact: true })).toHaveValue(code);
+  await expect(page.getByText('통과 · 같은 id 중복 방지')).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('button', { name: '로그아웃', exact: true })).toBeVisible();
+  await expect(page.getByLabel('solution.js', { exact: true })).toHaveValue(code);
+});
