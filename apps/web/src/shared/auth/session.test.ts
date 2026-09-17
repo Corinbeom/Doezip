@@ -11,13 +11,13 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 it('allows only known task/coding lists and workspace UUID details as return paths', async () => {
   const { safeReturnPath } = await import('./session');
-  for (const value of ['https://evil.test', '//evil.test', '/tasks?next=evil', '/tasks/../auth', '/tasks%2Fevil', '/coding?next=evil', '/coding/../auth', '/coding%2Fevil', '/coding/not-a-uuid']) expect(safeReturnPath(value)).toBe('/tasks');
+  for (const value of ['https://evil.test', '//evil.test', '/tasks?next=evil', '/tasks/../auth', '/tasks%2Fevil', '/coding?next=evil', '/coding/../auth', '/coding%2Fevil', '/coding/not-a-uuid']) expect(safeReturnPath(value)).toBe('/learn');
   expect(safeReturnPath('/sessions/61111111-1111-4111-8111-111111111111')).toBe('/sessions/61111111-1111-4111-8111-111111111111');
-  expect(safeReturnPath('/sessions')).toBe('/tasks');
+  expect(safeReturnPath('/sessions')).toBe('/learn');
   expect(safeReturnPath('/coding')).toBe('/coding');
   expect(safeReturnPath('/learn')).toBe('/learn');
   expect(safeReturnPath('/learn/61111111-1111-4111-8111-111111111111')).toBe('/learn/61111111-1111-4111-8111-111111111111');
-  expect(safeReturnPath('/learn/../auth')).toBe('/tasks');
+  expect(safeReturnPath('/learn/../auth')).toBe('/learn');
   expect(safeReturnPath('/coding/61111111-1111-4111-8111-111111111111')).toBe('/coding/61111111-1111-4111-8111-111111111111');
   expect(safeReturnPath('/tasks/61111111-1111-4111-8111-111111111111')).toBe('/tasks/61111111-1111-4111-8111-111111111111');
 });
@@ -47,7 +47,7 @@ it('starts Google with same-origin callback and sanitized destination', async ()
   oauth.mockResolvedValue({ error: null });
   const { startGoogleLogin, returnPathKey } = await import('./session');
   await startGoogleLogin('//evil.test');
-  expect(sessionStorage.getItem(returnPathKey)).toBe('/tasks');
+  expect(sessionStorage.getItem(returnPathKey)).toBe('/learn');
   expect(oauth).toHaveBeenCalledWith({ provider: 'google', options: { redirectTo: `${location.origin}/auth/callback` } });
 });
 it('treats malformed or unsafe provider configuration as unavailable', async () => {

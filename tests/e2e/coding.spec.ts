@@ -3,7 +3,7 @@ import {testIdentity,installTestSession,apiBase} from '../support/e2e-auth';
 const fixed='function addItem(items,item){return items.some(x=>x.id===item.id)?items.slice():[...items,item];}';
 test('code practice executes real code, persists results, restores and seals submission',async({page,context,request},info)=>{
  page.on('console',m=>{if(m.text().includes('CODING_WORKER_INIT'))console.log(m.text());});
- const identity=await testIdentity(request);await installTestSession(context,identity.session);
+ const identity=await testIdentity(request,`flow-${crypto.randomUUID()}`);await installTestSession(context,identity.session);
  await page.goto('/coding');await page.getByRole('button',{name:'새 구현 과제 시작'}).click();
  await expect(page).toHaveURL(/\/coding\/[0-9a-f-]+$/);
  await page.getByRole('button',{name:'저장하고 테스트'}).click();
@@ -33,7 +33,7 @@ test('code practice executes real code, persists results, restores and seals sub
 });
 test('infinite loop is interrupted and the editor remains usable',async({page,context,request})=>{
  page.on('console',m=>{if(m.text().includes('CODING_WORKER_INIT'))console.log(m.text());});
- const identity=await testIdentity(request);await installTestSession(context,identity.session);
+ const identity=await testIdentity(request,`flow-${crypto.randomUUID()}`);await installTestSession(context,identity.session);
  await page.goto('/coding');await page.getByRole('button',{name:'새 구현 과제 시작'}).click();
  await page.getByRole('textbox',{name:'solution.js'}).fill('while(true){}');
  await page.getByRole('button',{name:'저장하고 테스트'}).click();
