@@ -12,7 +12,7 @@ test('login entry preserves public browsing and exposes the Google action', asyn
   }
   await page.screenshot({ path: testInfo.outputPath('login.png'), fullPage: true });
   await page.getByRole('link', { name: '로그인 없이 과제 둘러보기' }).click();
-  await expect(page.getByRole('heading', { name: '과제 목록', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /어떤 역량을 연습할까요/ })).toBeVisible();
 });
 
 test('a callback without a code fails instead of creating a fake session', async ({ page }) => {

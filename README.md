@@ -27,7 +27,7 @@ npm run dev
 현재 로컬 checkout에서는 `npm install`부터 실행한다. CI와 lockfile 그대로 재설치할 때는 `npm ci`를 쓴다.
 새 clone의 기본 웹에서는 http://localhost:3000 에서 서비스 소개를 확인하고, 로그인 후 http://localhost:3000/learn 에서 진행 중인 학습을 이어가거나 새 과제를 시작한다. API·PostgreSQL 연결 확인은 http://localhost:3000/environment 다.
 API 운영 health: http://localhost:8080/actuator/health (`UP`: 200 / DB 장애 `DOWN`: 503, 상세 비공개).
-웹 http://localhost:3000/tasks 에서 로컬 조회용 가상 과제의 설명과 공개 루브릭을 확인한다.
+웹 http://localhost:3000/tasks 에서 현재 수행 가능한 보고서·구현 과제를 유형·난도·예상 시간·태그와 함께 비교한다. 이전 UUID 과제 상세 링크는 호환용으로 유지한다.
 공개 과제 조회 외에 인증된 사용자 연결 POST `/api/v1/me/bootstrap`, 조회 GET `/api/v1/me`를 제공한다. 과제 시작·공개 자료 열람·보고서 저장/복원 API도 제공한다. [F02b 범위](docs/F02B_REPORT_DRAFT.md)를 참고한다. 저장한 초안의 최초 제출·불변 제출본 조회는 [F02c 범위](docs/F02C_INITIAL_SUBMISSION.md)를 따른다. [F04a 검산 시작·열람](docs/F04A_CHALLENGE_START.md)을 제공하며 [F04b 검토 저장·제출](docs/F04B_CHALLENGE_REVIEW.md)도 제공한다. INITIAL 평가 요청·상태 조회와 저장된 결과 조회도 제공한다. FINAL 등 미구현 경로는 차단된다.
 
 Google 로그인 설정은 [인증 설정](docs/AUTH_SETUP.md)을 따른다. 설정이 없으면 `/login`에서 안내를 표시하고 로그인 버튼을 비활성화한다. 최초 Google 로그인은 사용자 확인 및 DB 연결 확인을 마쳤으며, 세부 검증 상태는 F01 기록을 따른다.
@@ -136,8 +136,8 @@ AI 평가 설정과 실행은 [AI_SETUP](docs/AI_SETUP.md), 구현·검증 구�
 
 웹과 API는 같은 checkout에서 npm run dev로 실행한다. 이전의 F04c 웹/F05c API 분리 실행은 통합 전 기록이다. 새 기능은 통합된 develop에서 새 feature 브랜치로 시작한다.
 
-## 서비스 내 구현 연습 (F08a)
+## 서비스 내 구현 과제 (F08a)
 
-`/coding`에서 JavaScript 코드 편집, AI 수정안 적용, 공개 테스트 실행, 저장·복원·제출을 제공한다.
+`/tasks`에서 보고서·구현 과제를 함께 탐색하고, 구현 과제를 시작하면 통합 `/learn/{id}` 흐름에서 JavaScript 코드 편집, AI 수정안 적용, 공개 테스트 실행, 저장·복원·제출을 제공한다. 독립 `구현 연습` 메뉴는 제거했다. 이전 `/coding` 목록과 `/coding/{id}` 기록은 기존 저장 흐름 호환을 위해 직접 URL에서 계속 열 수 있다.
 설정과 실행 경계는 [F08a 작업 기록](docs/F08A_CODING_WORKSPACE.md)을 따른다.
 통합 `/learn` 흐름에서는 구현 과제의 요청·코드·공개 테스트·검증 설명·직접 설명을 피드백 입력으로 사용한다. 독립 서버 채점과 범용 개발 환경은 아직 연결하지 않았다.
