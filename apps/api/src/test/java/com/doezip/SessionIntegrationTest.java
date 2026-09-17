@@ -860,6 +860,18 @@ class SessionIntegrationTest {
 
     @org.springframework.test.context.bean.override.mockito.MockitoBean com.doezip.learning.adapter.FlowFeedbackAi flowAi;
     @Autowired com.doezip.learning.service.FlowService flows;
+    @Test void learningCatalogIsPublicAndContainsOnlyBrowsableMetadata()throws Exception {
+      var response=request("/api/v1/learning-flows/catalog",HttpMethod.GET,null,null);
+      assertThat(response.getStatusCode().value()).isEqualTo(200);
+      var items=json(response);
+      assertThat(items).hasSize(2);
+      assertThat(items.get(0).path("catalogId").asText()).isEqualTo("payment-delay-report");
+      assertThat(items.get(0).path("version").asText()).isEqualTo("learning-flow-v2");
+      assertThat(items.get(0).path("tags")).isNotEmpty();
+      assertThat(items.get(0).path("hints")).isEmpty();
+      assertThat(items.get(1).path("catalogId").asText()).isEqualTo("item-identity-coding");
+      assertThat(items.get(1).path("kind").asText()).isEqualTo("CODING");
+    }
     JsonNode newFlow(String kind,String mode)throws Exception {
       if(kind.equals("REPORT")){
        UUID tid=com.doezip.learning.service.FlowTasks.REPORT_V2_ID;

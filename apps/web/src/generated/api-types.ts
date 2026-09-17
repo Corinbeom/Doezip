@@ -687,7 +687,13 @@ export interface components {
             index: number;
         };
         FlowTask: {
-            kind: string;
+            catalogId: string;
+            version: string;
+            /** @enum {string} */
+            kind: "REPORT" | "CODING";
+            difficulty: string;
+            estimatedMinutes: number;
+            tags: string[];
             title: string;
             situation: string;
             requirements: string[];

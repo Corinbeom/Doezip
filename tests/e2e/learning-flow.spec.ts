@@ -43,7 +43,7 @@ test('guided work preserves drafts across desktop/mobile panels and does not sub
 
 test('successful feedback offers a focused reader and a complete permanent record',async({page,context,request})=>{
  const who=await testIdentity(request,`flow-${crypto.randomUUID()}`);await installTestSession(context,who.session);const id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
- const task={kind:'REPORT',title:'결제 지연 상황을 동료에게 설명하기',situation:'관측 기록을 바탕으로 사실과 미확인 사항을 설명하세요.',requirements:['사실과 추정을 구분합니다.'],deliverable:'근거가 연결된 보고서',questions:['왜 이렇게 판단했나요?','조건이 바뀌면 무엇을 확인하나요?'],hints:['사실을 구분하세요.']};
+ const task={catalogId:'payment-delay-report',version:'learning-flow-v1',kind:'REPORT',difficulty:'입문',estimatedMinutes:25,tags:['자료 분석','보고서','근거 검증'],title:'결제 지연 상황을 동료에게 설명하기',situation:'관측 기록을 바탕으로 사실과 미확인 사항을 설명하세요.',requirements:['사실과 추정을 구분합니다.'],deliverable:'근거가 연결된 보고서',questions:['왜 이렇게 판단했나요?','조건이 바뀌면 무엇을 확인하나요?'],hints:['사실을 구분하세요.']};
  const source=(id:string,label:string,text:string)=>({id,label,text});
  const feedback={practiceArea:'VERIFY',items:[
   {area:'REQUEST',observation:'확인하려는 문제와 자료 범위를 AI에게 전달했습니다.',nextAction:'원하는 답변 형식도 함께 요청해 보세요.',recordIds:['request'],sources:[source('request','나의 요청','자료에서 확인된 사실과 아직 모르는 부분을 구분해 줘.')]},
