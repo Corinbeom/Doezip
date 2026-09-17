@@ -20,3 +20,5 @@ V8은 challenge_templates, challenge_statements, challenge_runs를 추가한다.
 V10은 fault_attempts와 수동 검산용 evidence_links를 추가한다. claims/AI 근거 연결은 후속 migration이다. 적용한 migration은 수정하지 않는다.
 
 V11은 evaluation_runs와 불변 입력·단일 active job·lease 제약을 추가한다. 결과/리포트 테이블은 후속이다.
+
+V20은 기존 learning flow를 유형별 안정적인 catalogId로 보정하고 이후 생성 기록에 `task_catalog_id + flow_version` 조합을 보존한다. 기존 flow_version 컬럼은 배포 중 이전 API가 계속 읽을 수 있도록 유지한다.
