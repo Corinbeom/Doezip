@@ -20,7 +20,7 @@ F00 당시에는 제품 API 없이 운영 경로 `GET /actuator/health`만 공�
 | 시간 | ISO 8601 UTC, 예 `2026-09-06T03:00:00Z` |
 | 본문 | UTF-8, LF 정규화. contentHash는 해당 바이트의 SHA-256 |
 | 길이 | 사용자 입력 상한은 Unicode code points. 한글·이모지 테스트 필요 |
-| 인증 | `Authorization: Bearer <access-token>`; 공개 tasks 두 GET만 예외 |
+| 인증 | `Authorization: Bearer <access-token>`; health, tasks 두 GET, learning-flows catalog GET만 예외 |
 | 소유권 | 부모 session.user_id == 검증된 사용자. 타인 리소스는 404 |
 | 캐시 | 개인 리소스·SSE는 `Cache-Control: no-store` |
 | 요청 | unknown fields 거부. `userId`, `faultTemplateId`, `leaseToken` 수신 금지 |
@@ -283,4 +283,4 @@ F05c 오류/호출 설정은 [AI 설정](AI_SETUP.md)을 따른다. 공개 Evalu
 코드 버전 CAS, AI 요청 key/예산, 브라우저 보고 실행 결과와 제출 잠금은 [F08a](F08A_CODING_WORKSPACE.md)를 따른다.
 
 ## P01 버전별 수행 흐름
-`/learning-flows`의 생성/목록/상세, notes/hints/submit/answers/feedback/practice를 추가했다. 모두 인증·소유권이 필요하고 개인 응답은 no-store다. feedback 요청은 비동기 상태를 반환하고 GET으로 조회한다. 모드·단계·버전 및 고정 근거 인터페이스는 OpenAPI와 [P01 명세](P01_LEARNING_FLOW.md)를 따른다. 기존 세션·코딩 계약은 보존하며 새 흐름에 속한 작업의 단독 제출 우회는 409다.
+`/learning-flows`의 생성/목록/상세, notes/hints/submit/answers/feedback/practice를 추가했다. `GET /learning-flows/catalog`만 공개하며 안정적인 catalogId, 콘텐츠 version, 유형·난도·예상 시간·태그와 공개 문제 설명을 반환하고 힌트는 빈 목록이다. 나머지는 인증·소유권이 필요하고 개인 응답은 no-store다. feedback 요청은 비동기 상태를 반환하고 GET으로 조회한다. 모드·단계·버전 및 고정 근거 인터페이스는 OpenAPI와 [P01 명세](P01_LEARNING_FLOW.md)를 따른다. 기존 세션·코딩 계약은 보존하며 새 흐름에 속한 작업의 단독 제출 우회는 409다.

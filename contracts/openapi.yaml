@@ -2411,7 +2411,12 @@ components:
       type: object
       additionalProperties: false
       required:
+      - catalogId
+      - version
       - kind
+      - difficulty
+      - estimatedMinutes
+      - tags
       - title
       - situation
       - requirements
@@ -2419,8 +2424,21 @@ components:
       - questions
       - hints
       properties:
-        kind: &id003
+        catalogId: &id003
           type: string
+        version: *id003
+        kind:
+          type: string
+          enum:
+          - REPORT
+          - CODING
+        difficulty: *id003
+        estimatedMinutes:
+          type: integer
+          minimum: 1
+        tags:
+          type: array
+          items: *id003
         title: *id003
         situation: *id003
         requirements:

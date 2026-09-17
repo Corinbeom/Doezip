@@ -14,7 +14,6 @@ export function LearningShell({ children }: { children: ReactNode }) {
   const links=[
     {href:'/learn',label:'내 학습'},
     {href:'/tasks',label:'과제 둘러보기'},
-    {href:'/coding',label:'구현 연습'},
   ];
   return <div className={styles.shell}>
     <a className={styles.skipLink} href="#task-main">본문으로 바로가기</a>

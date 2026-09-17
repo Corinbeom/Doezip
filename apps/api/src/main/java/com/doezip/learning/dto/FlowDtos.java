@@ -13,6 +13,6 @@ public final class FlowDtos {
  public record Submit(@NotNull @Min(0) Long version,@NotNull @Min(0) Long artifactVersion,@NotBlank @Pattern(regexp="[0-9a-f]{64}") String artifactHash) {}
  public record Answers(@NotBlank @Size(max=4000) String decision,@NotBlank @Size(max=4000) String change) {}
  public record Hint(@NotNull @Min(0) @Max(2) Integer index) {}
- public record Task(String kind,String title,String situation,List<String> requirements,String deliverable,List<String> questions,List<String> hints) {}
+ public record Task(String catalogId,String version,String kind,String difficulty,Integer estimatedMinutes,List<String> tags,String title,String situation,List<String> requirements,String deliverable,List<String> questions,List<String> hints) {}
  public record View(UUID id,String kind,String mode,String flowVersion,UUID sessionId,UUID codingId,UUID parentId,String stage,long version,JsonNode notes,JsonNode hints,JsonNode snapshot,JsonNode answers,JsonNode feedback,String feedbackStatus,Task task,List<JsonNode> comparison) {}
 }

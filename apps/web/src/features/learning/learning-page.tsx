@@ -9,7 +9,8 @@ import {ApiError} from '@/shared/api/client';
 import {WorkspaceEditor} from '@/features/workspace/workspace-page';
 import {LoadWorkspace} from '@/features/coding/coding-page';
 import {getWorkspace as reportWorkspace} from '@/features/workspace/api';
-import {catalog,listFlows,getFlow,changeFlow,type Flow,type Notes} from './api';
+import {listFlows,getFlow,changeFlow,type Flow,type Notes} from './api';
+import {getLearningCatalog} from '@/shared/api/learning-catalog';
 import styles from '@/features/coding/coding.module.css';
 import local from './learning.module.css';
 import {WorkStages} from './work-stages';
@@ -32,7 +33,7 @@ export function LearningPage({id}:{id?:string}){const auth=useAuth();return <Lea
 function Lobby({userId}:{userId:string}){
  const router=useRouter();const [mode,setMode]=useState<'TRAINING'|'SIMULATION'>('TRAINING');const [busy,setBusy]=useState(false);const [error,setError]=useState('');const pending=useRef<{kind:string;mode:string;requestKey:string}|null>(null);const active=useRef<AbortController|null>(null);
  useEffect(()=>()=>active.current?.abort(),[]);
- const tasks=useQuery({queryKey:['learning-catalog',userId],queryFn:({signal})=>catalog(signal),meta:{private:true}});
+ const tasks=useQuery({queryKey:['learning-catalog'],queryFn:({signal})=>getLearningCatalog(signal)});
  const list=useQuery({queryKey:['learning-list',userId],queryFn:({signal})=>listFlows(signal),meta:{private:true}});
  async function start(kind:string){setBusy(true);setError('');const c=new AbortController();active.current=c;const body=pending.current?.kind===kind&&pending.current.mode===mode?pending.current:{kind,mode,requestKey:crypto.randomUUID()};pending.current=body;try{const f=await changeFlow('',body,'POST',c.signal);if(!c.signal.aborted)router.push(`/learn/${f.id}`);}catch(e){if(!c.signal.aborted)setError(message(e));}finally{if(!c.signal.aborted)setBusy(false);}}
  const activeFlows=list.data?.filter(flow=>flow.stage!=='FEEDBACK')??[];
