@@ -878,7 +878,8 @@ class SessionIntegrationTest {
        database.update("INSERT INTO tasks(id,task_code,version_no,title,description_markdown,status) VALUES (?,'flow-test',2,'Scenario','Public','PUBLISHED') ON CONFLICT DO NOTHING",tid);
        for(int i=1;i<=3;i++){String content="confirmed source "+i+"\nunknown cause "+i;database.update("INSERT INTO materials(id,task_id,material_code,title,material_type,content_markdown,content_hash,release_stage,sort_order) VALUES (?,?,?,?, 'LOG',?,?,'INITIAL',?) ON CONFLICT DO NOTHING",UUID.fromString("74444444-4444-4444-8444-00000000000"+i),tid,"flow-source-"+i,"Flow material "+i,content,com.doezip.session.service.SessionService.hash(content),i);}
       }
-      var r=request("/api/v1/learning-flows",HttpMethod.POST,alice,mapper.writeValueAsString(Map.of("requestKey",UUID.randomUUID(),"kind",kind,"mode",mode)));
+      String catalogId=kind.equals("REPORT")?com.doezip.learning.service.FlowTasks.REPORT_CATALOG_ID:com.doezip.learning.service.FlowTasks.CODING_CATALOG_ID;
+      var r=request("/api/v1/learning-flows",HttpMethod.POST,alice,mapper.writeValueAsString(Map.of("requestKey",UUID.randomUUID(),"catalogId",catalogId,"version",com.doezip.learning.service.FlowTasks.CURRENT_VERSION,"mode",mode)));
       assertThat(r.getStatusCode().value()).as(r.getBody()).isEqualTo(200);return json(r);
     }
     JsonNode flowNotes(JsonNode f)throws Exception {return json(request("/api/v1/learning-flows/"+f.path("id").asText()+"/notes",HttpMethod.PUT,alice,mapper.writeValueAsString(Map.of("version",f.path("version").asLong(),"notes",Map.of("explanation","I chose this with limits","verification","Not yet verified; need more evidence","citations",List.of())))));}
@@ -891,6 +892,7 @@ class SessionIntegrationTest {
     @Test void learningFlowsPreserveLegacyAndSeparateModesWithStrictOwnership()throws Exception {
       for(String kind:List.of("REPORT","CODING"))for(String mode:List.of("TRAINING","SIMULATION")){
        var f=newFlow(kind,mode);String p="/api/v1/learning-flows/"+f.path("id").asText();
+       assertThat(f.path("catalogId").asText()).isEqualTo(kind.equals("REPORT")?"payment-delay-report":"item-identity-coding");
        assertThat(f.path("flowVersion").asText()).isEqualTo("learning-flow-v2");
        assertThat(request(p,HttpMethod.GET,bob,null).getStatusCode().value()).isEqualTo(404);
        assertThat(request(p+"/answers",HttpMethod.POST,alice,"{\"decision\":\"x\",\"change\":\"y\"}").getStatusCode().value()).isEqualTo(409);
@@ -903,6 +905,25 @@ class SessionIntegrationTest {
        assertThat(request(p+"/answers",HttpMethod.POST,alice,"{\"decision\":\"changed\",\"change\":\"changed\"}").getStatusCode().value()).isEqualTo(409);
        assertThat(request(p+"/feedback",HttpMethod.POST,alice,"{}").getStatusCode().value()).isEqualTo(503);
       }
+    }
+    @Test void learningFlowCreationUsesExactCatalogIdentityAndVersion()throws Exception {
+      UUID requestKey=UUID.randomUUID();
+      String body=mapper.writeValueAsString(Map.of("requestKey",requestKey,"catalogId","item-identity-coding","version","learning-flow-v2","mode","SIMULATION"));
+      var first=request("/api/v1/learning-flows",HttpMethod.POST,alice,body);
+      assertThat(first.getStatusCode().value()).as(first.getBody()).isEqualTo(200);
+      var created=json(first);
+      assertThat(created.path("catalogId").asText()).isEqualTo("item-identity-coding");
+      assertThat(created.path("kind").asText()).isEqualTo("CODING");
+      assertThat(created.path("flowVersion").asText()).isEqualTo("learning-flow-v2");
+      assertThat(database.queryForObject("SELECT task_catalog_id FROM learning_flows WHERE id=?",String.class,UUID.fromString(created.path("id").asText()))).isEqualTo("item-identity-coding");
+      assertThat(json(request("/api/v1/learning-flows",HttpMethod.POST,alice,body)).path("id")).isEqualTo(created.path("id"));
+      String changed=mapper.writeValueAsString(Map.of("requestKey",requestKey,"catalogId","payment-delay-report","version","learning-flow-v2","mode","SIMULATION"));
+      assertThat(request("/api/v1/learning-flows",HttpMethod.POST,alice,changed).getStatusCode().value()).isEqualTo(409);
+      String unknown=mapper.writeValueAsString(Map.of("requestKey",UUID.randomUUID(),"catalogId","unknown-task","version","learning-flow-v2","mode","TRAINING"));
+      assertThat(request("/api/v1/learning-flows",HttpMethod.POST,alice,unknown).getStatusCode().value()).isEqualTo(404);
+      String unknownVersion=mapper.writeValueAsString(Map.of("requestKey",UUID.randomUUID(),"catalogId","item-identity-coding","version","learning-flow-v99","mode","TRAINING"));
+      assertThat(request("/api/v1/learning-flows",HttpMethod.POST,alice,unknownVersion).getStatusCode().value()).isEqualTo(404);
+      assertThat(request("/api/v1/learning-flows",HttpMethod.POST,alice,"{\"requestKey\":\""+UUID.randomUUID()+"\",\"kind\":\"CODING\",\"mode\":\"TRAINING\"}").getStatusCode().value()).isEqualTo(400);
     }
     @Test void learningContentV2UsesThreeSourcesAndTheVersionedCodingSuite()throws Exception {
       var report=newFlow("REPORT","TRAINING");
@@ -933,7 +954,7 @@ class SessionIntegrationTest {
       assertThat(request(p+"/feedback",HttpMethod.POST,alice,"{}").getStatusCode().value()).isEqualTo(200);
       JsonNode completed=null;for(int i=0;i<100;i++){completed=json(request(p,HttpMethod.GET,alice,null));if(completed.path("feedbackStatus").asText().equals("SUCCEEDED"))break;Thread.sleep(25);}
       assertThat(completed.path("feedbackStatus").asText()).isEqualTo("SUCCEEDED");assertThat(completed.path("feedback").path("items").get(0).path("sources").get(0).path("text")).isEqualTo(f.path("snapshot").path("artifact"));
-      var child=json(request(p+"/practice",HttpMethod.POST,alice,"{}"));assertThat(child.path("parentId").asText()).isEqualTo(id.toString());assertThat(child.path("codingId")).isNotEqualTo(f.path("codingId"));assertThat(child.path("stage").asText()).isEqualTo("WORKING");assertThat(json(request(p+"/practice",HttpMethod.POST,alice,"{}")).path("id")).isEqualTo(child.path("id"));
+      var child=json(request(p+"/practice",HttpMethod.POST,alice,"{}"));assertThat(child.path("parentId").asText()).isEqualTo(id.toString());assertThat(child.path("catalogId")).isEqualTo(f.path("catalogId"));assertThat(child.path("flowVersion")).isEqualTo(f.path("flowVersion"));assertThat(child.path("codingId")).isNotEqualTo(f.path("codingId"));assertThat(child.path("stage").asText()).isEqualTo("WORKING");assertThat(json(request(p+"/practice",HttpMethod.POST,alice,"{}")).path("id")).isEqualTo(child.path("id"));
       assertThatThrownBy(()->database.update("UPDATE learning_flows SET snapshot='{}'::jsonb WHERE id=?",id)).isInstanceOf(org.springframework.dao.DataAccessException.class);
       request(p+"/feedback",HttpMethod.POST,alice,"{}");verify(flowAi,times(1)).evaluate(anyString(),any());
     }

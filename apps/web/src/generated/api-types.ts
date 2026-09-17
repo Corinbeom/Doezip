@@ -654,8 +654,8 @@ export interface components {
         FlowCreate: {
             /** Format: uuid */
             requestKey: string;
-            /** @enum {string} */
-            kind: "REPORT" | "CODING";
+            catalogId: string;
+            version: string;
             /** @enum {string} */
             mode: "TRAINING" | "SIMULATION";
         };
@@ -744,6 +744,7 @@ export interface components {
         LearningFlow: {
             /** Format: uuid */
             id: string;
+            catalogId: string;
             /** @enum {string} */
             kind: "REPORT" | "CODING";
             /** @enum {string} */

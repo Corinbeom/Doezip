@@ -32,5 +32,6 @@
 - coding 코드를 API 프로세스에서 실행하지 않는다. AI 예약은 DB 트랜잭션, 외부 호출은 트랜잭션 밖, 결과는 terminal CAS다. 브라우저가 보고한 실행 결과는 신뢰된 채점으로 승격하지 않는다.
 
 - P01 learning-flows는 소유권·flow CAS·artifact version/hash·직접 설명 선행을 서버에서 검사한다. 저장 이벤트와 제출 snapshot은 같은 artifact 잠금을 공유한다. flow 행은 NO KEY UPDATE로 잠가 artifact 저장의 event FK 잠금과 역순 경합을 피한다. 발행 원문은 snapshot record ID에서만 복원하며 의미 정확성과 구분한다. 새 지침은 새 프롬프트 버전으로 추가한다.
+- 새 learning-flow는 클라이언트가 보낸 kind로 유형을 결정하지 않는다. 공개 catalog의 `catalogId`와 `version` 조합을 서버 등록 정보에서 해석하고, 그 식별자를 flow와 제출 snapshot에 보존한다.
 
 - D01 컨테이너는 비루트 사용자로 실행하고 Render의 `0.0.0.0:10000`에서만 외부 요청을 받는다. `demo` Flyway 위치에는 공개 가상 seed만 둔다. health는 DB 연결을 검사하되 상태 외 상세를 공개하지 않으며 API·DB·AI 비밀값을 이미지나 Blueprint에 하드코딩하지 않는다.
