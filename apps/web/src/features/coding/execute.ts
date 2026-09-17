@@ -1,5 +1,6 @@
 import type { CheckResult } from './runner';
-export function execute(code: string, signal: AbortSignal): Promise<CheckResult[]> {
+import type { CodingSuite } from './runner';
+export function execute(code: string, suite:CodingSuite, signal: AbortSignal): Promise<CheckResult[]> {
   return new Promise((resolve,reject) => {
     if(signal.aborted){reject(new Error('실행이 취소되었습니다.'));return;}
     const worker = new Worker(new URL('./execution.worker.ts', import.meta.url), {type:'module'});
@@ -12,6 +13,6 @@ export function execute(code: string, signal: AbortSignal): Promise<CheckResult[
     signal.addEventListener('abort',abort,{once:true});
     worker.onmessage=(event)=>finish(event.data.error,event.data.results);
     worker.onerror=()=>finish('실행기를 불러오지 못했습니다.');
-    worker.postMessage(code);
+    worker.postMessage({code,suite});
   });
 }

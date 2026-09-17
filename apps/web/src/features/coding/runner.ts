@@ -1,17 +1,27 @@
 import variant from '@jitl/quickjs-wasmfile-release-sync';
 import { newQuickJSWASMModuleFromVariant, newVariant } from 'quickjs-emscripten-core';
 export type CheckResult = { name: string; passed: boolean; detail: string };
-const cases = [
+export type CodingSuite = 'duplicate-items-v1'|'duplicate-items-v2';
+const v1Cases = [
   { name: '새 항목 추가', input: 'addItem([], {id:"a",title:"첫 항목"})', expected: [{id:'a',title:'첫 항목'}] },
   { name: '같은 id 중복 방지', input: 'addItem([{id:"a",title:"기존"}], {id:"a",title:"다른 제목"})', expected: [{id:'a',title:'기존'}] },
   { name: '다른 항목과 순서 유지', input: 'addItem([{id:"a",title:"기존"}], {id:"b",title:"새 항목"})', expected: [{id:'a',title:'기존'},{id:'b',title:'새 항목'}] },
   { name: '원본 배열 보존', input: '(()=>{const original=[{id:"a",title:"기존"}];addItem(original,{id:"b",title:"새 항목"});return original;})()', expected: [{id:'a',title:'기존'}] },
 ];
-export async function runCode(code: string, wasmBinary?: ArrayBuffer): Promise<CheckResult[]> {
+const suites:Record<CodingSuite,typeof v1Cases>={
+ 'duplicate-items-v1':v1Cases,
+ 'duplicate-items-v2':[
+  {name:'새 id 추가',input:'addItem([{id:"a",title:"기존"}], {id:"b",title:"새 항목"})',expected:[{id:'a',title:'기존'},{id:'b',title:'새 항목'}]},
+  {name:'같은 id는 기존 항목 유지',input:'addItem([{id:"a",title:"기존"}], {id:"a",title:"바뀐 제목"})',expected:[{id:'a',title:'기존'}]},
+  {name:'같은 제목이어도 다른 id 추가',input:'addItem([{id:"a",title:"같은 제목"}], {id:"b",title:"같은 제목"})',expected:[{id:'a',title:'같은 제목'},{id:'b',title:'같은 제목'}]},
+  {name:'원본 배열 보존',input:'(()=>{const original=[{id:"a",title:"기존"}];addItem(original,{id:"b",title:"새 항목"});return original;})()',expected:[{id:'a',title:'기존'}]},
+ ],
+};
+export async function runCode(code: string, wasmBinary?: ArrayBuffer, suite:CodingSuite='duplicate-items-v1'): Promise<CheckResult[]> {
   if (code.length > 20000) throw new Error('코드는 20,000자 이하여야 합니다.');
   const engine = await newQuickJSWASMModuleFromVariant(wasmBinary ? newVariant(variant, {wasmBinary}) : variant);
   // No host functions, module loader, DOM, network, credentials or filesystem are exposed.
-  return cases.map(({ name, input, expected }) => {
+  return suites[suite].map(({ name, input, expected }) => {
     const runtime = engine.newRuntime();
     runtime.setMemoryLimit(8 * 1024 * 1024); runtime.setMaxStackSize(256 * 1024);
     const deadline = Date.now() + 300;

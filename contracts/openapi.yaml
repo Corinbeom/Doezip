@@ -2681,6 +2681,7 @@ components:
           type: string
           enum:
           - duplicate-items-v1
+          - duplicate-items-v2
         results:
           type: array
           items:
@@ -2738,6 +2739,7 @@ components:
           type: string
           enum:
           - duplicate-items-v1
+          - duplicate-items-v2
         code: *codingSchema003
         version: *codingSchema002
         submittedAt:

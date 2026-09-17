@@ -862,9 +862,9 @@ class SessionIntegrationTest {
     @Autowired com.doezip.learning.service.FlowService flows;
     JsonNode newFlow(String kind,String mode)throws Exception {
       if(kind.equals("REPORT")){
-       UUID tid=com.doezip.learning.service.FlowTasks.REPORT_ID;
-       database.update("INSERT INTO tasks(id,task_code,title,description_markdown,status) VALUES (?,'flow-test','Scenario','Public','PUBLISHED') ON CONFLICT DO NOTHING",tid);
-       material(UUID.randomUUID(),tid,"INITIAL","Flow material","confirmed line\nunknown cause");
+       UUID tid=com.doezip.learning.service.FlowTasks.REPORT_V2_ID;
+       database.update("INSERT INTO tasks(id,task_code,version_no,title,description_markdown,status) VALUES (?,'flow-test',2,'Scenario','Public','PUBLISHED') ON CONFLICT DO NOTHING",tid);
+       for(int i=1;i<=3;i++){String content="confirmed source "+i+"\nunknown cause "+i;database.update("INSERT INTO materials(id,task_id,material_code,title,material_type,content_markdown,content_hash,release_stage,sort_order) VALUES (?,?,?,?, 'LOG',?,?,'INITIAL',?) ON CONFLICT DO NOTHING",UUID.fromString("74444444-4444-4444-8444-00000000000"+i),tid,"flow-source-"+i,"Flow material "+i,content,com.doezip.session.service.SessionService.hash(content),i);}
       }
       var r=request("/api/v1/learning-flows",HttpMethod.POST,alice,mapper.writeValueAsString(Map.of("requestKey",UUID.randomUUID(),"kind",kind,"mode",mode)));
       assertThat(r.getStatusCode().value()).as(r.getBody()).isEqualTo(200);return json(r);
@@ -873,12 +873,13 @@ class SessionIntegrationTest {
     JsonNode sealFlow(JsonNode f)throws Exception {
       String artifact="function addItem(items,item){return [...items,item];}";long version;
       if(f.path("kind").asText().equals("REPORT")){artifact="The cause remains unknown.";var saved=json(save(f.path("sessionId").asText(),alice,artifact,0));version=saved.path("lockVersion").asLong();}
-      else {String cp="/api/v1/coding-workspaces/"+f.path("codingId").asText();var saved=json(request(cp,HttpMethod.PUT,alice,mapper.writeValueAsString(Map.of("code",artifact,"expectedVersion",0))));version=saved.path("version").asLong();request(cp+"/runs",HttpMethod.POST,alice,mapper.writeValueAsString(Map.of("version",version,"suite","duplicate-items-v1","results",List.of(Map.of("name","duplicate","passed",false,"detail","still duplicated")))));}
+      else {String cp="/api/v1/coding-workspaces/"+f.path("codingId").asText();var saved=json(request(cp,HttpMethod.PUT,alice,mapper.writeValueAsString(Map.of("code",artifact,"expectedVersion",0))));version=saved.path("version").asLong();request(cp+"/runs",HttpMethod.POST,alice,mapper.writeValueAsString(Map.of("version",version,"suite",saved.path("taskVersion").asText(),"results",List.of(Map.of("name","duplicate","passed",false,"detail","still duplicated")))));}
       f=flowNotes(f);var r=request("/api/v1/learning-flows/"+f.path("id").asText()+"/submit",HttpMethod.POST,alice,mapper.writeValueAsString(Map.of("version",f.path("version").asLong(),"artifactVersion",version,"artifactHash",com.doezip.session.service.SessionService.hash(artifact))));assertThat(r.getStatusCode().value()).as(r.getBody()).isEqualTo(200);return json(r);
     }
     @Test void learningFlowsPreserveLegacyAndSeparateModesWithStrictOwnership()throws Exception {
       for(String kind:List.of("REPORT","CODING"))for(String mode:List.of("TRAINING","SIMULATION")){
        var f=newFlow(kind,mode);String p="/api/v1/learning-flows/"+f.path("id").asText();
+       assertThat(f.path("flowVersion").asText()).isEqualTo("learning-flow-v2");
        assertThat(request(p,HttpMethod.GET,bob,null).getStatusCode().value()).isEqualTo(404);
        assertThat(request(p+"/answers",HttpMethod.POST,alice,"{\"decision\":\"x\",\"change\":\"y\"}").getStatusCode().value()).isEqualTo(409);
        assertThat(request(p+"/hints",HttpMethod.POST,alice,"{\"index\":0}").getStatusCode().value()).isEqualTo(mode.equals("TRAINING")?200:409);
@@ -890,6 +891,20 @@ class SessionIntegrationTest {
        assertThat(request(p+"/answers",HttpMethod.POST,alice,"{\"decision\":\"changed\",\"change\":\"changed\"}").getStatusCode().value()).isEqualTo(409);
        assertThat(request(p+"/feedback",HttpMethod.POST,alice,"{}").getStatusCode().value()).isEqualTo(503);
       }
+    }
+    @Test void learningContentV2UsesThreeSourcesAndTheVersionedCodingSuite()throws Exception {
+      var report=newFlow("REPORT","TRAINING");
+      UUID session=UUID.fromString(report.path("sessionId").asText());
+      assertThat(database.queryForObject("SELECT task_id FROM learning_sessions WHERE id=?",UUID.class,session)).isEqualTo(com.doezip.learning.service.FlowTasks.REPORT_V2_ID);
+      assertThat(database.queryForObject("SELECT count(*) FROM materials WHERE task_id=?",Integer.class,com.doezip.learning.service.FlowTasks.REPORT_V2_ID)).isEqualTo(3);
+      assertThat(report.path("task").path("situation").asText()).contains("서로 다른 가능성");
+
+      var coding=newFlow("CODING","TRAINING");String cp="/api/v1/coding-workspaces/"+coding.path("codingId").asText();
+      var workspace=json(request(cp,HttpMethod.GET,alice,null));
+      assertThat(workspace.path("taskVersion").asText()).isEqualTo("duplicate-items-v2");
+      String wrong=mapper.writeValueAsString(Map.of("version",0,"suite","duplicate-items-v1","results",List.of(Map.of("name","legacy","passed",true,"detail","wrong suite"))));
+      assertThat(request(cp+"/runs",HttpMethod.POST,alice,wrong).getStatusCode().value()).isEqualTo(400);
+      assertThat(json(request("/api/v1/coding-workspaces/"+codingStart(alice),HttpMethod.GET,alice,null)).path("taskVersion").asText()).isEqualTo("duplicate-items-v1");
     }
     @Test void learningFlowRejectsStaleArtifactsAndForeignCitations()throws Exception {
       var f=newFlow("REPORT","TRAINING");String p="/api/v1/learning-flows/"+f.path("id").asText();String sid=f.path("sessionId").asText();
