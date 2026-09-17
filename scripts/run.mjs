@@ -50,7 +50,9 @@ function publicWebEnv() {
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? '',
   };
 }
-function web(production = false) {
+async function web(production = false) {
+  // The root runner invokes Next directly, bypassing npm workspace predev.
+  if (!production) await import('./coding-runtime.mjs');
   // Only these explicit public values from .env are passed to Next.js.
   const webEnv = publicWebEnv();
   run(process.execPath, [webRequire.resolve('next/dist/bin/next'), production ? 'start' : 'dev', '--hostname', '127.0.0.1', '--port', env.WEB_PORT ?? '3000'], `${root}apps/web`, webEnv);
@@ -61,13 +63,13 @@ function api(production = false) {
   else run('./gradlew', ['--no-daemon', 'bootRun'], `${root}apps/api`, apiEnv);
 }
 switch (process.argv[2]) {
-  case 'dev': web(); api(); break;
-  case 'dev:web': web(); break;
+  case 'dev': await web(); api(); break;
+  case 'dev:web': await web(); break;
   case 'dev:api': api(); break;
-  case 'start:web': web(true); break;
+  case 'start:web': await web(true); break;
   case 'build:web': run('npm', ['run', 'build', '-w', 'apps/web'], root, publicWebEnv()); break;
   case 'start:api': api(true); break;
   case 'db:up': run('docker', ['compose', '--env-file', '.env', '-f', 'compose.local.yml', 'up', '-d', '--wait', 'db']); break;
-  case 'check:api': run('./gradlew', ['--no-daemon', 'test', 'build'], `${root}apps/api`, {...env,AI_EVALUATION_ENABLED:'false',GEMINI_API_KEY:''}); break;
+  case 'check:api': run('./gradlew', ['--no-daemon', 'test', 'build'], `${root}apps/api`, {...env,AI_CODING_ENABLED:'false',AI_CHAT_ENABLED:'false',AI_EVALUATION_ENABLED:'false',GEMINI_API_KEY:''}); break;
   default: throw new Error('Unknown command');
 }

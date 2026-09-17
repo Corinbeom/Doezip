@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 @Service @Transactional(readOnly=true)
 public class SessionService {
+ @org.springframework.beans.factory.annotation.Autowired private com.doezip.learning.repository.FlowRepository flowRecords;
  private final ChallengeRunRepository challenges;private final ChallengeTemplateRepository templates;private final DocumentRepository documents;
  private final com.doezip.evaluation.repository.EvaluationRepository evaluations;
  private final SessionRepository sessions; private final MaterialRepository materials;
@@ -25,7 +26,7 @@ public class SessionService {
  @Transactional public Workspace create(UUID userId,Create request){
   if(request==null)throw SessionFailure.invalid();
   tasks.findByIdAndStatusIn(request.taskId(),List.of("PUBLISHED")).orElseThrow(TaskNotFoundException::new);
-  return workspace(sessions.save(new LearningSession(userId,request.taskId())));
+  return workspace(sessions.saveAndFlush(new LearningSession(userId,request.taskId())));
  }
  public Workspace get(UUID userId,UUID id){return workspace(owned(userId,id));}
  private LearningSession owned(UUID userId,UUID id){return sessions.findByIdAndUserId(id,userId).orElseThrow(SessionFailure::missing);}
@@ -36,7 +37,7 @@ public class SessionService {
   var challenge=challenges.findBySessionId(s.getId());
   var evaluation=evaluations.latest(s.getId());
   List<String> actions=new ArrayList<>(List.of("READ_MATERIALS"));
-  if(s.writable())actions.addAll(List.of("WRITE_DRAFT","SNAPSHOT_INITIAL"));
+  if(s.writable())actions.addAll(List.of("WRITE_DRAFT","SNAPSHOT_INITIAL","SEND_MESSAGE"));
   if(challenge.isEmpty()&&s.getStatus().equals("ACTIVE")&&s.getCurrentStep().equals("CHALLENGE")
     &&documents.findBySessionIdAndCheckpoint(s.getId(),"INITIAL").isPresent()&&templates.existsByTaskId(s.getTaskId()))actions.add("START_CHALLENGE");
   if(challenge.isPresent()&&challenge.get().getStatus().equals("IN_PROGRESS")&&s.getStatus().equals("ACTIVE")&&s.getCurrentStep().equals("CHALLENGE"))actions.addAll(List.of("EDIT_CHALLENGE","SUBMIT_CHALLENGE"));
@@ -63,7 +64,7 @@ public class SessionService {
   var s=sessions.lockOwned(id,userId).orElseThrow(SessionFailure::missing);
   if(!s.writable())throw new SessionFailure(409,"INVALID_SESSION_STATE");
   if(s.getLockVersion()!=request.expectedLockVersion() || s.getLockVersion()==Long.MAX_VALUE)throw new SessionFailure(409,"DRAFT_VERSION_CONFLICT");
-  s.saveDraft(text);
+  s.saveDraft(text);flowRecords.event(id,"REPORT_SAVED",Map.of("markdown",text,"version",s.getLockVersion()));
   return new Draft(text,s.getLockVersion(),hash(text));
  }
  public static String hash(String text){

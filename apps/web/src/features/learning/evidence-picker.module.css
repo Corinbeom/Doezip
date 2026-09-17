@@ -1,0 +1,15 @@
+.picker { margin-top:24px; padding:20px; border:1px solid var(--line); border-radius:16px; background:var(--soft); }
+.heading { display:flex; justify-content:space-between; gap:16px; align-items:flex-end; }
+.heading p,.heading h3 { margin:0; }.heading p { color:var(--muted); font-size:12px; }.heading>span { color:var(--muted); font-size:12px; }
+.materials { display:flex; gap:8px; overflow:auto; margin:14px 0; padding-bottom:3px; }
+.materials button { flex:none; background:var(--surface); color:var(--green); }
+.materials button[aria-selected=true] { background:var(--green); color:white; }
+.help { color:var(--muted); font-size:13px; }
+.lines { max-height:280px; overflow:auto; padding:4px!important; list-style:none!important; background:var(--surface); border:1px solid var(--line); border-radius:12px; }
+.lines li { margin:0; }.lines button { display:grid; grid-template-columns:32px 1fr; width:100%; padding:8px; text-align:left; color:var(--ink); background:transparent; border:0; border-radius:7px; }
+.lines button[aria-pressed=true] { background:var(--sage); }.lines span { color:var(--muted); font-size:12px; text-align:right; }.lines code { padding-left:10px; white-space:pre-wrap; font:13px/1.6 ui-monospace,monospace; }
+.preview { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; margin-top:12px; padding:14px; background:var(--surface); border-left:4px solid var(--green); border-radius:8px; }
+.preview>div { min-width:0; }.preview span { color:var(--green); font-size:12px; font-weight:700; }.preview p { margin:4px 0; }.preview button { flex:none; }
+.linked { margin-top:18px; }.linked h4 { margin-bottom:8px; }.linked article { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:7px; padding:10px 12px; background:var(--surface); border-radius:8px; }
+.linked article div { display:flex; gap:9px; min-width:0; }.linked article span { color:var(--muted); }.linked article button { padding:6px 10px; background:transparent; color:var(--green); }
+@media(max-width:650px) { .preview { align-items:stretch; flex-direction:column; }.preview button { width:100%; }.linked article div { flex-direction:column; gap:0; } }

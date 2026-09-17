@@ -6,7 +6,7 @@
     "apps/web"
   ],
   "engines": {
-    "node": "24.20.0"
+    "node": "24.x"
   },
   "scripts": {
     "db:up": "node scripts/run.mjs db:up",
@@ -20,7 +20,11 @@
     "test:e2e": "node scripts/verify.mjs e2e",
     "check": "node scripts/verify.mjs check",
     "test:ai": "node scripts/ai-smoke.mjs",
-    "test:flow:ai": "node scripts/ai-flow.mjs"
+    "test:flow:ai": "node scripts/ai-flow.mjs",
+    "test:chat:ai": "node scripts/chat-smoke.mjs",
+    "test:coding:ai": "node scripts/coding-smoke.mjs",
+    "test:learning:ai": "node scripts/learning-quality.mjs",
+    "deploy:smoke": "node scripts/deployment-smoke.mjs"
   },
   "devDependencies": {
     "@apidevtools/swagger-parser": "12.1.0",

@@ -28,6 +28,8 @@ import org.springframework.test.context.*;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.*;
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.*;
 
 @ActiveProfiles("test")
 @Testcontainers
@@ -64,13 +66,88 @@ class SessionIntegrationTest {
         registry.add("app.auth.provider-id", () -> "doezip-supabase");
         registry.add("app.cors-allowed-origin", () -> "http://localhost:3000");
     }
+    @org.springframework.test.context.bean.override.mockito.MockitoBean com.doezip.chat.adapter.ChatSettings chatSettings;
+    @org.springframework.test.context.bean.override.mockito.MockitoBean com.doezip.chat.adapter.ChatAdapter chatAdapter;
+    @Autowired com.doezip.chat.service.ChatService chatService;
     @Autowired TestRestTemplate http;
     @Autowired ObjectMapper mapper;
     @Autowired JdbcTemplate database;
     @Autowired JwtDecoder decoder;
     @Autowired CurrentUser currentUser;
+    @org.springframework.test.context.bean.override.mockito.MockitoBean com.doezip.coding.adapter.CodingAi codingAi;
+    @BeforeEach void codingMock(){org.mockito.Mockito.when(codingAi.available()).thenReturn(true);}
+    String codingStart(String jwt) throws Exception {var response=request("/api/v1/coding-workspaces",HttpMethod.POST,jwt,"{}");assertThat(response.getStatusCode().value()).as(response.getBody()).isEqualTo(200);return json(response).get("id").asText();}
+    @Test void codingOwnershipCasRunAndImmutableSubmission() throws Exception {
+      String id=codingStart(alice),p="/api/v1/coding-workspaces/"+id;
+      assertThat(request(p,HttpMethod.GET,bob,null).getStatusCode().value()).isEqualTo(404);
+      assertThat(request(p,HttpMethod.GET,null,null).getStatusCode().value()).isEqualTo(401);
+      assertThat(request(p,HttpMethod.PUT,alice,"{}").getStatusCode().value()).isEqualTo(400);
+      String save=mapper.writeValueAsString(Map.of("code","function addItem(items,item){return items;}","expectedVersion",0));
+      assertThat(request(p,HttpMethod.PUT,alice,save).getStatusCode().value()).isEqualTo(200);
+      assertThat(request(p,HttpMethod.PUT,alice,save).getStatusCode().value()).isEqualTo(409);
+      String submit=mapper.writeValueAsString(Map.of("expectedVersion",1,"explanation","테스트의 한계를 확인했습니다."));
+      assertThat(request(p+"/submit",HttpMethod.POST,alice,submit).getStatusCode().value()).isEqualTo(409);
+      String run=mapper.writeValueAsString(Map.of("version",1,"suite","duplicate-items-v1","results",List.of(Map.of("name","중복 확인","passed",false,"detail","실패"))));
+      assertThat(request(p+"/runs",HttpMethod.POST,alice,run).getStatusCode().value()).isEqualTo(200);
+      assertThat(request(p+"/submit",HttpMethod.POST,alice,submit).getStatusCode().value()).isEqualTo(200);
+      assertThat(request(p+"/submit",HttpMethod.POST,alice,submit).getStatusCode().value()).isEqualTo(200);
+      assertThat(request(p+"/runs",HttpMethod.POST,alice,run).getStatusCode().value()).isEqualTo(409);
+      assertThat(request(p,HttpMethod.PUT,alice,save).getStatusCode().value()).isEqualTo(409);
+      assertThat(json(request(p,HttpMethod.GET,alice,null)).get("submittedAt").isNull()).isFalse();
+    }
+    @Test void codingAiProposalIsStoredWithoutOverwritingAndReplaysOnce() throws Exception {
+      String id=codingStart(alice),p="/api/v1/coding-workspaces/"+id;
+      String original=json(request(p,HttpMethod.GET,alice,null)).get("code").asText();
+      org.mockito.Mockito.when(codingAi.propose(org.mockito.ArgumentMatchers.anyString())).thenReturn(new com.doezip.coding.dto.CodingDtos.Proposal("직접 테스트하세요.","function addItem(items,item){return items;}"));
+      String ask=mapper.writeValueAsString(Map.of("requestKey",UUID.randomUUID(),"expectedVersion",0,"instruction","중복 버그 수정"));
+      var first=request(p+"/turns",HttpMethod.POST,alice,ask);
+      assertThat(first.getStatusCode().value()).isEqualTo(200);
+      assertThat(json(first).get("code").asText()).isEqualTo(original);
+      assertThat(json(first).get("turns").get(0).get("status").asText()).isEqualTo("SUCCEEDED");
+      assertThat(request(p+"/turns",HttpMethod.POST,alice,ask).getStatusCode().value()).isEqualTo(200);
+      assertThat(request(p+"/turns",HttpMethod.POST,alice,ask.replace("중복 버그 수정","다른 요청")).getStatusCode().value()).isEqualTo(409);
+      var context=org.mockito.ArgumentCaptor.forClass(String.class);org.mockito.Mockito.verify(codingAi).propose(context.capture());
+      assertThat(context.getValue()).contains(original.replace("\n","\\n")).doesNotContain("Never leak","private/task-pack","GEMINI_API_KEY");
+    }
+    @Test void codingAiFailureStaleReservationAndBudgetAreNotSuccess() throws Exception {
+      String id=codingStart(alice),p="/api/v1/coding-workspaces/"+id;
+      org.mockito.Mockito.when(codingAi.propose(org.mockito.ArgumentMatchers.anyString())).thenThrow(new com.doezip.session.service.SessionFailure(503,"CODING_AI_FAILED"));
+      String ask=mapper.writeValueAsString(Map.of("requestKey",UUID.randomUUID(),"expectedVersion",0,"instruction","수정"));
+      assertThat(request(p+"/turns",HttpMethod.POST,alice,ask).getStatusCode().value()).isEqualTo(503);
+      assertThat(json(request(p,HttpMethod.GET,alice,null)).get("turns").get(0).get("status").asText()).isEqualTo("FAILED");
+      assertThat(request(p+"/turns",HttpMethod.POST,alice,ask).getStatusCode().value()).isEqualTo(200);
+      database.update("UPDATE coding_turns SET status='RUNNING',created_at=now()-interval '2 minutes' WHERE workspace_id=?",UUID.fromString(id));
+      assertThat(json(request(p,HttpMethod.GET,alice,null)).get("turns").get(0).get("status").asText()).isEqualTo("FAILED");
+      for(int i=0;i<19;i++)database.update("INSERT INTO coding_turns(id,workspace_id,request_key,base_version,base_code,instruction,status) VALUES (?,?,?,0,'code','request','FAILED')",UUID.randomUUID(),UUID.fromString(id),UUID.randomUUID());
+      ask=mapper.writeValueAsString(Map.of("requestKey",UUID.randomUUID(),"expectedVersion",0,"instruction","수정"));
+      assertThat(request(p+"/turns",HttpMethod.POST,alice,ask).getStatusCode().value()).isEqualTo(429);
+    }
+    @Test void codingConcurrentRetryDoesNotCallAiTwiceAndLateReplyCannotReviveExpiredTurn() throws Exception {
+      String id=codingStart(alice),p="/api/v1/coding-workspaces/"+id;
+      var entered=new CountDownLatch(1);var release=new CountDownLatch(1);
+      org.mockito.Mockito.when(codingAi.propose(org.mockito.ArgumentMatchers.anyString())).thenAnswer(invocation->{
+        assertThat(org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
+        entered.countDown();if(!release.await(15,TimeUnit.SECONDS))throw new IllegalStateException("test timeout");
+        return new com.doezip.coding.dto.CodingDtos.Proposal("테스트하세요.","function addItem(items,item){return items;}");
+      });
+      String ask=mapper.writeValueAsString(Map.of("requestKey",UUID.randomUUID(),"expectedVersion",0,"instruction","수정"));
+      try(var executor=Executors.newVirtualThreadPerTaskExecutor()){
+        var first=executor.submit(()->request(p+"/turns",HttpMethod.POST,alice,ask));
+        try{
+          assertThat(entered.await(15,TimeUnit.SECONDS)).isTrue();
+          var replay=request(p+"/turns",HttpMethod.POST,alice,ask);
+          assertThat(replay.getStatusCode().value()).isEqualTo(200);
+          assertThat(json(replay).get("turns").get(0).get("status").asText()).isEqualTo("RUNNING");
+          assertThat(request(p,HttpMethod.PUT,alice,mapper.writeValueAsString(Map.of("code","changed","expectedVersion",0))).getStatusCode().value()).isEqualTo(409);
+          database.update("UPDATE coding_turns SET created_at=now()-interval '2 minutes' WHERE workspace_id=?",UUID.fromString(id));
+          assertThat(json(request(p,HttpMethod.GET,alice,null)).get("turns").get(0).get("status").asText()).isEqualTo("FAILED");
+        }finally{release.countDown();}
+        assertThat(json(first.get(15,TimeUnit.SECONDS)).get("turns").get(0).get("status").asText()).isEqualTo("FAILED");
+        org.mockito.Mockito.verify(codingAi).propose(org.mockito.ArgumentMatchers.anyString());
+      }
+    }
     @BeforeEach void setup() throws Exception {
-        database.update("DELETE FROM evaluation_call_budgets"); database.update("DELETE FROM feedback_reports"); database.update("DELETE FROM evaluation_evidence"); database.update("DELETE FROM dimension_evaluations"); database.update("DELETE FROM evaluation_runs"); database.update("DELETE FROM evidence_links"); database.update("DELETE FROM fault_attempts"); database.update("DELETE FROM challenge_runs"); database.update("DELETE FROM challenge_statements"); database.update("DELETE FROM challenge_templates"); database.update("DELETE FROM document_versions"); database.update("DELETE FROM learning_sessions"); database.update("DELETE FROM materials");
+        database.update("DELETE FROM learning_flow_events");database.update("DELETE FROM learning_flows");database.update("DELETE FROM evaluation_call_budgets"); database.update("DELETE FROM feedback_reports"); database.update("DELETE FROM evaluation_evidence"); database.update("DELETE FROM dimension_evaluations"); database.update("DELETE FROM evaluation_runs"); database.update("DELETE FROM evidence_links"); database.update("DELETE FROM fault_attempts"); database.update("DELETE FROM challenge_runs"); database.update("DELETE FROM challenge_statements"); database.update("DELETE FROM challenge_templates"); database.update("DELETE FROM document_versions"); database.update("DELETE FROM chat_messages"); database.update("DELETE FROM learning_sessions"); database.update("DELETE FROM materials");
         database.update("DELETE FROM rubric_dimensions"); database.update("DELETE FROM tasks"); database.update("DELETE FROM users");
         database.update("INSERT INTO tasks(id,task_code,title,description_markdown,status,published_at) VALUES (?,'test-writing','Test','Public task','PUBLISHED',now())", taskId);
         alice=token("alice",c->{}); bob=token("bob",c->{});bootstrap(alice,"{}");bootstrap(bob,"{}");
@@ -127,7 +204,7 @@ class SessionIntegrationTest {
       var first=create(alice,taskId); assertThat(first.getStatusCode()).isEqualTo(HttpStatus.CREATED);
       var workspace=json(first);String id=workspace.get("session").get("id").asText();
       assertThat(json(create(alice,taskId)).get("session").get("id").asText()).isNotEqualTo(id);
-      assertThat(workspace.get("session").get("allowedActions").toString()).isEqualTo("[\"READ_MATERIALS\",\"WRITE_DRAFT\",\"SNAPSHOT_INITIAL\"]");
+      assertThat(workspace.get("session").get("allowedActions").toString()).isEqualTo("[\"READ_MATERIALS\",\"WRITE_DRAFT\",\"SNAPSHOT_INITIAL\",\"SEND_MESSAGE\"]");
       assertThat(workspace.get("draft").get("lockVersion").asLong()).isZero();
       assertThat(workspace.get("draft").get("contentHash").asText()).isEqualTo(com.doezip.session.service.SessionService.hash(""));
       for(String field:List.of("challengeRunId","initialReportId","finalReportId","activeEvaluationId"))assertThat(workspace.get(field).isNull()).isTrue();
@@ -711,5 +788,133 @@ class SessionIntegrationTest {
         var first=pool.submit(reserve);var second=pool.submit(reserve);gate.countDown();assertThat(List.of(first.get(15,java.util.concurrent.TimeUnit.SECONDS),second.get(15,java.util.concurrent.TimeUnit.SECONDS))).containsExactlyInAnyOrder(true,false);
       }finally{pool.shutdownNow();}
       assertThat(database.queryForObject("SELECT calls FROM evaluation_call_budgets WHERE scope='global'",Integer.class)).isEqualTo(1);
+    }
+
+    void enableChat(){when(chatSettings.available()).thenReturn(true);when(chatSettings.model()).thenReturn("test-provider");when(chatSettings.dailyLimit()).thenReturn(20);when(chatSettings.globalLimit()).thenReturn(100);}
+    String chatBody(UUID key,String text,boolean include)throws Exception{return mapper.writeValueAsString(Map.of("clientMessageKey",key,"contentText",text,"includeCurrentDraft",include));}
+    JsonNode chatMessages(String id)throws Exception{return json(request(path(id)+"/messages",HttpMethod.GET,alice,null)).get("items");}
+    @Test void chatStreamsPersistsAndReplaysWithoutCallingProviderAgain()throws Exception{
+      enableChat();var calls=new java.util.concurrent.atomic.AtomicInteger();
+      doAnswer(call->{assertThat(org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive()).isFalse();calls.incrementAndGet();java.util.function.Consumer<String> emit=call.getArgument(1);emit.accept("자료 ");emit.accept("확인");return null;}).when(chatAdapter).stream(anyString(),any());
+      var id=start();var key=UUID.randomUUID();String body=chatBody(key,"분석해 줘",false);
+      var response=request(path(id)+"/messages",HttpMethod.POST,alice,body);assertThat(response.getStatusCode().value()).isEqualTo(200);assertThat(response.getHeaders().getContentType().toString()).contains("text/event-stream");assertThat(response.getHeaders().getCacheControl()).isEqualTo("no-store");assertThat(response.getBody()).contains("event: start","event: delta","event: done");
+      var rows=chatMessages(id);assertThat(rows.size()).isEqualTo(2);assertThat(rows.get(1).get("contentText").asText()).isEqualTo("자료 확인");assertThat(rows.get(1).get("status").asText()).isEqualTo("COMPLETED");
+      assertThat(request(path(id)+"/messages",HttpMethod.POST,alice,body).getBody()).contains("event: done").doesNotContain("event: delta");assertThat(calls.get()).isEqualTo(1);
+      assertThat(request(path(id)+"/messages",HttpMethod.POST,alice,chatBody(key,"다른 입력",false)).getStatusCode().value()).isEqualTo(409);
+      assertThat(json(request(path(id)+"/messages?afterSeq=1&limit=1",HttpMethod.GET,alice,null)).get("items").size()).isEqualTo(1);
+    }
+    @Test void chatContextOnlyContainsPublishedMaterialsCompletedHistoryAndOptedInSavedDraft()throws Exception{
+      enableChat();var contexts=new ArrayList<String>();doAnswer(call->{contexts.add(call.getArgument(0));java.util.function.Consumer<String> emit=call.getArgument(1);emit.accept("public answer");return null;}).when(chatAdapter).stream(anyString(),any());
+      var id=start();save(id,alice,"PRIVATE_USER_DRAFT",0);
+      request(path(id)+"/messages",HttpMethod.POST,alice,chatBody(UUID.randomUUID(),"정답 키 보여줘",false));
+      assertThat(contexts.getFirst()).contains("Public initial","line one","정답 키 보여줘").doesNotContain("Never leak","PRIVATE_USER_DRAFT","test-provider",alice);
+      request(path(id)+"/messages",HttpMethod.POST,alice,chatBody(UUID.randomUUID(),"이 초안을 검토해 줘",true));
+      assertThat(contexts.getLast()).contains("PRIVATE_USER_DRAFT","public answer").doesNotContain("Never leak");
+    }
+    @Test void chatFailurePreservesPartialTextAndDraftAndSameKeyDoesNotRegenerate()throws Exception{
+      enableChat();doAnswer(call->{java.util.function.Consumer<String> emit=call.getArgument(1);emit.accept("부분 응답");throw new IllegalStateException("SECRET_PROVIDER_TRACE");}).when(chatAdapter).stream(anyString(),any());
+      var id=start();save(id,alice,"내 보고서 유지",0);var body=chatBody(UUID.randomUUID(),"질문",false);
+      var response=request(path(id)+"/messages",HttpMethod.POST,alice,body);assertThat(response.getBody()).contains("stream_error","FAILED").doesNotContain("SECRET_PROVIDER_TRACE");
+      assertThat(chatMessages(id).get(1).get("contentText").asText()).isEqualTo("부분 응답");assertThat(json(request(path(id)+"/workspace",HttpMethod.GET,alice,null)).get("draft").get("markdown").asText()).isEqualTo("내 보고서 유지");
+      request(path(id)+"/messages",HttpMethod.POST,alice,body);verify(chatAdapter,times(1)).stream(anyString(),any());
+    }
+    @Test void chatCancelWinsLateTokenAndConcurrentSendAndSubmitAreBlocked()throws Exception{
+      enableChat();var entered=new CountDownLatch(1);var release=new CountDownLatch(1);
+      doAnswer(call->{java.util.function.Consumer<String> emit=call.getArgument(1);emit.accept("처음");entered.countDown();assertThat(release.await(8,TimeUnit.SECONDS)).isTrue();emit.accept("늦은 토큰");return null;}).when(chatAdapter).stream(anyString(),any());
+      var id=start();var draft=json(save(id,alice,"보고서",0));var key=UUID.randomUUID();var executor=Executors.newSingleThreadExecutor();
+      try{
+       var future=executor.submit(()->request(path(id)+"/messages",HttpMethod.POST,alice,chatBody(key,"질문",false)));assertThat(entered.await(8,TimeUnit.SECONDS)).isTrue();
+       var row=chatMessages(id).get(1);var messageId=row.get("id").asText();
+       var duplicate=request(path(id)+"/messages",HttpMethod.POST,alice,chatBody(key,"질문",false));assertThat(json(duplicate).get("details").get("assistantMessageId").asText()).isEqualTo(messageId);
+       assertThat(request(path(id)+"/messages",HttpMethod.POST,alice,chatBody(UUID.randomUUID(),"새 질문",false)).getStatusCode().value()).isEqualTo(409);
+       assertThat(request(path(id)+"/document-versions",HttpMethod.POST,alice,mapper.writeValueAsString(Map.of("checkpoint","INITIAL","expectedDraftLockVersion",draft.get("lockVersion").asLong(),"expectedContentHash",draft.get("contentHash").asText()))).getStatusCode().value()).isEqualTo(409);
+       assertThat(request(path(id)+"/messages/"+messageId+"/cancel",HttpMethod.POST,bob,"{}").getStatusCode().value()).isEqualTo(404);
+       assertThat(json(request(path(id)+"/messages/"+messageId+"/cancel",HttpMethod.POST,alice,"{}")).get("status").asText()).isEqualTo("CANCELLED");release.countDown();future.get(8,TimeUnit.SECONDS);
+       var restored=chatMessages(id).get(1);assertThat(restored.get("status").asText()).isEqualTo("CANCELLED");assertThat(restored.get("contentText").asText()).isEqualTo("처음");
+      }finally{release.countDown();executor.shutdownNow();}
+    }
+    @Test void staleChatRecoversAfterServerRestartAndDeniesWrongOwnerAndInvalidStage()throws Exception{
+      enableChat();var id=start();UUID owner=database.queryForObject("SELECT id FROM users WHERE auth_subject='alice'",UUID.class);
+      var begun=chatService.begin(owner,UUID.fromString(id),new com.doezip.chat.dto.ChatDtos.Request(UUID.randomUUID(),"질문",false));
+      database.update("UPDATE chat_messages SET created_at=now()-interval '91 seconds' WHERE id=?",begun.assistant().id());
+      assertThat(chatMessages(id).get(1).get("status").asText()).isEqualTo("FAILED");
+      assertThat(request(path(id)+"/messages",HttpMethod.GET,bob,null).getStatusCode().value()).isEqualTo(404);
+      assertThat(request(path(id)+"/messages",HttpMethod.POST,bob,chatBody(UUID.randomUUID(),"질문",false)).getStatusCode().value()).isEqualTo(404);
+      database.update("UPDATE learning_sessions SET current_step='CHALLENGE' WHERE id=?",UUID.fromString(id));
+      assertThat(request(path(id)+"/messages",HttpMethod.POST,alice,chatBody(UUID.randomUUID(),"질문",false)).getStatusCode().value()).isEqualTo(409);
+    }
+    @Test void chatBudgetAndInputLimitsAreEnforcedBeforeProviderCall()throws Exception{
+      enableChat();when(chatSettings.dailyLimit()).thenReturn(1);doAnswer(call->{java.util.function.Consumer<String> emit=call.getArgument(1);emit.accept("응답");return null;}).when(chatAdapter).stream(anyString(),any());var id=start();
+      assertThat(request(path(id)+"/messages",HttpMethod.POST,alice,chatBody(UUID.randomUUID()," ",false)).getStatusCode().value()).isEqualTo(400);
+      assertThat(request(path(id)+"/messages",HttpMethod.POST,alice,chatBody(UUID.randomUUID(),"x".repeat(4001),false)).getStatusCode().value()).isEqualTo(400);
+      request(path(id)+"/messages",HttpMethod.POST,alice,chatBody(UUID.randomUUID(),"질문",false));
+      assertThat(request(path(id)+"/messages",HttpMethod.POST,alice,chatBody(UUID.randomUUID(),"두 번째",false)).getStatusCode().value()).isEqualTo(429);verify(chatAdapter,times(1)).stream(anyString(),any());
+    }
+
+    @Test void chatErrorsBeforeStreamingRemainJsonEvenWithAnSseAcceptHeader()throws Exception{
+      var id=start();var headers=new HttpHeaders();headers.setBearerAuth(alice);headers.setContentType(MediaType.APPLICATION_JSON);headers.setAccept(List.of(MediaType.TEXT_EVENT_STREAM));
+      var response=http.exchange(path(id)+"/messages",HttpMethod.POST,new HttpEntity<>(chatBody(UUID.randomUUID(),"질문",false),headers),String.class);
+      assertThat(response.getStatusCode().value()).isEqualTo(503);assertThat(response.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_JSON);assertThat(json(response).get("code").asText()).isEqualTo("CHAT_NOT_CONFIGURED");
+      var invalid=http.exchange(path(id)+"/messages",HttpMethod.POST,new HttpEntity<>("{}",headers),String.class);assertThat(invalid.getStatusCode().value()).isEqualTo(400);assertThat(invalid.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_JSON);
+    }
+
+    @org.springframework.test.context.bean.override.mockito.MockitoBean com.doezip.learning.adapter.FlowFeedbackAi flowAi;
+    @Autowired com.doezip.learning.service.FlowService flows;
+    JsonNode newFlow(String kind,String mode)throws Exception {
+      if(kind.equals("REPORT")){
+       UUID tid=com.doezip.learning.service.FlowTasks.REPORT_ID;
+       database.update("INSERT INTO tasks(id,task_code,title,description_markdown,status) VALUES (?,'flow-test','Scenario','Public','PUBLISHED') ON CONFLICT DO NOTHING",tid);
+       material(UUID.randomUUID(),tid,"INITIAL","Flow material","confirmed line\nunknown cause");
+      }
+      var r=request("/api/v1/learning-flows",HttpMethod.POST,alice,mapper.writeValueAsString(Map.of("requestKey",UUID.randomUUID(),"kind",kind,"mode",mode)));
+      assertThat(r.getStatusCode().value()).as(r.getBody()).isEqualTo(200);return json(r);
+    }
+    JsonNode flowNotes(JsonNode f)throws Exception {return json(request("/api/v1/learning-flows/"+f.path("id").asText()+"/notes",HttpMethod.PUT,alice,mapper.writeValueAsString(Map.of("version",f.path("version").asLong(),"notes",Map.of("explanation","I chose this with limits","verification","Not yet verified; need more evidence","citations",List.of())))));}
+    JsonNode sealFlow(JsonNode f)throws Exception {
+      String artifact="function addItem(items,item){return [...items,item];}";long version;
+      if(f.path("kind").asText().equals("REPORT")){artifact="The cause remains unknown.";var saved=json(save(f.path("sessionId").asText(),alice,artifact,0));version=saved.path("lockVersion").asLong();}
+      else {String cp="/api/v1/coding-workspaces/"+f.path("codingId").asText();var saved=json(request(cp,HttpMethod.PUT,alice,mapper.writeValueAsString(Map.of("code",artifact,"expectedVersion",0))));version=saved.path("version").asLong();request(cp+"/runs",HttpMethod.POST,alice,mapper.writeValueAsString(Map.of("version",version,"suite","duplicate-items-v1","results",List.of(Map.of("name","duplicate","passed",false,"detail","still duplicated")))));}
+      f=flowNotes(f);var r=request("/api/v1/learning-flows/"+f.path("id").asText()+"/submit",HttpMethod.POST,alice,mapper.writeValueAsString(Map.of("version",f.path("version").asLong(),"artifactVersion",version,"artifactHash",com.doezip.session.service.SessionService.hash(artifact))));assertThat(r.getStatusCode().value()).as(r.getBody()).isEqualTo(200);return json(r);
+    }
+    @Test void learningFlowsPreserveLegacyAndSeparateModesWithStrictOwnership()throws Exception {
+      for(String kind:List.of("REPORT","CODING"))for(String mode:List.of("TRAINING","SIMULATION")){
+       var f=newFlow(kind,mode);String p="/api/v1/learning-flows/"+f.path("id").asText();
+       assertThat(request(p,HttpMethod.GET,bob,null).getStatusCode().value()).isEqualTo(404);
+       assertThat(request(p+"/answers",HttpMethod.POST,alice,"{\"decision\":\"x\",\"change\":\"y\"}").getStatusCode().value()).isEqualTo(409);
+       assertThat(request(p+"/hints",HttpMethod.POST,alice,"{\"index\":0}").getStatusCode().value()).isEqualTo(mode.equals("TRAINING")?200:409);
+       var sealed=sealFlow(f);assertThat(sealed.path("stage").asText()).isEqualTo("EXPLAIN");assertThat(sealed.path("snapshot").path("records").size()).isGreaterThan(3);
+       assertThat(request(p+"/feedback",HttpMethod.POST,alice,"{}").getStatusCode().value()).isEqualTo(409);
+       assertThat(request(p+"/notes",HttpMethod.PUT,alice,"{\"version\":2,\"notes\":{\"explanation\":\"x\",\"verification\":\"x\",\"citations\":[]}}").getStatusCode().value()).isEqualTo(409);
+       if(kind.equals("REPORT"))assertThat(save(f.path("sessionId").asText(),alice,"late",1).getStatusCode().value()).isEqualTo(409);
+       assertThat(json(request(p+"/answers",HttpMethod.POST,alice,"{\"decision\":\"I cannot explain this yet\",\"change\":\"I need another test\"}")).path("stage").asText()).isEqualTo("FEEDBACK");
+       assertThat(request(p+"/answers",HttpMethod.POST,alice,"{\"decision\":\"changed\",\"change\":\"changed\"}").getStatusCode().value()).isEqualTo(409);
+       assertThat(request(p+"/feedback",HttpMethod.POST,alice,"{}").getStatusCode().value()).isEqualTo(503);
+      }
+    }
+    @Test void learningFlowRejectsStaleArtifactsAndForeignCitations()throws Exception {
+      var f=newFlow("REPORT","TRAINING");String p="/api/v1/learning-flows/"+f.path("id").asText();String sid=f.path("sessionId").asText();
+      var bad=request(p+"/notes",HttpMethod.PUT,alice,mapper.writeValueAsString(Map.of("version",0,"notes",Map.of("explanation","x","verification","x","citations",List.of(Map.of("materialId",hiddenId,"lineStart",1,"lineEnd",1))))));assertThat(bad.getStatusCode().value()).isEqualTo(404);
+      var saved=json(save(sid,alice,"first",0));save(sid,alice,"second",1);f=flowNotes(f);
+      var r=request(p+"/submit",HttpMethod.POST,alice,mapper.writeValueAsString(Map.of("version",f.path("version").asLong(),"artifactVersion",1,"artifactHash",saved.path("contentHash").asText())));assertThat(r.getStatusCode().value()).isEqualTo(409);assertThat(json(request(p,HttpMethod.GET,alice,null)).path("snapshot").isNull()).isTrue();
+      assertThat(request(path(sid)+"/document-versions",HttpMethod.POST,alice,mapper.writeValueAsString(Map.of("checkpoint","INITIAL","expectedDraftLockVersion",2,"expectedContentHash",com.doezip.session.service.SessionService.hash("second")))).getStatusCode().value()).isEqualTo(409);
+    }
+    @Test void learningFeedbackUsesFrozenEvidenceAndCreatesSeparatePractice()throws Exception {
+      var f=sealFlow(newFlow("CODING","TRAINING"));String p="/api/v1/learning-flows/"+f.path("id").asText();UUID id=UUID.fromString(f.path("id").asText());
+      request(p+"/answers",HttpMethod.POST,alice,"{\"decision\":\"I checked the duplicate test\",\"change\":\"I would test updated titles\"}");
+      doReturn(true).when(aiSettings).available();
+      when(flowAi.evaluate(anyString(),any())).thenAnswer(call->{JsonNode input=call.getArgument(1);assertThat(input.path("records").toString()).contains("I checked the duplicate test").doesNotContain("Never leak");var result=mapper.createObjectNode().put("practiceArea","VERIFY");var items=result.putArray("items");for(String area:List.of("REQUEST","VERIFY","IMPROVE","EXPLAIN"))items.addObject().put("area",area).put("observation","This is a submitted record, not proof of ability").put("nextAction","Verify one claim").putArray("recordIds").add("artifact");return result;});
+      assertThat(request(p+"/feedback",HttpMethod.POST,alice,"{}").getStatusCode().value()).isEqualTo(200);
+      JsonNode completed=null;for(int i=0;i<100;i++){completed=json(request(p,HttpMethod.GET,alice,null));if(completed.path("feedbackStatus").asText().equals("SUCCEEDED"))break;Thread.sleep(25);}
+      assertThat(completed.path("feedbackStatus").asText()).isEqualTo("SUCCEEDED");assertThat(completed.path("feedback").path("items").get(0).path("sources").get(0).path("text")).isEqualTo(f.path("snapshot").path("artifact"));
+      var child=json(request(p+"/practice",HttpMethod.POST,alice,"{}"));assertThat(child.path("parentId").asText()).isEqualTo(id.toString());assertThat(child.path("codingId")).isNotEqualTo(f.path("codingId"));assertThat(child.path("stage").asText()).isEqualTo("WORKING");assertThat(json(request(p+"/practice",HttpMethod.POST,alice,"{}")).path("id")).isEqualTo(child.path("id"));
+      assertThatThrownBy(()->database.update("UPDATE learning_flows SET snapshot='{}'::jsonb WHERE id=?",id)).isInstanceOf(org.springframework.dao.DataAccessException.class);
+      request(p+"/feedback",HttpMethod.POST,alice,"{}");verify(flowAi,times(1)).evaluate(anyString(),any());
+    }
+    @Test void learningFeedbackFailureAndExpiredLeaseDoNotPublishSuccess()throws Exception {
+      var f=sealFlow(newFlow("REPORT","TRAINING"));UUID id=UUID.fromString(f.path("id").asText());UUID user=database.queryForObject("SELECT user_id FROM learning_flows WHERE id=?",UUID.class,id);flows.answer(user,id,new com.doezip.learning.dto.FlowDtos.Answers("reason","new condition"));doReturn(true).when(aiSettings).available();
+      var r=flows.reserve(user,id);assertThatThrownBy(()->flows.reserve(user,id)).isInstanceOf(com.doezip.session.service.SessionFailure.class);
+      database.update("UPDATE learning_flows SET feedback_started_at=now()-interval '2 minutes' WHERE id=?",id);assertThat(flows.get(user,id).feedbackStatus()).isEqualTo("FAILED");assertThat(flows.finish(user,id,r.token(),mapper.createObjectNode()).feedbackStatus()).isEqualTo("FAILED");
+      when(flowAi.evaluate(anyString(),any())).thenThrow(new IllegalStateException("PRIVATE_PROVIDER_FAILURE"));request("/api/v1/learning-flows/"+id+"/feedback",HttpMethod.POST,alice,"{}");
+      for(int i=0;i<100;i++){if(flows.get(user,id).feedbackStatus().equals("FAILED"))break;Thread.sleep(25);}assertThat(flows.get(user,id).feedbackStatus()).isEqualTo("FAILED");assertThat(flows.get(user,id).feedback().isNull()).isTrue();
     }
 }

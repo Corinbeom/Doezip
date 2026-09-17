@@ -15,6 +15,10 @@ public class EvaluationBudget {
     @Transactional
     public void reserve(UUID session) {
         UUID user=db.queryForObject("SELECT user_id FROM learning_sessions WHERE id=?",UUID.class,session);
+        reserveUser(user);
+    }
+    @Transactional
+    public void reserveUser(UUID user) {
         increment("global",settings.globalLimit());
         increment("user:"+user,settings.dailyLimit());
     }

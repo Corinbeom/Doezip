@@ -1,2 +1,2 @@
-import { EnvironmentCheck } from '@/features/environment/environment-check';
-export default function Page() { return <EnvironmentCheck />; }
+import {redirect} from 'next/navigation';
+export default function Page(){redirect('/learn');}

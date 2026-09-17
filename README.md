@@ -2,6 +2,7 @@
 
 AI 활용 역량 훈련 서비스.
 현재 저장소에는 Next.js 웹, Spring Boot API, PostgreSQL 개발 환경과 과제 조회·로그인·보고서 작성·최초 제출·검산 초안 열람·검토 저장·제출·Gemini INITIAL 평가·결과 조회 기능이 구성되어 있다.
+이 브랜치는 보고서·구현 과제의 훈련/모의 전형, 내 결과물 검증, 제출 후 직접 설명과 근거 중심 피드백·재연습을 연결한다. AI 대화 화면은 [P05 기록](docs/P05_AI_WORKSPACE.md), 브라우저 품질 점검은 [P04 기록](docs/P04_PRODUCT_QUALITY.md), 힌트·원문 선택·피드백 읽기 기준은 [P03 기록](docs/P03_FEEDBACK_EXPERIENCE.md), 단계형 화면과 훈련 안내 기준은 [P02 기록](docs/P02_GUIDED_WORKSPACE.md), 핵심 흐름과 경계는 [P01 기록](docs/P01_LEARNING_FLOW.md), 이전 통합은 [I02 기록](docs/I02_UNIFIED_WORKSPACE.md)을 따른다.
 제품 기능의 구현 범위와 진행 상태는 [개발 계획](docs/FEATURE_BACKLOG.md)을 참고한다.
 
 ## 로컬 실행
@@ -12,8 +13,8 @@ Git이 필요하다. 아래 명령은 macOS/Linux/WSL 셸 기준이다. Windows�
 ```bash
 git clone https://github.com/Corinbeom/Doezip.git
 cd Doezip
-# 통합된 개발 환경을 checkout한다.
-git switch develop
+# 공개 데모와 현재 통합 기능 확인 브랜치. develop 반영 전이다.
+git switch feature/D01-demo-deployment
 # nvm을 사용하는 경우
 nvm install
 nvm use
@@ -23,8 +24,10 @@ npm run db:up
 npm run dev
 ```
 
+현재 사용자 확인 환경은 **http://localhost:3189/learn**으로 고정한다. 아래 3000/8080은 새 clone의 기본값이며, 기존 로컬 `.env`를 덮어쓰지 않는다.
+
 현재 로컬 checkout에서는 `npm install`부터 실행한다. CI와 lockfile 그대로 재설치할 때는 `npm ci`를 쓴다.
-웹 http://localhost:3000 에서 API와 PostgreSQL 연결 상태를 확인한다.
+새 clone의 기본 웹에서는 http://localhost:3000/learn 에서 과제를 시작한다. API·PostgreSQL 연결 확인은 http://localhost:3000/environment 다.
 API 운영 health: http://localhost:8080/actuator/health (`UP`: 200 / DB 장애 `DOWN`: 503, 상세 비공개).
 웹 http://localhost:3000/tasks 에서 로컬 조회용 가상 과제의 설명과 공개 루브릭을 확인한다.
 공개 과제 조회 외에 인증된 사용자 연결 POST `/api/v1/me/bootstrap`, 조회 GET `/api/v1/me`를 제공한다. 과제 시작·공개 자료 열람·보고서 저장/복원 API도 제공한다. [F02b 범위](docs/F02B_REPORT_DRAFT.md)를 참고한다. 저장한 초안의 최초 제출·불변 제출본 조회는 [F02c 범위](docs/F02C_INITIAL_SUBMISSION.md)를 따른다. [F04a 검산 시작·열람](docs/F04A_CHALLENGE_START.md)을 제공하며 [F04b 검토 저장·제출](docs/F04B_CHALLENGE_REVIEW.md)도 제공한다. INITIAL 평가 요청·상태 조회와 저장된 결과 조회도 제공한다. FINAL 등 미구현 경로는 차단된다.
@@ -48,6 +51,8 @@ Ctrl+C는 이 실행기가 시작한 프로세스만 종료한다. DB와 영속 
 | `npm run check:api` | JUnit·실제 PostgreSQL Testcontainers·JAR build |
 | `npm run test:e2e` | 빌드된 실제 웹·API 서버를 시작해 Playwright 검사 |
 | `npm run check` | 계약·웹·API·E2E 전체 검사(AI 비활성) |
+| `npm run deploy:smoke` | 배포 웹·API·DB health·CORS·보호 경로 확인 |
+| `npm run test:chat:ai` | 가상 자료로 실제 AI 대화·PostgreSQL 저장/복원 검사(키 필요) |
 | `npm run test:flow:ai` | 가상 과제의 실제 AI 평가·결과 복원 브라우저 검사(키 필요) |
 
 ## 검증
@@ -69,6 +74,21 @@ AI 키·OAuth 계정은 검사에 필요 없다. 최신 통합 결과와 실제 
 DB를 멈출 때는 `docker compose --env-file .env -f compose.local.yml stop db`를 쓴다.
 볼륨 삭제 옵션은 일반 실행·검증 명령에 넣지 않는다.
 
+## 공개 데모 배포
+
+웹은 Vercel, API와 PostgreSQL은 Render를 기준으로 한다. 공개 데모는 `demo` 프로필의 검수된 가상 과제만 사용하며 로컬 DB나 `local` 프로필을 재사용하지 않는다. 배포 설정, 환경변수, OAuth 변경과 smoke 순서는 [D01 배포 기록](docs/D01_DEPLOYMENT.md)을 따른다.
+
+- 공개 웹: <https://doezip.vercel.app>
+- API health: <https://doezip-api.onrender.com/actuator/health>
+
+```bash
+DEPLOY_WEB_URL=https://<web-host> \
+DEPLOY_API_URL=https://<api-host> \
+npm run deploy:smoke
+```
+
+이 검사는 공개 웹·health·과제 조회·CORS·보호 경로 차단을 확인한다. 실제 Google 로그인과 Gemini 응답은 별도로 브라우저에서 확인한다.
+
 ## 설정·구조
 
 - `.env.example` → 로컬 `.env`. 실제 `.env`는 Git 제외. 루트 실행기가 명시적으로 파싱한다.
@@ -87,7 +107,7 @@ DB를 멈출 때는 `docker compose --env-file .env -f compose.local.yml stop db
   전체 ERD migration·학습 과제 패키지 seed는 후속 작업.
 - `contracts`, `docs`, `fixtures`, `templates`: 기존 기준 자료 보존. fixture는 웹에 import·배포하지 않는다.
   templates는 참고 예시이며 실제 앱 설정은 루트와 apps/api 아래에 있다.
-- `.github/workflows/ci.yml`: 로컬과 같은 `npm run check`. PR(main/develop), push(main/develop/feature/**).
+- `.github/workflows/ci.yml`: 로컬과 같은 `npm run check`와 배포 API 이미지 build. PR(main/develop), push(main/develop/feature/**).
 
 ## 문서
 
@@ -117,3 +137,9 @@ DB를 멈출 때는 `docker compose --env-file .env -f compose.local.yml stop db
 AI 평가 설정과 실행은 [AI_SETUP](docs/AI_SETUP.md), 구현·검증 구분은 [F05c 기록](docs/F05C_AI_EVALUATION.md)을 따른다. `npm run test:ai`는 기본 CI와 분리한 명시적 실제 호출 검사다.
 
 웹과 API는 같은 checkout에서 npm run dev로 실행한다. 이전의 F04c 웹/F05c API 분리 실행은 통합 전 기록이다. 새 기능은 통합된 develop에서 새 feature 브랜치로 시작한다.
+
+## 서비스 내 구현 연습 (F08a)
+
+`/coding`에서 JavaScript 코드 편집, AI 수정안 적용, 공개 테스트 실행, 저장·복원·제출을 제공한다.
+설정과 실행 경계는 [F08a 작업 기록](docs/F08A_CODING_WORKSPACE.md)을 따른다.
+구현 과제의 AI 역량 평가와 범용 개발 환경은 아직 연결하지 않았다.

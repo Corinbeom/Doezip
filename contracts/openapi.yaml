@@ -18,6 +18,587 @@ tags:
 - name: evaluation
 - name: defense
 paths:
+  /learning-flows:
+    get:
+      operationId: listLearningFlows
+      tags:
+      - learning
+      responses:
+        '200':
+          description: Versioned private learning flow; no-store. Browser tests are
+            not independent grading.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LearningFlow'
+    post:
+      operationId: createLearningFlow
+      tags:
+      - learning
+      responses:
+        '200':
+          description: Versioned private learning flow; no-store. Browser tests are
+            not independent grading.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningFlow'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FlowCreate'
+  /learning-flows/catalog:
+    get:
+      operationId: learningFlowCatalog
+      tags:
+      - learning
+      responses:
+        '200':
+          description: Versioned private learning flow; no-store. Browser tests are
+            not independent grading.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FlowTask'
+  /learning-flows/{id}:
+    get:
+      operationId: getLearningFlow
+      tags:
+      - learning
+      responses:
+        '200':
+          description: Versioned private learning flow; no-store. Browser tests are
+            not independent grading.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningFlow'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: &id001
+          type: string
+          format: uuid
+  /learning-flows/{id}/notes:
+    put:
+      operationId: learningFlowNotes
+      tags:
+      - learning
+      responses:
+        '200':
+          description: Versioned private learning flow; no-store. Browser tests are
+            not independent grading.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningFlow'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FlowSave'
+  /learning-flows/{id}/hints:
+    post:
+      operationId: learningFlowHints
+      tags:
+      - learning
+      responses:
+        '200':
+          description: Versioned private learning flow; no-store. Browser tests are
+            not independent grading.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningFlow'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FlowHint'
+  /learning-flows/{id}/submit:
+    post:
+      operationId: learningFlowSubmit
+      tags:
+      - learning
+      responses:
+        '200':
+          description: Versioned private learning flow; no-store. Browser tests are
+            not independent grading.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningFlow'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FlowSubmit'
+  /learning-flows/{id}/answers:
+    post:
+      operationId: learningFlowAnswers
+      tags:
+      - learning
+      responses:
+        '200':
+          description: Versioned private learning flow; no-store. Browser tests are
+            not independent grading.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningFlow'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FlowAnswers'
+  /learning-flows/{id}/feedback:
+    post:
+      operationId: learningFlowFeedback
+      tags:
+      - learning
+      responses:
+        '200':
+          description: Versioned private learning flow; no-store. Browser tests are
+            not independent grading.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningFlow'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: *id001
+  /learning-flows/{id}/practice:
+    post:
+      operationId: learningFlowPractice
+      tags:
+      - learning
+      responses:
+        '200':
+          description: Versioned private learning flow; no-store. Browser tests are
+            not independent grading.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningFlow'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: *id001
+  /coding-workspaces:
+    get:
+      operationId: listCodingWorkspaces
+      tags:
+      - coding
+      responses:
+        '200':
+          description: 성공. 개인 응답은 no-store. 테스트 기록은 브라우저 보고이며 서버 채점이 아님.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: &codingPath001
+                  type: string
+                  format: uuid
+        '400':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      operationId: createCodingWorkspace
+      tags:
+      - coding
+      responses:
+        '200':
+          description: 성공. 개인 응답은 no-store. 테스트 기록은 브라우저 보고이며 서버 채점이 아님.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodingWorkspace'
+        '400':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /coding-workspaces/{id}:
+    get:
+      operationId: getCodingWorkspace
+      tags:
+      - coding
+      responses:
+        '200':
+          description: 성공. 개인 응답은 no-store. 테스트 기록은 브라우저 보고이며 서버 채점이 아님.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodingWorkspace'
+        '400':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      operationId: saveCodingWorkspace
+      tags:
+      - coding
+      responses:
+        '200':
+          description: 성공. 개인 응답은 no-store. 테스트 기록은 브라우저 보고이며 서버 채점이 아님.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodingWorkspace'
+        '400':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodingSave'
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema: *codingPath001
+  /coding-workspaces/{id}/turns:
+    post:
+      operationId: askCodingAi
+      tags:
+      - coding
+      responses:
+        '200':
+          description: 성공. 개인 응답은 no-store. 테스트 기록은 브라우저 보고이며 서버 채점이 아님.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodingWorkspace'
+        '400':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodingAsk'
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema: *codingPath001
+  /coding-workspaces/{id}/runs:
+    post:
+      operationId: recordCodingRun
+      tags:
+      - coding
+      responses:
+        '200':
+          description: 성공. 개인 응답은 no-store. 테스트 기록은 브라우저 보고이며 서버 채점이 아님.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodingWorkspace'
+        '400':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodingRun'
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema: *codingPath001
+  /coding-workspaces/{id}/submit:
+    post:
+      operationId: submitCodingWorkspace
+      tags:
+      - coding
+      responses:
+        '200':
+          description: 성공. 개인 응답은 no-store. 테스트 기록은 브라우저 보고이며 서버 채점이 아님.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodingWorkspace'
+        '400':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 입력, 인증, 소유권, 상태 충돌, 예산 또는 서비스 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodingSubmit'
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema: *codingPath001
   /me/bootstrap:
     post:
       operationId: bootstrapUser
@@ -1721,6 +2302,495 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    FlowCreate:
+      type: object
+      additionalProperties: false
+      required:
+      - requestKey
+      - kind
+      - mode
+      properties:
+        requestKey: &id001
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum:
+          - REPORT
+          - CODING
+        mode:
+          type: string
+          enum:
+          - TRAINING
+          - SIMULATION
+    FlowCitation:
+      type: object
+      additionalProperties: false
+      required:
+      - materialId
+      - lineStart
+      - lineEnd
+      properties:
+        materialId: *id001
+        lineStart:
+          type: integer
+          minimum: 1
+        lineEnd:
+          type: integer
+          minimum: 1
+    FlowNotes:
+      type: object
+      additionalProperties: false
+      required:
+      - explanation
+      - verification
+      - citations
+      properties:
+        explanation:
+          type: string
+          maxLength: 4000
+        verification:
+          type: string
+          maxLength: 4000
+        citations:
+          type: array
+          items:
+            $ref: '#/components/schemas/FlowCitation'
+          maxItems: 8
+    FlowSave:
+      type: object
+      additionalProperties: false
+      required:
+      - version
+      - notes
+      properties:
+        version: &id002
+          type: integer
+          minimum: 0
+        notes:
+          $ref: '#/components/schemas/FlowNotes'
+    FlowSubmit:
+      type: object
+      additionalProperties: false
+      required:
+      - version
+      - artifactVersion
+      - artifactHash
+      properties:
+        version: *id002
+        artifactVersion: *id002
+        artifactHash:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+    FlowAnswers:
+      type: object
+      additionalProperties: false
+      required:
+      - decision
+      - change
+      properties:
+        decision:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        change:
+          type: string
+          minLength: 1
+          maxLength: 4000
+    FlowHint:
+      type: object
+      additionalProperties: false
+      required:
+      - index
+      properties:
+        index:
+          type: integer
+          minimum: 0
+          maximum: 2
+    FlowTask:
+      type: object
+      additionalProperties: false
+      required:
+      - kind
+      - title
+      - situation
+      - requirements
+      - deliverable
+      - questions
+      - hints
+      properties:
+        kind: &id003
+          type: string
+        title: *id003
+        situation: *id003
+        requirements:
+          type: array
+          items: *id003
+        deliverable: *id003
+        questions:
+          type: array
+          items: *id003
+        hints:
+          type: array
+          items: *id003
+    FlowRecord:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - label
+      - text
+      properties:
+        id: *id003
+        label: *id003
+        text: *id003
+    FlowFeedback:
+      type: object
+      additionalProperties: false
+      required:
+      - practiceArea
+      - items
+      properties:
+        practiceArea:
+          type: string
+          enum: [REQUEST, VERIFY, IMPROVE, EXPLAIN]
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+            - area
+            - observation
+            - nextAction
+            - recordIds
+            - sources
+            properties:
+              area:
+                type: string
+                enum:
+                - REQUEST
+                - VERIFY
+                - IMPROVE
+                - EXPLAIN
+              observation: *id003
+              nextAction: *id003
+              recordIds:
+                type: array
+                items: *id003
+              sources:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FlowRecord'
+    FlowSnapshot:
+      type: object
+      required:
+      - artifact
+      - records
+      - notes
+      - citations
+      - artifactVersion
+      - artifactHash
+      - flowVersion
+      - task
+      - mode
+      - hints
+      - cutoff
+      properties:
+        artifact: *id003
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/FlowRecord'
+        notes:
+          $ref: '#/components/schemas/FlowNotes'
+        citations:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+            - materialId
+            - lineStart
+            - lineEnd
+            - quote
+            properties:
+              materialId: *id001
+              lineStart: *id002
+              lineEnd: *id002
+              quote: *id003
+        artifactVersion: *id002
+        artifactHash: *id003
+        flowVersion: *id002
+        task:
+          $ref: '#/components/schemas/FlowTask'
+        mode: *id003
+        hints:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+            - index
+            - text
+            properties:
+              index: *id002
+              text: *id003
+        cutoff: *id003
+        publicRun:
+          $ref: '#/components/schemas/CodingRun'
+      additionalProperties: false
+    LearningFlow:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - kind
+      - mode
+      - flowVersion
+      - sessionId
+      - codingId
+      - parentId
+      - stage
+      - version
+      - notes
+      - hints
+      - snapshot
+      - answers
+      - feedback
+      - feedbackStatus
+      - task
+      - comparison
+      properties:
+        id: *id001
+        kind:
+          type: string
+          enum:
+          - REPORT
+          - CODING
+        mode:
+          type: string
+          enum:
+          - TRAINING
+          - SIMULATION
+        flowVersion: *id003
+        sessionId:
+          type: string
+          format: uuid
+          nullable: true
+        codingId:
+          type: string
+          format: uuid
+          nullable: true
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+        stage:
+          type: string
+          enum:
+          - WORKING
+          - EXPLAIN
+          - FEEDBACK
+        version: *id002
+        notes:
+          $ref: '#/components/schemas/FlowNotes'
+        hints:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+            - index
+            - text
+            properties:
+              index: *id002
+              text: *id003
+        snapshot:
+          allOf:
+          - $ref: '#/components/schemas/FlowSnapshot'
+          nullable: true
+        answers:
+          allOf:
+          - $ref: '#/components/schemas/FlowAnswers'
+          nullable: true
+        feedback:
+          allOf:
+          - $ref: '#/components/schemas/FlowFeedback'
+          nullable: true
+        feedbackStatus:
+          type: string
+          enum:
+          - READY
+          - RUNNING
+          - FAILED
+          - SUCCEEDED
+        task:
+          $ref: '#/components/schemas/FlowTask'
+        comparison:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+            - label
+            - previousArtifact
+            - currentArtifact
+            - changed
+            - previousVerification
+            - currentVerification
+            properties:
+              label: *id003
+              previousArtifact: *id003
+              currentArtifact: *id003
+              changed:
+                type: boolean
+              previousVerification:
+                $ref: '#/components/schemas/FlowNotes'
+              currentVerification:
+                $ref: '#/components/schemas/FlowNotes'
+    CodingResult:
+      type: object
+      additionalProperties: false
+      required:
+      - name
+      - passed
+      - detail
+      properties:
+        name:
+          type: string
+          maxLength: 80
+        passed:
+          type: boolean
+        detail:
+          type: string
+          maxLength: 500
+    CodingRun:
+      type: object
+      additionalProperties: false
+      required:
+      - version
+      - suite
+      - results
+      properties:
+        version: &codingSchema002
+          type: integer
+          format: int64
+          minimum: 0
+        suite:
+          type: string
+          enum:
+          - duplicate-items-v1
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/CodingResult'
+          minItems: 1
+          maxItems: 10
+    CodingTurn:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - requestKey
+      - baseVersion
+      - baseCode
+      - instruction
+      - status
+      - explanation
+      - proposedCode
+      properties:
+        id: &codingSchema001
+          type: string
+          format: uuid
+        requestKey: *codingSchema001
+        baseVersion: *codingSchema002
+        baseCode: &codingSchema003
+          type: string
+        instruction: *codingSchema003
+        status:
+          type: string
+          enum:
+          - RUNNING
+          - SUCCEEDED
+          - FAILED
+        explanation:
+          type: string
+          nullable: true
+        proposedCode:
+          type: string
+          nullable: true
+    CodingWorkspace:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - taskVersion
+      - code
+      - version
+      - submittedAt
+      - explanation
+      - lastRun
+      - turns
+      properties:
+        id: *codingSchema001
+        taskVersion:
+          type: string
+          enum:
+          - duplicate-items-v1
+        code: *codingSchema003
+        version: *codingSchema002
+        submittedAt:
+          type: string
+          nullable: true
+        explanation:
+          type: string
+          nullable: true
+        lastRun:
+          allOf:
+          - $ref: '#/components/schemas/CodingRun'
+          nullable: true
+        turns:
+          type: array
+          items:
+            $ref: '#/components/schemas/CodingTurn'
+    CodingSave:
+      type: object
+      additionalProperties: false
+      required:
+      - code
+      - expectedVersion
+      properties:
+        code:
+          type: string
+          maxLength: 20000
+        expectedVersion: *codingSchema002
+    CodingAsk:
+      type: object
+      additionalProperties: false
+      required:
+      - requestKey
+      - expectedVersion
+      - instruction
+      properties:
+        requestKey: *codingSchema001
+        expectedVersion: *codingSchema002
+        instruction:
+          type: string
+          minLength: 1
+          maxLength: 4000
+    CodingSubmit:
+      type: object
+      additionalProperties: false
+      required:
+      - expectedVersion
+      - explanation
+      properties:
+        expectedVersion: *codingSchema002
+        explanation:
+          type: string
+          minLength: 1
+          maxLength: 4000
     Error:
       type: object
       additionalProperties: false

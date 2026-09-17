@@ -19,15 +19,20 @@
 .brand svg { width: 30px; height: 30px; }
 .brand > span { font-size: 25px; font-weight: 800; letter-spacing: -1.2px; display: flex; gap: 9px; align-items: baseline; }
 .brand small { font-size: 12px; letter-spacing: -.1px; font-weight: 550; color: var(--muted); }
-.navigation { display: flex; align-self: stretch; }
-.navigation a { display: flex; align-items: center; position: relative; color: var(--green); font-size: 14px; font-weight: 650; }
-.navigation a::after { content: ''; height: 3px; position: absolute; bottom: -1px; left: 0; right: 0; background: var(--green); border-radius: 2px; }
+.navigation { display: flex; align-self: stretch; gap: 18px; }
+.navigation a { display: flex; align-items: center; min-height:44px; position: relative; color: var(--green); font-size: 14px; font-weight: 650; }
+.navigation a::after { content: ''; height: 3px; position: absolute; bottom: -1px; left: 50%; right: 50%; background: var(--green); border-radius: 2px; transition:left .16s ease,right .16s ease; }
+.navigation a:is(:hover,[aria-current='page'])::after { left:0; right:0; }
+.navigation a[aria-current='page'] { font-weight:800; }
 .tagline { margin-left: auto; font-size: 12px; color: var(--muted); }
 .footer { border-top: 1px solid var(--line); padding: 26px 32px; max-width: 1216px; margin: 0 auto; display: flex; align-items: center; gap: 18px; color: var(--muted); font-size: 11px; }
 .footer > a { font-size: 18px; color: var(--green); font-weight: 750; letter-spacing: -1px; }
 .footerNote { margin-left: auto; }
 @media (max-width: 640px) {
- .headerInner { height: 64px; padding: 0 18px; gap: 16px; }
+ .headerInner { height: auto; min-height: 64px; padding: 10px 18px 0; gap: 0 16px; flex-wrap: wrap; }
+ .navigation { order: 3; flex-basis: 100%; min-height: 42px; gap: 24px; }
+ .navigation a { white-space: nowrap; }
  .brand svg { width: 25px; height: 25px; } .brand > span { font-size: 23px; } .brand small, .tagline, .footerNote { display: none; }
  .navigation a { font-size: 12px; } .footer { padding: 21px 18px; gap: 12px; font-size: 10px; flex-wrap: wrap; }
 }
+@media (prefers-reduced-motion: reduce) { .navigation a::after { transition:none; } }

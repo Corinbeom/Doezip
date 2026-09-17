@@ -75,13 +75,13 @@ it('keeps the approved exploration shell honest about available capabilities', a
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ items: [task] })));
   render(<QueryProvider><TaskListPage /></QueryProvider>);
   await screen.findByRole('link', { name: task.title });
-  expect(screen.getByRole('link', { name: '되짚 홈' })).toHaveAttribute('href', '/tasks');
+  expect(screen.getByRole('link', { name: '되짚 홈' })).toHaveAttribute('href', '/learn');
   expect(screen.getByRole('link', { name: '본문으로 바로가기' })).toHaveAttribute('href', '#task-main');
   expect(screen.getByRole('link', { name: '문제 살펴보기' })).toHaveAttribute('href', '#task-list');
   expect(screen.queryByText(/미승인/)).not.toBeInTheDocument();
   expect(screen.queryByRole('link', { name: '내 학습' })).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: /시작하기/ })).not.toBeInTheDocument();
-  expect(screen.getByText(/AI 학습은 준비 중/)).toBeInTheDocument();
+  expect(screen.getByText(/보고서 과제는 AI와 자료를 분석/)).toBeInTheDocument();
 });
 
 it('renders missing rubrics without inventing evaluation criteria', async () => {
@@ -89,5 +89,5 @@ it('renders missing rubrics without inventing evaluation criteria', async () => 
   render(<QueryProvider><TaskDetailPage taskId={task.id} /></QueryProvider>);
   await screen.findByText('등록된 평가 기준이 없습니다.');
   expect(screen.queryByRole('heading', { name: '근거 확인' })).not.toBeInTheDocument();
-  expect(screen.getByText(/제출은 준비 중/)).toBeInTheDocument();
+  expect(screen.getByText(/보고서를 작성해 제출할 수/)).toBeInTheDocument();
 });
