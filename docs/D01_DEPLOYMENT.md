@@ -6,8 +6,8 @@
 
 - 공개 웹: <https://doezip.vercel.app>
 - 공개 API health: <https://doezip-api.onrender.com/actuator/health>
-- 배포 브랜치: `feature/D01-demo-deployment`
-- 배포 앱 커밋: `397f249d905f56f568b521ccf4aa83b89b7d4153`
+- 배포 기준 브랜치: `main`
+- 현재 배포 앱 커밋: `76df1c81bf6eb353d5aebdac822d1a3c7affd3b9`
 
 무료 Render API는 유휴 15분 뒤 중지될 수 있고 첫 요청 복구에 시간이 걸린다. 무료 PostgreSQL은 생성 후 30일에 만료되고 백업을 제공하지 않는다. 장기 시연 전에 유료 인스턴스와 백업 정책으로 전환한다.
 
@@ -47,7 +47,7 @@
 ## 완료 기준
 
 - GitHub CI 성공
-- Render API와 PostgreSQL health 성공, Flyway 1~17 적용
+- Render API와 PostgreSQL health 성공, 현재 Flyway migration 적용
 - Vercel 웹 200, 정확한 API origin CORS 성공
 - 비로그인 보호 경로 401, 로그인 사용자 bootstrap/소유권 성공
 - 공개 가상 과제에서 실제 Gemini 대화 또는 평가 1회 성공
@@ -64,3 +64,12 @@
 - Render 최초 생성 DB는 PostgreSQL 18.6이다. 현재 migration은 적용됐지만 Flyway가 공식 확인한 최신 major는 17이라 경고를 남긴다. `render.yaml`은 이후 새 DB를 17로 만들도록 고쳤으며, 현재 DB 교체는 데이터 삭제 작업이므로 이번 배포에서 실행하지 않았다.
 - 무료 인스턴스의 첫 요청 지연과 무료 DB의 30일 만료 조건이 있다. 장기 공개 전에 DB 17 재생성 또는 지원 Flyway 버전 검토, 백업·유료 전환 결정을 한다.
 - Google OAuth는 공개 callback을 포함한 계정 선택 화면까지 자동 확인했다. 사용자는 공개 도메인에서 로그인한 뒤 보고서 작성 과제와 구현 과제의 정상 흐름을 각각 끝까지 수행해 실제 인증·저장·AI 연동·결과 화면을 확인했다.
+
+## 2026-09-17 `main` 배포 갱신
+
+- P05 작업 공간 개선과 P06 콘텐츠 v0.2를 각각 develop에 squash merge한 뒤, develop을 PR #6으로 main에 merge commit 반영했다. main과 develop은 `76df1c81bf6eb353d5aebdac822d1a3c7affd3b9`로 동기화했고 두 브랜치의 push CI가 성공했다.
+- Render 배포 기준 브랜치를 `main`으로 변경했다. 배포 `dep-daloml3l550s73c0nt4g`가 성공했고 API는 demo 프로필로 기동했다. 기존 PostgreSQL 18.6 데이터는 보존한 채 migration 18과 19가 적용되어 스키마 버전 19가 됐다.
+- Vercel Production 배포 `dpl_9kTZG97RjtQXBMc4pBNRcmAsWyfk`가 성공했고 `https://doezip.vercel.app` 별칭에 연결됐다. 현재 프로젝트는 CLI 배포 방식이며 GitHub 자동 배포 연결은 아직 설정하지 않았다.
+- `scripts/deployment-smoke.mjs`를 Node 24.20.0으로 실행해 웹 200, DB health 200과 제한된 응답, 공개 과제 200, 보호 경로 401, Vercel origin CORS를 실제 URL에서 확인했다. 새 보고서 과제 `72222222-2222-4222-8222-222222222222`도 운영 목록에 존재한다.
+- 기존 사용자 계정을 서비스에서 로그아웃한 뒤 Google 계정 선택, Supabase callback, 원래 과제 URL 복귀를 확인했다. v0.2 보고서 과제를 새로 시작해 세 공개 자료가 표시되는지 확인하고 실제 Gemini 대화 응답을 받았다. 브라우저의 앱 콘솔 오류는 없었다.
+- 사용하지 않은 별도 Google 계정이 없어 완전히 새로운 사용자의 최초 가입은 실행하지 않았다. 이번 결과는 기존 계정의 실제 OAuth 재로그인과 운영 세션 복원 검증이다.
