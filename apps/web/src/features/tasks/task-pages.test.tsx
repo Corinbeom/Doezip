@@ -15,18 +15,22 @@ const task:Task={
 };
 const report:LearningTask={catalogId:'payment-delay-report',version:'learning-flow-v2',kind:'REPORT',difficulty:'중급',estimatedMinutes:35,tags:['운영 분석','보고서','상충 근거'],title:'결제 지연 대응안을 운영 리드에게 제안하기',situation:'서로 다른 자료를 비교해 운영 리드에게 보고합니다.',requirements:['일치하거나 충돌하는 내용을 구분합니다.'],deliverable:'근거가 연결된 보고서',questions:['왜 이렇게 판단했나요?','무엇을 바꾸겠나요?'],hints:[]};
 const coding:LearningTask={catalogId:'item-identity-coding',version:'learning-flow-v2',kind:'CODING',difficulty:'중급',estimatedMinutes:30,tags:['JavaScript','디버깅','경계 조건'],title:'항목의 식별 기준을 바로잡기',situation:'잘못된 식별 기준으로 생긴 중복 버그를 수정합니다.',requirements:['id를 기준으로 판단합니다.'],deliverable:'코드와 테스트 기록',questions:['왜 이렇게 판단했나요?','무엇을 바꾸겠나요?'],hints:[]};
+const activation:LearningTask={...report,catalogId:'activation-drop-report',version:'activation-drop-v1',estimatedMinutes:40,tags:['퍼널 분석','CSV·JSON','VOC'],title:'가입 후 활성화 하락 원인을 제품 리드에게 보고하기'};
+const retry:LearningTask={...coding,catalogId:'retry-policy-coding',version:'retry-policy-v1',estimatedMinutes:35,tags:['JavaScript','재시도 정책','예외 처리'],title:'결제 요청의 안전한 재시도 조건 구현하기'};
 const json=(data:unknown,status=200)=>new Response(JSON.stringify(data),{status});
 afterEach(()=>{vi.unstubAllGlobals();vi.unstubAllEnvs();});
 
 it('loads the unified public catalog and exposes report and coding tags',async()=>{
   vi.stubEnv('NEXT_PUBLIC_API_BASE_URL','http://localhost:8181/api/v1/');
-  const fetcher=vi.fn().mockResolvedValue(json([report,coding]));
+  const fetcher=vi.fn().mockResolvedValue(json([report,activation,coding,retry]));
   vi.stubGlobal('fetch',fetcher);
   render(<QueryProvider><TaskListPage/></QueryProvider>);
   expect(screen.getByRole('status')).toHaveTextContent('과제를 불러오는 중');
   expect(await screen.findByRole('link',{name:report.title})).toHaveAttribute('href','/tasks/'+report.catalogId);
   expect(screen.getByRole('link',{name:coding.title})).toHaveAttribute('href','/tasks/'+coding.catalogId);
-  expect(screen.getByText('JavaScript')).toBeInTheDocument();
+  expect(screen.getByRole('link',{name:activation.title})).toHaveAttribute('href','/tasks/'+activation.catalogId);
+  expect(screen.getByRole('link',{name:retry.title})).toHaveAttribute('href','/tasks/'+retry.catalogId);
+  expect(screen.getAllByText('JavaScript')).toHaveLength(2);
   expect(fetcher).toHaveBeenCalledWith('http://localhost:8181/api/v1/learning-flows/catalog',expect.objectContaining({signal:expect.any(AbortSignal)}));
 });
 it('filters the unified catalog by task type',async()=>{
@@ -57,6 +61,8 @@ it('renders catalog detail with requirements and a login start path',async()=>{
   await screen.findByRole('heading',{name:coding.title});
   expect(screen.getByRole('region',{name:'과제 상황'})).toHaveTextContent(coding.situation);
   expect(screen.getByRole('heading',{name:'완료 조건'})).toBeInTheDocument();
+  expect(screen.getByRole('heading',{name:'결과보다 판단 과정을 남겨요.'})).toBeInTheDocument();
+  expect(screen.getByText('제안과 경계 테스트를 대조합니다.')).toBeInTheDocument();
   expect(screen.getByRole('link',{name:/로그인하고 시작하기/})).toHaveAttribute('href','/login?returnTo=%2Ftasks%2Fitem-identity-coding');
 });
 it('renders legacy public detail and rubrics safely as text',async()=>{

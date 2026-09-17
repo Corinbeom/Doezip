@@ -13,8 +13,8 @@ import {LearningShell,Arrow} from '@/shared/ui/learning-shell';
 import styles from './tasks.module.css';
 import {StartSession} from '@/features/workspace/start-session';
 
-function Artwork({kind}:{kind?:LearningTask['kind']}) {
-  return <div className={styles.artwork} data-kind={kind??'REPORT'}><Image src="/design/task-evidence.svg" width={240} height={230} alt=""/></div>;
+function Artwork({kind,priority=false}:{kind?:LearningTask['kind'];priority?:boolean}) {
+  return <div className={styles.artwork} data-kind={kind??'REPORT'}><Image src="/design/task-evidence.svg" width={240} height={230} alt="" priority={priority}/></div>;
 }
 function Retry({retry,pending}:{retry:()=>void;pending:boolean}) {
   return <button className={styles.button} type="button" onClick={retry} disabled={pending}>{pending?'다시 불러오는 중…':'재시도'}<Arrow/></button>;
@@ -75,10 +75,10 @@ function CatalogTaskDetail({catalogId}:{catalogId:string}) {
     {catalog.isPending&&<div className={styles.state}><h1>과제 상세</h1><span className={styles.loader} aria-hidden="true"/><p role="status">과제를 불러오는 중…</p></div>}
     {catalog.isError&&<div className={styles.state}><h1>과제 상세</h1><p role="alert">과제를 불러오지 못했습니다.</p><Retry retry={()=>void catalog.refetch()} pending={catalog.isFetching}/></div>}
     {catalog.isSuccess&&!task&&<div className={styles.state}><h1>과제 상세</h1><p role="alert">과제를 찾을 수 없습니다.</p><p className={styles.description}>목록으로 돌아가 다른 문제를 살펴보세요.</p><Link className={styles.secondaryButton} href="/tasks">과제 목록으로</Link></div>}
-    {task&&<><section className={styles.detailHead} aria-labelledby="task-title"><div><CatalogMeta task={task}/><h1 id="task-title">{task.title}</h1><Tags task={task}/></div><Artwork kind={task.kind}/></section>
+    {task&&<><section className={styles.detailHead} aria-labelledby="task-title"><div><CatalogMeta task={task}/><h1 id="task-title">{task.title}</h1><Tags task={task}/></div><Artwork kind={task.kind} priority/></section>
       <div className={styles.detailGrid}><div><section className={styles.contentSection} aria-labelledby="situation-title"><h2 id="situation-title">과제 상황</h2><div className={styles.brief}><span className={styles.quote} aria-hidden="true">“</span><p className={styles.preserve}>{task.situation}</p></div></section>
       <section className={styles.contentSection} aria-labelledby="requirements-title"><h2 id="requirements-title">완료 조건</h2><ol className={styles.rubrics}>{task.requirements.map((requirement,index)=><li key={requirement}><span className={styles.rubricNumber} aria-hidden="true">{String(index+1).padStart(2,'0')}</span><div><p>{requirement}</p></div></li>)}</ol></section></div>
-      <aside className={styles.detailAside}><p className={styles.eyebrow}>{task.kind==='REPORT'?'자료 기반 보고서':'코드 수정과 검증'}</p><h2>결과보다 판단 과정을 남겨요.</h2><p className={styles.description}>AI와 작업한 뒤 제안을 직접 검증하고, 채택한 이유와 남은 한계를 설명합니다.</p><div className={styles.availability}><strong>제출물</strong><br/>{task.deliverable}</div><StartLearningTask task={task}/><Link className={styles.secondaryButton} href="/tasks">다른 과제 살펴보기<Arrow/></Link></aside></div></>}
+      <aside className={styles.detailAside}><p className={styles.eyebrow}>{task.kind==='REPORT'?'자료 기반 보고서':'코드 수정과 검증'}</p><h2>결과보다 판단 과정을 남겨요.</h2><p className={styles.description}>AI와 작업한 뒤 제안을 직접 검증하고, 채택한 이유와 남은 한계를 설명합니다.</p><ol className={styles.focusList}><li><strong>요청</strong><span>문제와 제약을 구체화합니다.</span></li><li><strong>검증</strong><span>{task.kind==='REPORT'?'주장과 원자료를 대조합니다.':'제안과 경계 테스트를 대조합니다.'}</span></li><li><strong>개선</strong><span>확인한 내용을 결과물에 반영합니다.</span></li><li><strong>설명</strong><span>선택과 한계를 내 말로 남깁니다.</span></li></ol><div className={styles.availability}><strong>제출물</strong><br/>{task.deliverable}</div><StartLearningTask task={task}/><Link className={styles.secondaryButton} href="/tasks">다른 과제 살펴보기<Arrow/></Link></aside></div></>}
   </div></LearningShell>;
 }
 
@@ -89,7 +89,7 @@ function LegacyTaskDetail({taskId}:{taskId:string}) {
     <nav className={styles.breadcrumb} aria-label="현재 위치"><Link href="/tasks">과제 목록으로</Link><span aria-hidden="true">/</span><span>이전 과제 소개</span></nav>
     {task.isPending&&<div className={styles.state}><h1>과제 상세</h1><span className={styles.loader} aria-hidden="true"/><p role="status">과제를 불러오는 중…</p></div>}
     {task.isError&&<div className={styles.state}><h1>과제 상세</h1><p role="alert">{unavailable?'과제를 찾을 수 없습니다.':'과제를 불러오지 못했습니다.'}</p><p className={styles.description}>{unavailable?'목록으로 돌아가 다른 문제를 살펴보세요.':'잠시 후 다시 시도해 주세요.'}</p>{!unavailable&&<Retry retry={()=>void task.refetch()} pending={task.isFetching}/>}</div>}
-    {task.isSuccess&&<><section className={styles.detailHead} aria-labelledby="task-title"><div><span className={styles.pill}>이전 보고서 과제</span><h1 id="task-title">{task.data.title}</h1><TaskMeta task={task.data}/></div><Artwork/></section>
+    {task.isSuccess&&<><section className={styles.detailHead} aria-labelledby="task-title"><div><span className={styles.pill}>이전 보고서 과제</span><h1 id="task-title">{task.data.title}</h1><TaskMeta task={task.data}/></div><Artwork priority/></section>
       <div className={styles.detailGrid}><div><section className={styles.contentSection} aria-labelledby="description-title"><h2 id="description-title">과제 설명</h2><div className={styles.brief}><span className={styles.quote} aria-hidden="true">“</span><p className={styles.preserve}>{task.data.descriptionMarkdown}</p></div></section>
       <section className={styles.contentSection} aria-labelledby="rubrics-title"><h2 id="rubrics-title">평가 기준</h2>{task.data.rubrics.length===0?<p className={styles.brief}>등록된 평가 기준이 없습니다.</p>:<ul className={styles.rubrics}>{task.data.rubrics.map((rubric,index)=><li key={rubric.code}><span className={styles.rubricNumber} aria-hidden="true">{String(index+1).padStart(2,'0')}</span><div><h3>{rubric.title}</h3><p className={styles.preserve}>{rubric.description}</p></div></li>)}</ul>}</section></div>
       <aside className={styles.detailAside}><p className={styles.eyebrow}>이전 과제 기록</p><h2>먼저, 충분히 살펴보세요.</h2><p className={styles.description}>과제의 상황과 평가 기준을 읽으며 어떤 근거로 판단할지 생각해 보세요.</p><div className={styles.availability}>AI와 자료를 분석하고 보고서를 작성해 제출할 수 있어요.</div>{task.data.status==='PUBLISHED'&&<StartSession taskId={task.data.id}/>}<Link className={styles.secondaryButton} href="/tasks">현재 과제 둘러보기<Arrow/></Link></aside></div></>}

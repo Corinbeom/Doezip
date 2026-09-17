@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CodingService {
  @org.springframework.beans.factory.annotation.Autowired private com.doezip.learning.repository.FlowRepository flowRecords;
  private final CodingRepository repo;private final Map<String,String> starters;
- public CodingService(CodingRepository repo){this.repo=repo;starters=Map.of("duplicate-items-v1",starter("coding/starter.js"),"duplicate-items-v2",starter("coding/starter-v2.js"));}
+ public CodingService(CodingRepository repo){this.repo=repo;starters=Map.of("duplicate-items-v1",starter("coding/starter.js"),"duplicate-items-v2",starter("coding/starter-v2.js"),"retry-policy-v1",starter("coding/retry-policy-v1.js"));}
  private String starter(String path){try(var in=new ClassPathResource(path).getInputStream()){return new String(in.readAllBytes(),StandardCharsets.UTF_8);}catch(Exception e){throw new IllegalStateException(e);}}
  @Transactional public Workspace create(UUID user){return create(user,"duplicate-items-v1");}
  @Transactional public Workspace create(UUID user,String taskVersion){
@@ -62,5 +62,8 @@ public class CodingService {
   repo.finish(turnId,id,proposal);
   return repo.view(id,user);
  }
- @Transactional(readOnly=true) public String context(UUID user,UUID id,Turn turn){var w=repo.view(id,user);return repo.encode(Map.of("taskVersion",w.taskVersion(),"code",turn.baseCode(),"request",turn.instruction(),"publicTestRun",w.lastRun()==null?"실행 기록 없음":w.lastRun(),"history",w.turns().stream().filter(t->t.status().equals("SUCCEEDED")).skip(Math.max(0,w.turns().stream().filter(t->t.status().equals("SUCCEEDED")).count()-4)).map(t->Map.of("request",t.instruction(),"reply",t.explanation())).toList()));}
+ @Transactional(readOnly=true) public String context(UUID user,UUID id,Turn turn){var w=repo.view(id,user);return repo.encode(Map.of("taskVersion",w.taskVersion(),"taskRequirements",taskRequirements(w.taskVersion()),"code",turn.baseCode(),"request",turn.instruction(),"publicTestRun",w.lastRun()==null?"실행 기록 없음":w.lastRun(),"history",w.turns().stream().filter(t->t.status().equals("SUCCEEDED")).skip(Math.max(0,w.turns().stream().filter(t->t.status().equals("SUCCEEDED")).count()-4)).map(t->Map.of("request",t.instruction(),"reply",t.explanation())).toList()));}
+ private List<String> taskRequirements(String version){return version.equals("retry-policy-v1")
+  ?List.of("429, 502, 503, 504 또는 NETWORK_TIMEOUT만 재시도","attempt는 0 이상 3 미만","비어 있지 않은 idempotencyKey 필수","입력 객체를 변경하지 않음")
+  :List.of("항목의 동일 여부는 id로 판단","같은 id는 기존 항목 유지","새 id만 뒤에 추가","입력 배열과 기존 항목을 변경하지 않음");}
 }

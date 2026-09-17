@@ -107,7 +107,7 @@ class SessionIntegrationTest {
       assertThat(request(p+"/turns",HttpMethod.POST,alice,ask).getStatusCode().value()).isEqualTo(200);
       assertThat(request(p+"/turns",HttpMethod.POST,alice,ask.replace("중복 버그 수정","다른 요청")).getStatusCode().value()).isEqualTo(409);
       var context=org.mockito.ArgumentCaptor.forClass(String.class);org.mockito.Mockito.verify(codingAi).propose(context.capture());
-      assertThat(context.getValue()).contains(original.replace("\n","\\n")).doesNotContain("Never leak","private/task-pack","GEMINI_API_KEY");
+      assertThat(context.getValue()).contains(original.replace("\n","\\n"),"taskRequirements","입력 배열과 기존 항목을 변경하지 않음").doesNotContain("Never leak","private/task-pack","GEMINI_API_KEY");
     }
     @Test void codingAiFailureStaleReservationAndBudgetAreNotSuccess() throws Exception {
       String id=codingStart(alice),p="/api/v1/coding-workspaces/"+id;
@@ -864,13 +864,17 @@ class SessionIntegrationTest {
       var response=request("/api/v1/learning-flows/catalog",HttpMethod.GET,null,null);
       assertThat(response.getStatusCode().value()).isEqualTo(200);
       var items=json(response);
-      assertThat(items).hasSize(2);
+      assertThat(items).hasSize(4);
       assertThat(items.get(0).path("catalogId").asText()).isEqualTo("payment-delay-report");
       assertThat(items.get(0).path("version").asText()).isEqualTo("learning-flow-v2");
       assertThat(items.get(0).path("tags")).isNotEmpty();
       assertThat(items.get(0).path("hints")).isEmpty();
-      assertThat(items.get(1).path("catalogId").asText()).isEqualTo("item-identity-coding");
-      assertThat(items.get(1).path("kind").asText()).isEqualTo("CODING");
+      assertThat(items.get(1).path("catalogId").asText()).isEqualTo("activation-drop-report");
+      assertThat(items.get(1).path("version").asText()).isEqualTo("activation-drop-v1");
+      assertThat(items.get(2).path("catalogId").asText()).isEqualTo("item-identity-coding");
+      assertThat(items.get(2).path("kind").asText()).isEqualTo("CODING");
+      assertThat(items.get(3).path("catalogId").asText()).isEqualTo("retry-policy-coding");
+      assertThat(items.get(3).path("version").asText()).isEqualTo("retry-policy-v1");
     }
     JsonNode newFlow(String kind,String mode)throws Exception {
       if(kind.equals("REPORT")){
@@ -938,6 +942,36 @@ class SessionIntegrationTest {
       String wrong=mapper.writeValueAsString(Map.of("version",0,"suite","duplicate-items-v1","results",List.of(Map.of("name","legacy","passed",true,"detail","wrong suite"))));
       assertThat(request(cp+"/runs",HttpMethod.POST,alice,wrong).getStatusCode().value()).isEqualTo(400);
       assertThat(json(request("/api/v1/coding-workspaces/"+codingStart(alice),HttpMethod.GET,alice,null)).path("taskVersion").asText()).isEqualTo("duplicate-items-v1");
+    }
+    @Test void newQualityTasksLoadSyntheticSourcesAndTheRetrySuite()throws Exception {
+      database.update("INSERT INTO tasks(id,task_code,version_no,title,description_markdown,status) VALUES (?,'activation-drop',1,'Activation drop','Public synthetic task','PUBLISHED') ON CONFLICT DO NOTHING",com.doezip.learning.service.FlowTasks.ACTIVATION_ID);
+      for(int i=1;i<=4;i++){
+        String content="synthetic activation source "+i+"\nunknown cause "+i;
+        database.update("INSERT INTO materials(id,task_id,material_code,title,material_type,content_markdown,content_hash,release_stage,sort_order) VALUES (?,?,?,?, 'LOG',?,?,'INITIAL',?) ON CONFLICT DO NOTHING",UUID.fromString("75555555-5555-4555-8555-00000000000"+i),com.doezip.learning.service.FlowTasks.ACTIVATION_ID,"activation-source-"+i,"Activation material "+i,content,com.doezip.session.service.SessionService.hash(content),i);
+      }
+      String activationBody=mapper.writeValueAsString(Map.of("requestKey",UUID.randomUUID(),"catalogId",com.doezip.learning.service.FlowTasks.ACTIVATION_CATALOG_ID,"version",com.doezip.learning.service.FlowTasks.ACTIVATION_VERSION,"mode","TRAINING"));
+      var activationResponse=request("/api/v1/learning-flows",HttpMethod.POST,alice,activationBody);
+      assertThat(activationResponse.getStatusCode().value()).as(activationResponse.getBody()).isEqualTo(200);
+      var activation=json(activationResponse);
+      assertThat(activation.path("kind").asText()).isEqualTo("REPORT");
+      assertThat(activation.path("task").path("title").asText()).contains("활성화 하락");
+      assertThat(database.queryForObject("SELECT count(*) FROM materials WHERE task_id=?",Integer.class,com.doezip.learning.service.FlowTasks.ACTIVATION_ID)).isEqualTo(4);
+      assertThat(database.queryForObject("SELECT prompt_version FROM learning_flows WHERE id=?",String.class,UUID.fromString(activation.path("id").asText()))).isEqualTo("learning-feedback-v2");
+
+      String retryBody=mapper.writeValueAsString(Map.of("requestKey",UUID.randomUUID(),"catalogId",com.doezip.learning.service.FlowTasks.RETRY_CATALOG_ID,"version",com.doezip.learning.service.FlowTasks.RETRY_VERSION,"mode","SIMULATION"));
+      var retryResponse=request("/api/v1/learning-flows",HttpMethod.POST,alice,retryBody);
+      assertThat(retryResponse.getStatusCode().value()).as(retryResponse.getBody()).isEqualTo(200);
+      var retry=json(retryResponse);
+      assertThat(retry.path("kind").asText()).isEqualTo("CODING");
+      var workspace=json(request("/api/v1/coding-workspaces/"+retry.path("codingId").asText(),HttpMethod.GET,alice,null));
+      assertThat(workspace.path("taskVersion").asText()).isEqualTo("retry-policy-v1");
+      assertThat(workspace.path("code").asText()).contains("function shouldRetry");
+      assertThat(database.queryForObject("SELECT prompt_version FROM learning_flows WHERE id=?",String.class,UUID.fromString(retry.path("id").asText()))).isEqualTo("learning-feedback-v2");
+      org.mockito.Mockito.when(codingAi.propose(org.mockito.ArgumentMatchers.anyString())).thenReturn(new com.doezip.coding.dto.CodingDtos.Proposal("넓은 조건을 경계 테스트로 확인하세요.","function shouldRetry(input){return false;}"));
+      String ask=mapper.writeValueAsString(Map.of("requestKey",UUID.randomUUID(),"expectedVersion",0,"instruction","일반 500도 재시도해야 하나요?"));
+      assertThat(request("/api/v1/coding-workspaces/"+retry.path("codingId").asText()+"/turns",HttpMethod.POST,alice,ask).getStatusCode().value()).isEqualTo(200);
+      var context=org.mockito.ArgumentCaptor.forClass(String.class);org.mockito.Mockito.verify(codingAi).propose(context.capture());
+      assertThat(context.getValue()).contains("retry-policy-v1","429, 502, 503, 504 또는 NETWORK_TIMEOUT만 재시도","비어 있지 않은 idempotencyKey 필수");
     }
     @Test void learningFlowRejectsStaleArtifactsAndForeignCitations()throws Exception {
       var f=newFlow("REPORT","TRAINING");String p="/api/v1/learning-flows/"+f.path("id").asText();String sid=f.path("sessionId").asText();

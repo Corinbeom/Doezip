@@ -2705,6 +2705,7 @@ components:
           enum:
           - duplicate-items-v1
           - duplicate-items-v2
+          - retry-policy-v1
         results:
           type: array
           items:
@@ -2763,6 +2764,7 @@ components:
           enum:
           - duplicate-items-v1
           - duplicate-items-v2
+          - retry-policy-v1
         code: *codingSchema003
         version: *codingSchema002
         submittedAt:

@@ -20,6 +20,6 @@ it('prioritizes the current learning status before starting a new task',async()=
   expect(screen.getByRole('heading',{name:'은범님, 오늘은 어떤 판단을 연습할까요?'})).toBeInTheDocument();
   expect(screen.getByRole('heading',{name:'진행 중인 학습'})).toBeInTheDocument();
   expect(await screen.findByText('진행 중인 과제가 없습니다.')).toBeInTheDocument();
-  expect(await screen.findByRole('button',{name:'보고서 과제 시작하기'})).toBeInTheDocument();
+  expect(await screen.findByRole('button',{name:'장애 원인 분석 보고서 시작하기'})).toBeInTheDocument();
   expect(screen.getByRole('heading',{name:'완료한 과제'})).toBeInTheDocument();
 });
