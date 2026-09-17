@@ -22,10 +22,10 @@ npm run db:up
 npm run dev
 ```
 
-현재 사용자 확인 환경은 **http://localhost:3189/learn**으로 고정한다. 아래 3000/8080은 새 clone의 기본값이며, 기존 로컬 `.env`를 덮어쓰지 않는다.
+현재 사용자 확인 환경은 **http://localhost:3189**로 고정한다. 아래 3000/8080은 새 clone의 기본값이며, 기존 로컬 `.env`를 덮어쓰지 않는다.
 
 현재 로컬 checkout에서는 `npm install`부터 실행한다. CI와 lockfile 그대로 재설치할 때는 `npm ci`를 쓴다.
-새 clone의 기본 웹에서는 http://localhost:3000/learn 에서 과제를 시작한다. API·PostgreSQL 연결 확인은 http://localhost:3000/environment 다.
+새 clone의 기본 웹에서는 http://localhost:3000 에서 서비스 소개를 확인하고, 로그인 후 http://localhost:3000/learn 에서 진행 중인 학습을 이어가거나 새 과제를 시작한다. API·PostgreSQL 연결 확인은 http://localhost:3000/environment 다.
 API 운영 health: http://localhost:8080/actuator/health (`UP`: 200 / DB 장애 `DOWN`: 503, 상세 비공개).
 웹 http://localhost:3000/tasks 에서 로컬 조회용 가상 과제의 설명과 공개 루브릭을 확인한다.
 공개 과제 조회 외에 인증된 사용자 연결 POST `/api/v1/me/bootstrap`, 조회 GET `/api/v1/me`를 제공한다. 과제 시작·공개 자료 열람·보고서 저장/복원 API도 제공한다. [F02b 범위](docs/F02B_REPORT_DRAFT.md)를 참고한다. 저장한 초안의 최초 제출·불변 제출본 조회는 [F02c 범위](docs/F02C_INITIAL_SUBMISSION.md)를 따른다. [F04a 검산 시작·열람](docs/F04A_CHALLENGE_START.md)을 제공하며 [F04b 검토 저장·제출](docs/F04B_CHALLENGE_REVIEW.md)도 제공한다. INITIAL 평가 요청·상태 조회와 저장된 결과 조회도 제공한다. FINAL 등 미구현 경로는 차단된다.
@@ -97,7 +97,7 @@ npm run deploy:smoke
 - 기본 포트는 web 3000 / api 8080 / PG 5432이며 로컬에 바인딩한다.
 - `DB_PORT` 변경 시 `DATABASE_URL`, `API_PORT` 변경 시 `NEXT_PUBLIC_API_BASE_URL`,
   `WEB_PORT` 변경 시 `CORS_ALLOWED_ORIGIN`도 맞춘다. 공개 URL 변경 후 production build를 다시 한다.
-- `apps/web/src/app`: 라우팅, `src/features/environment`: 임시 연결 확인 화면, `src/features/tasks`: 과제 조회.
+- `apps/web/src/app`: 라우팅, `src/features/landing`: 공개 랜딩, `src/features/learning`: 로그인 후 내 학습과 통합 과제 흐름, `src/features/tasks`: 공개 과제 조회, `src/features/environment`: 임시 연결 확인 화면.
 - `apps/web/src/shared/api`: 공통 fetch·오류·Query Provider. `shared/ui`: 승인 디자인의 공통 화면 구성·스타일.
 - `apps/web/src/generated/api-types.ts`: 생성 타입. **손으로 수정하지 않는다.**
 - `apps/api`: Spring MVC·JPA·Validation·Security·Actuator·Flyway. DB 상세 비공개. health·과제 조회 GET은 공개다. 사용자·학습 세션·제출본·검산 경로는 JWT와 소유권을 확인하고, 미구현 경로는 차단한다.
