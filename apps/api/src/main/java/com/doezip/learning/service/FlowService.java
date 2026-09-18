@@ -46,7 +46,15 @@ public class FlowService {
    c.put("previousArtifact",old.path("snapshot").path("artifact").asText());c.put("currentArtifact",f.path("snapshot").path("artifact").asText());
    c.put("changed",!old.path("snapshot").path("artifact").equals(f.path("snapshot").path("artifact")));c.set("previousVerification",old.path("snapshot").path("notes"));c.set("currentVerification",f.path("snapshot").path("notes"));comparison.add(c);
   }}
-  return new View(uuid(f,"id"),f.path("task_catalog_id").asText(),f.path("task_kind").asText(),f.path("mode").asText(),f.path("flow_version").asText(),uuid(f,"session_id"),uuid(f,"coding_id"),parent,f.path("stage").asText(),f.path("version").asLong(),f.path("notes"),f.path("hints"),f.path("snapshot"),f.path("answers"),f.path("feedback"),f.path("feedback_status").asText(),FlowTasks.get(f.path("task_catalog_id").asText(),f.path("flow_version").asText(),false),comparison);
+  var task=FlowTasks.get(f.path("task_catalog_id").asText(),f.path("flow_version").asText(),false);
+  JsonNode snapshot=f.path("snapshot");
+  if(snapshot.isObject()){
+   var normalized=(ObjectNode)snapshot.deepCopy();
+   var snapshotTask=(ObjectNode)repo.json().valueToTree(task);
+   if(snapshot.path("task").isObject())snapshot.path("task").properties().forEach(entry->snapshotTask.set(entry.getKey(),entry.getValue()));
+   normalized.set("task",snapshotTask);snapshot=normalized;
+  }
+  return new View(uuid(f,"id"),f.path("task_catalog_id").asText(),f.path("task_kind").asText(),f.path("mode").asText(),f.path("flow_version").asText(),uuid(f,"session_id"),uuid(f,"coding_id"),parent,f.path("stage").asText(),f.path("version").asLong(),f.path("notes"),f.path("hints"),snapshot,f.path("answers"),f.path("feedback"),f.path("feedback_status").asText(),task,comparison);
  }
  @Transactional public View save(UUID user,UUID id,Save b){var f=repo.owned(user,id,true);working(f,b.version());
   // Check material ownership/stage and ranges before saving references. Quotes are server-derived at sealing.

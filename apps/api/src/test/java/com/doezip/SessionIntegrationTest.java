@@ -929,6 +929,25 @@ class SessionIntegrationTest {
       assertThat(request("/api/v1/learning-flows",HttpMethod.POST,alice,unknownVersion).getStatusCode().value()).isEqualTo(404);
       assertThat(request("/api/v1/learning-flows",HttpMethod.POST,alice,"{\"requestKey\":\""+UUID.randomUUID()+"\",\"kind\":\"CODING\",\"mode\":\"TRAINING\"}").getStatusCode().value()).isEqualTo(400);
     }
+    @Test void legacySnapshotTasksAreEnrichedWithoutChangingTheStoredRecord()throws Exception {
+      var flow=newFlow("REPORT","TRAINING");UUID id=UUID.fromString(flow.path("id").asText());
+      var snapshot=mapper.createObjectNode();snapshot.put("artifact","Archived report");snapshot.putArray("records");
+      snapshot.set("notes",mapper.valueToTree(Map.of("explanation","Archived reason","verification","Archived check","citations",List.of())));snapshot.putArray("citations");
+      snapshot.put("artifactVersion",0);snapshot.put("artifactHash",com.doezip.session.service.SessionService.hash("Archived report"));snapshot.put("flowVersion",0);snapshot.put("mode","TRAINING");snapshot.putArray("hints");snapshot.put("cutoff","2026-09-10T00:00:00Z");
+      var archivedTask=snapshot.putObject("task");archivedTask.put("kind","REPORT");archivedTask.put("title","Archived task title");archivedTask.put("situation","Archived situation");archivedTask.putArray("requirements").add("Archived requirement");archivedTask.put("deliverable","Archived deliverable");archivedTask.putArray("questions").add("Archived question");archivedTask.putArray("hints");
+      database.update("UPDATE learning_flows SET snapshot=?::jsonb,stage='EXPLAIN' WHERE id=?",snapshot.toString(),id);
+
+      var response=json(request("/api/v1/learning-flows",HttpMethod.GET,alice,null));
+      var returned=java.util.stream.StreamSupport.stream(response.spliterator(),false).filter(item->item.path("id").asText().equals(id.toString())).findFirst().orElseThrow();
+      assertThat(returned.path("snapshot").path("task").path("catalogId").asText()).isEqualTo("payment-delay-report");
+      assertThat(returned.path("snapshot").path("task").path("version").asText()).isEqualTo("learning-flow-v2");
+      assertThat(returned.path("snapshot").path("task").path("difficulty").asText()).isEqualTo("중급");
+      assertThat(returned.path("snapshot").path("task").path("estimatedMinutes").asInt()).isEqualTo(35);
+      assertThat(returned.path("snapshot").path("task").path("tags")).isNotEmpty();
+      assertThat(returned.path("snapshot").path("task").path("title").asText()).isEqualTo("Archived task title");
+      String stored=database.queryForObject("SELECT snapshot->'task' FROM learning_flows WHERE id=?",String.class,id);
+      assertThat(mapper.readTree(stored).has("catalogId")).isFalse();
+    }
     @Test void learningContentV2UsesThreeSourcesAndTheVersionedCodingSuite()throws Exception {
       var report=newFlow("REPORT","TRAINING");
       UUID session=UUID.fromString(report.path("sessionId").asText());
