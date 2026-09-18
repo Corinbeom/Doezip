@@ -1,4 +1,4 @@
-import {fireEvent,render,screen} from '@testing-library/react';
+import {fireEvent,render,screen,within} from '@testing-library/react';
 import {afterEach,expect,it,vi} from 'vitest';
 import {QueryProvider} from '@/shared/api/query-provider';
 import {TaskDetailPage,TaskListPage} from './task-pages';
@@ -105,6 +105,7 @@ it('keeps one catalog navigation path and removes the standalone coding menu',as
   expect(screen.getByRole('link',{name:'본문으로 바로가기'})).toHaveAttribute('href','#task-main');
   expect(screen.getByRole('link',{name:'과제 살펴보기'})).toHaveAttribute('href','#task-list');
   expect(screen.getByRole('link',{name:'내 학습'})).toHaveAttribute('href','/learn');
+  expect(within(screen.getByRole('navigation',{name:'주 메뉴'})).getAllByRole('link').map(link=>link.textContent)).toEqual(['과제 둘러보기','내 학습']);
   expect(screen.queryByRole('link',{name:'구현 연습'})).not.toBeInTheDocument();
 });
 it('renders missing legacy rubrics without inventing evaluation criteria',async()=>{
