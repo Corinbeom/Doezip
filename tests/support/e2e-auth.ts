@@ -15,10 +15,11 @@ export async function testIdentity(request: APIRequestContext, user: 'alice' | '
 }
 export async function installTestSession(context: BrowserContext, session: Awaited<ReturnType<typeof testIdentity>>['session']) {
   // Only local test sessions issued by tests/support/auth-server.mjs, never real OAuth tokens.
-  await context.addInitScript(value => {
+  const projectRef = new URL(env.NEXT_PUBLIC_SUPABASE_URL ?? 'https://e2e-auth.invalid').hostname.split('.')[0];
+  await context.addInitScript(({ storageKey, value }) => {
     if (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
-      localStorage.setItem('sb-e2e-auth-auth-token', JSON.stringify(value));
-  }, session);
+      localStorage.setItem(storageKey, JSON.stringify(value));
+  }, { storageKey: `sb-${projectRef}-auth-token`, value: session });
 }
 export async function createWorkspace(request: APIRequestContext, headers: Record<string, string>) {
   const response = await request.post(`${apiBase}/sessions`, { headers, data: { taskId: sampleTaskId } });
