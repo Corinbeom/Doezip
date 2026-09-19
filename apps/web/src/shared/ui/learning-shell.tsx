@@ -24,6 +24,6 @@ export function LearningShell({ children }: { children: ReactNode }) {
       <AuthControl />
     </div></header>
     <main id="task-main" tabIndex={-1}>{children}</main>
-    <footer className={styles.footer}><Link href="/" aria-label="되짚 홈으로 이동"><Image src="/brand/doezip-wordmark.svg" width={80} height={34} alt=""/></Link><span>AI의 답을, 근거로 되짚다.</span><span className={styles.footerNote}>함께 생각하고, 스스로 판단하는 연습.</span></footer>
+    <footer className={styles.footer}><div className={styles.footerBrand}><Link href="/" aria-label="되짚 홈으로 이동"><Image src="/brand/doezip-wordmark.svg" width={80} height={34} alt=""/></Link><span>AI의 답을, 근거로 되짚다.</span></div><nav aria-label="운영 정책"><Link href="/terms">이용약관</Link><Link href="/privacy">개인정보 처리방침</Link><Link href="/ai-policy">AI 이용 안내</Link></nav><span className={styles.footerNote}>함께 생각하고, 스스로 판단하는 연습.</span></footer>
   </div>;
 }

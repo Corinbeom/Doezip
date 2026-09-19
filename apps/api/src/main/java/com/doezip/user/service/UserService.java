@@ -15,15 +15,18 @@ public class UserService {
     private final UserRepository users;
     private final String provider;
     private final Validator validator;
-    public UserService(UserRepository users, @Value("${app.auth.provider-id}") String provider, Validator validator) {
-        this.users=users; this.provider=provider; this.validator=validator;
+    private final AccountDeletionService accountDeletion;
+    public UserService(UserRepository users, @Value("${app.auth.provider-id}") String provider, Validator validator,
+            AccountDeletionService accountDeletion) {
+        this.users=users; this.provider=provider; this.validator=validator; this.accountDeletion=accountDeletion;
     }
     @Transactional(readOnly=true)
     public UserResponse get(Jwt jwt) {
-        return UserResponse.from(users.findByAuthProviderAndAuthSubject(provider, jwt.getSubject()).orElseThrow(UserNotFoundException::new));
+        return UserResponse.from(users.findByAuthProviderAndAuthSubjectAndDeletionRequestedAtIsNull(provider, jwt.getSubject()).orElseThrow(UserNotFoundException::new));
     }
     @Transactional
     public UserResponse bootstrap(Jwt jwt, BootstrapRequest request) {
+        if (accountDeletion.isRecentlyDeleted(jwt.getSubject())) throw new AccountDeletedException();
         String name = request.displayName();
         if (name != null && !validName(name)) throw new InvalidProfileException();
         if (name == null) {
@@ -35,6 +38,16 @@ public class UserService {
         String email = claim instanceof String text && !text.isBlank()
             && validator.validate(new EmailValue(text)).isEmpty() ? text : null;
         users.insertIfAbsent(UUID.randomUUID(), provider, jwt.getSubject(), name.strip(), email);
+        return get(jwt);
+    }
+    @Transactional
+    public UserResponse acceptLegal(Jwt jwt, LegalAcceptanceRequest request) {
+        if (!LegalPolicy.TERMS_VERSION.equals(request.termsVersion())
+                || !LegalPolicy.PRIVACY_VERSION.equals(request.privacyVersion())
+                || !LegalPolicy.AI_NOTICE_VERSION.equals(request.aiNoticeVersion()))
+            throw new InvalidProfileException();
+        if (users.acceptLegal(provider, jwt.getSubject(), request.termsVersion(), request.privacyVersion(), request.aiNoticeVersion()) != 1)
+            throw new UserNotFoundException();
         return get(jwt);
     }
     private boolean validName(String value) {

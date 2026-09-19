@@ -9,7 +9,7 @@ vi.mock('./api',()=>({getMaterial:vi.fn(),getWorkspace:vi.fn(),saveDraft:vi.fn()
 vi.mock('@/shared/auth/auth-provider',()=>({useAuth:vi.fn()}));
 vi.mock('@/features/auth/auth-control',()=>({AuthControl:()=>null}));
 const workspace:Workspace={session:{id:'session',taskId:'task',status:'ACTIVE',currentStep:'WRITING',mode:'PRACTICE',conditionReleasedAt:null,allowedActions:['READ_MATERIALS','WRITE_DRAFT']},task:{id:'task',taskCode:'task',versionNo:1,title:'자료로 판단하기',descriptionMarkdown:'설명',status:'PUBLISHED',rubrics:[]},materials:[],draft:{markdown:'saved report',lockVersion:1,contentHash:'hash'},challengeRunId:null,initialReportId:null,finalReportId:null,activeEvaluationId:null};
-const connected={status:'connected' as const,user:{id:'user1',displayName:'학습자',email:null},logout:vi.fn(),reconnect:vi.fn()};
+const connected={status:'connected' as const,user:{id:'user1',displayName:'학습자',email:null,legalAccepted:true},logout:vi.fn(),reconnect:vi.fn(),acceptPolicies:vi.fn(),deleteAccount:vi.fn()};
 beforeEach(()=>{vi.clearAllMocks();vi.mocked(useAuth).mockReturnValue(connected);});
 function mount(){const client=new QueryClient({defaultOptions:{queries:{retry:false}}});return {client,...render(<QueryClientProvider client={client}><WorkspacePage sessionId="session"/></QueryClientProvider>)};}
 it('loads private workspace, restores draft, and handles no materials honestly',async()=>{

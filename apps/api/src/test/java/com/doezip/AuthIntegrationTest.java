@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +39,9 @@ class AuthIntegrationTest {
     static final ECKey ec;
     static final HttpServer jwks;
     static final String issuer;
+    static final AtomicInteger deletionStatus = new AtomicInteger(200);
+    static final AtomicInteger deletionCalls = new AtomicInteger();
+    static final AtomicReference<String> deletionRequest = new AtomicReference<>();
     static {
         try {
             rsa = new RSAKeyGenerator(2048).keyID("rsa-test").generate();
@@ -47,6 +51,17 @@ class AuthIntegrationTest {
                 byte[] body = new JWKSet(List.of(rsa.toPublicJWK(), ec.toPublicJWK())).toString().getBytes(StandardCharsets.UTF_8);
                 exchange.getResponseHeaders().set("Content-Type", "application/json");
                 exchange.sendResponseHeaders(200, body.length);
+                try (var out = exchange.getResponseBody()) { out.write(body); }
+            });
+            jwks.createContext("/auth/v1/admin/users/", exchange -> {
+                deletionCalls.incrementAndGet();
+                String request = exchange.getRequestMethod() + " " + exchange.getRequestURI().getPath()
+                    + "\nAuthorization: " + exchange.getRequestHeaders().getFirst("Authorization")
+                    + "\napikey: " + exchange.getRequestHeaders().getFirst("apikey")
+                    + "\n" + new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+                deletionRequest.set(request);
+                byte[] body = "{}".getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(deletionStatus.get(), body.length);
                 try (var out = exchange.getResponseBody()) { out.write(body); }
             });
             jwks.start(); issuer = "http://127.0.0.1:" + jwks.getAddress().getPort();
@@ -62,6 +77,8 @@ class AuthIntegrationTest {
         registry.add("app.auth.jwk-set-uri", () -> issuer + "/jwks");
         registry.add("app.auth.audience", () -> "authenticated");
         registry.add("app.auth.provider-id", () -> "doezip-supabase");
+        registry.add("app.auth.admin-url", () -> issuer + "/auth/v1");
+        registry.add("app.auth.secret-key", () -> "test-secret-key");
         registry.add("app.cors-allowed-origin", () -> "http://localhost:3000");
     }
     @Autowired TestRestTemplate http;
@@ -69,7 +86,11 @@ class AuthIntegrationTest {
     @Autowired JdbcTemplate database;
     @Autowired JwtDecoder decoder;
     @Autowired CurrentUser currentUser;
-    @BeforeEach void clearUsers() { database.update("DELETE FROM users"); }
+    @Autowired com.doezip.user.service.IdentityDeletionGateway identityDeletionGateway;
+    @BeforeEach void clearUsers() {
+        database.update("DELETE FROM users"); database.update("DELETE FROM account_deletion_blocks");
+        deletionStatus.set(200); deletionCalls.set(0); deletionRequest.set(null);
+    }
 
     String token(String subject, Consumer<JWTClaimsSet.Builder> change) throws Exception {
         return signed(subject, change, rsa, JWSAlgorithm.RS256);
@@ -92,6 +113,8 @@ class AuthIntegrationTest {
         return http.exchange(path, method, new HttpEntity<>(body, headers), String.class);
     }
     ResponseEntity<String> bootstrap(String token, String body) { return request("/api/v1/me/bootstrap", HttpMethod.POST, token, body); }
+    ResponseEntity<String> acceptLegal(String token, String body) { return request("/api/v1/me/legal-acceptance", HttpMethod.PUT, token, body); }
+    ResponseEntity<String> deleteAccount(String token) { return request("/api/v1/me", HttpMethod.DELETE, token, null); }
     JsonNode json(ResponseEntity<String> response) throws Exception { return mapper.readTree(response.getBody()); }
     void assertError(ResponseEntity<String> response, HttpStatus status, String code) throws Exception {
         assertThat(response.getStatusCode()).isEqualTo(status);
@@ -110,12 +133,28 @@ class AuthIntegrationTest {
         assertThat(first.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(first.getHeaders().getCacheControl()).isEqualTo("no-store");
         var user = json(first);
-        assertThat(user.size()).isEqualTo(3);
+        assertThat(user.size()).isEqualTo(4);
         assertThat(user.get("displayName").asText()).isEqualTo("학습자 예시");
         assertThat(user.get("email").asText()).isEqualTo("learner@example.com");
+        assertThat(user.get("legalAccepted").asBoolean()).isFalse();
         assertThat(json(bootstrap(jwt, "{\"displayName\":\"다른 이름\"}"))).isEqualTo(user);
         assertThat(json(request("/api/v1/me", HttpMethod.GET, jwt, null))).isEqualTo(user);
         assertThat(database.queryForObject("SELECT count(*) FROM users", Integer.class)).isEqualTo(1);
+    }
+    @Test void adminDeletionFixtureAcceptsServerOnlyCredentials() {
+        identityDeletionGateway.delete("direct-test",false);
+        assertThat(deletionRequest.get()).contains("direct-test", "test-secret-key");
+    }
+    @Test void recordsCurrentLegalVersionsWithoutPretendingExistingUsersAccepted() throws Exception {
+        String jwt=token("legal",c->{});bootstrap(jwt,"{}");
+        assertThat(json(request("/api/v1/me",HttpMethod.GET,jwt,null)).get("legalAccepted").asBoolean()).isFalse();
+        String current="{\"termsVersion\":\"2026-09-21\",\"privacyVersion\":\"2026-09-21\",\"aiNoticeVersion\":\"2026-09-21\"}";
+        var accepted=acceptLegal(jwt,current);assertThat(accepted.getStatusCode()).isEqualTo(HttpStatus.OK);assertThat(json(accepted).get("legalAccepted").asBoolean()).isTrue();
+        assertThat(database.queryForObject("SELECT legal_accepted_at IS NOT NULL FROM users WHERE auth_subject='legal'",Boolean.class)).isTrue();
+        assertError(acceptLegal(jwt,current.replace("2026-09-21","old-version")),HttpStatus.BAD_REQUEST,"INVALID_INPUT");
+        assertError(acceptLegal(jwt,current.substring(0,current.length()-1)+",\"accepted\":true}"),HttpStatus.BAD_REQUEST,"INVALID_INPUT");
+        assertError(acceptLegal(jwt,"{\"termsVersion\":20260921,\"privacyVersion\":\"2026-09-21\",\"aiNoticeVersion\":\"2026-09-21\"}"),HttpStatus.BAD_REQUEST,"INVALID_INPUT");
+        assertThat(json(request("/api/v1/me",HttpMethod.GET,jwt,null)).get("legalAccepted").asBoolean()).isTrue();
     }
     @Test void concurrentBootstrapCreatesOneIdentity() throws Exception {
         String jwt = token("concurrent", c -> {});
@@ -186,9 +225,74 @@ class AuthIntegrationTest {
         var allowed = http.exchange("/api/v1/me/bootstrap", HttpMethod.OPTIONS, new HttpEntity<>(headers), String.class);
         assertThat(allowed.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(allowed.getHeaders().getAccessControlAllowOrigin()).isEqualTo("http://localhost:3000");
+        headers.setAccessControlRequestMethod(HttpMethod.PUT);
+        assertThat(http.exchange("/api/v1/me/legal-acceptance",HttpMethod.OPTIONS,new HttpEntity<>(headers),String.class).getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(http.exchange("/api/v1/tasks", HttpMethod.OPTIONS, new HttpEntity<>(headers), String.class).getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         assertThat(http.exchange("/api/v1/me", HttpMethod.OPTIONS, new HttpEntity<>(headers), String.class).getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        headers.setAccessControlRequestMethod(HttpMethod.DELETE);
+        assertThat(http.exchange("/api/v1/me", HttpMethod.OPTIONS, new HttpEntity<>(headers), String.class).getStatusCode()).isEqualTo(HttpStatus.OK);
         headers.setOrigin("https://attacker.invalid");
         assertThat(http.exchange("/api/v1/me/bootstrap", HttpMethod.OPTIONS, new HttpEntity<>(headers), String.class).getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test void deletesIdentityAndAllOwnedLearningDataButKeepsSharedContent() throws Exception {
+        String alice = token("delete-report", c -> {}), bob = token("keep-user", c -> {});
+        UUID aliceId = UUID.fromString(json(bootstrap(alice, "{}")).get("id").asText());
+        UUID bobId = UUID.fromString(json(bootstrap(bob, "{}")).get("id").asText());
+        UUID task=UUID.randomUUID(), rubric=UUID.randomUUID(), material=UUID.randomUUID(), template=UUID.randomUUID(), statement=UUID.randomUUID();
+        UUID session=UUID.randomUUID(), document=UUID.randomUUID(), challenge=UUID.randomUUID(), fault=UUID.randomUUID(), link=UUID.randomUUID();
+        UUID evaluation=UUID.randomUUID(), dimension=UUID.randomUUID(), evidence=UUID.randomUUID(), report=UUID.randomUUID(), message=UUID.randomUUID(), flow=UUID.randomUUID(), event=UUID.randomUUID();
+        database.update("INSERT INTO tasks(id,task_code,title,description_markdown) VALUES (?,?,?,?)",task,"delete-fixture-"+task,"공유 과제","설명");
+        database.update("INSERT INTO rubric_dimensions(id,task_id,code,area,title,public_description,criteria_json) VALUES (?,?,?,?,?,?,?::jsonb)",rubric,task,"evidence","EVIDENCE","근거","설명","{}");
+        database.update("INSERT INTO materials(id,task_id,material_code,title,material_type,content_markdown,content_hash) VALUES (?,?,?,?,?,?,?)",material,task,"log","로그","LOG","한 줄","a".repeat(64));
+        database.update("INSERT INTO challenge_templates(id,task_id,variant_code,title,instructions_markdown,content_hash) VALUES (?,?,?,?,?,?)",template,task,"v1","검산","안내","b".repeat(64));
+        database.update("INSERT INTO challenge_statements(id,challenge_template_id,statement_key,sort_order,content_text) VALUES (?,?,?,?,?)",statement,template,"s1",1,"주장");
+        database.update("INSERT INTO learning_sessions(id,user_id,task_id) VALUES (?,?,?)",session,aliceId,task);
+        database.update("INSERT INTO document_versions(id,session_id,version_no,checkpoint,content_markdown,content_hash,source_draft_lock_version,sealed_at) VALUES (?,?,?,?,?,?,?,now())",document,session,1,"INITIAL","보고서","c".repeat(64),0);
+        database.update("INSERT INTO challenge_runs(id,session_id,task_id,challenge_template_id,notice_version,notice_acknowledged_at,status,submitted_at) VALUES (?,?,?,?,?,now(),'SUBMITTED',now())",challenge,session,task,template,"v1");
+        database.update("INSERT INTO fault_attempts(id,challenge_run_id,challenge_template_id,statement_id,decision,reason_text) VALUES (?,?,?,?,?,?)",fault,challenge,template,statement,"KEEP","원문 확인");
+        database.update("INSERT INTO evidence_links(id,fault_attempt_id,material_id,line_start,line_end,quoted_text,relation,origin,review_status) VALUES (?,?,?,?,?,?,?,?,?)",link,fault,material,1,1,"한 줄","SUPPORTS","USER","ACCEPTED");
+        database.update("INSERT INTO evaluation_runs(id,session_id,task_id,document_version_id,challenge_run_id,phase,status,idempotency_key,input_snapshot_json,input_fingerprint,evaluator_version,llm_config_json) VALUES (?,?,?,?,?,?,'SUCCEEDED',?,?::jsonb,?,?,?::jsonb)",evaluation,session,task,document,challenge,"INITIAL",UUID.randomUUID(),"{}","d".repeat(64),"test","{}");
+        database.update("INSERT INTO dimension_evaluations(id,evaluation_run_id,task_id,rubric_dimension_id,evidence_state,rationale) VALUES (?,?,?,?,?,?)",dimension,evaluation,task,rubric,"SUFFICIENT","근거 있음");
+        database.update("INSERT INTO evaluation_evidence(id,dimension_evaluation_id,document_version_id,evidence_kind,polarity,method,explanation) VALUES (?,?,?,?,?,?,?)",evidence,dimension,document,"REPORT","SUPPORT","RULE","연결");
+        database.update("INSERT INTO feedback_reports(id,session_id,evaluation_run_id,summary,strengths_json,improvements_json,fault_summary_json,public_report_json) VALUES (?,?,?,?,?::jsonb,?::jsonb,?::jsonb,?::jsonb)",report,session,evaluation,"요약","[]","[]","[]","{}");
+        database.update("INSERT INTO chat_messages(id,session_id,seq_no,role,content_text,status,client_message_key,completed_at) VALUES (?,?,1,'USER',?,'COMPLETED',?,now())",message,session,"질문",UUID.randomUUID());
+        database.update("INSERT INTO learning_flows(id,user_id,request_key,task_kind,mode,session_id,task_catalog_id) VALUES (?,?,?,'REPORT','TRAINING',?,?)",flow,aliceId,UUID.randomUUID(),session,"delete-fixture");
+        database.update("INSERT INTO learning_flow_events(id,flow_id,kind,body) VALUES (?,?,?,?::jsonb)",event,flow,"START","{}");
+
+        ResponseEntity<String> deleted=deleteAccount(alice);
+        assertThat(deleted.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        assertThat(deleted.getHeaders().getCacheControl()).contains("no-store");
+        assertThat(deletionCalls.get()).isEqualTo(1);
+        assertThat(deletionRequest.get()).contains("DELETE /auth/v1/admin/users/delete-report","Authorization: Bearer test-secret-key","apikey: test-secret-key","\"should_soft_delete\":false");
+        for(String table:List.of("learning_sessions","document_versions","challenge_runs","fault_attempts","evidence_links","evaluation_runs","dimension_evaluations","evaluation_evidence","feedback_reports","chat_messages","learning_flows","learning_flow_events"))
+            assertThat(database.queryForObject("SELECT count(*) FROM "+table,Integer.class)).as(table).isZero();
+        assertThat(database.queryForObject("SELECT count(*) FROM users WHERE id=?",Integer.class,aliceId)).isZero();
+        assertThat(database.queryForObject("SELECT count(*) FROM users WHERE id=?",Integer.class,bobId)).isOne();
+        for(String table:List.of("tasks","rubric_dimensions","materials","challenge_templates","challenge_statements"))
+            assertThat(database.queryForObject("SELECT count(*) FROM "+table,Integer.class)).as(table).isOne();
+        assertError(bootstrap(alice,"{}"),HttpStatus.GONE,"ACCOUNT_DELETED");
+        assertThat(json(request("/api/v1/me",HttpMethod.GET,bob,null)).get("id").asText()).isEqualTo(bobId.toString());
+    }
+
+    @Test void providerFailureKeepsLocalAccountAndAllowsRetry() throws Exception {
+        String jwt=token("delete-retry",c->{});UUID id=UUID.fromString(json(bootstrap(jwt,"{}")).get("id").asText());
+        database.update("INSERT INTO coding_workspaces(id,user_id,task_version,code) VALUES (?,?,?,?)",UUID.randomUUID(),id,"duplicate-items-v1","return true");
+        deletionStatus.set(500);
+        assertError(deleteAccount(jwt),HttpStatus.SERVICE_UNAVAILABLE,"ACCOUNT_DELETION_UNAVAILABLE");
+        assertThat(database.queryForObject("SELECT deletion_requested_at IS NULL FROM users WHERE id=?",Boolean.class,id)).isTrue();
+        assertThat(database.queryForObject("SELECT count(*) FROM coding_workspaces WHERE user_id=?",Integer.class,id)).isOne();
+        deletionStatus.set(200);
+        assertThat(deleteAccount(jwt).getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        assertThat(database.queryForObject("SELECT count(*) FROM users WHERE id=?",Integer.class,id)).isZero();
+    }
+    @Test void onlyAnInterruptedPendingDeletionTreatsMissingProviderIdentityAsSuccess() throws Exception {
+        String fresh=token("missing-fresh",c->{});UUID freshId=UUID.fromString(json(bootstrap(fresh,"{}")).get("id").asText());
+        deletionStatus.set(404);assertError(deleteAccount(fresh),HttpStatus.SERVICE_UNAVAILABLE,"ACCOUNT_DELETION_UNAVAILABLE");
+        assertThat(database.queryForObject("SELECT count(*) FROM users WHERE id=?",Integer.class,freshId)).isOne();
+        String recovery=token("missing-recovery",c->{});UUID recoveryId=UUID.fromString(json(bootstrap(recovery,"{}")).get("id").asText());
+        database.update("UPDATE users SET deletion_requested_at=now() WHERE id=?",recoveryId);
+        assertThat(deleteAccount(recovery).getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        assertThat(database.queryForObject("SELECT count(*) FROM users WHERE id=?",Integer.class,recoveryId)).isZero();
     }
 }

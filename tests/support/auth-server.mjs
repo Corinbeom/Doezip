@@ -12,6 +12,12 @@ const server = createServer((req, res) => {
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Cache-Control', 'no-store');
   if (url.pathname === '/jwks') return res.end(JSON.stringify({ keys: [jwk] }));
+  if (req.method === 'DELETE' && url.pathname.startsWith('/auth/v1/admin/users/')) {
+    if (req.headers.authorization !== 'Bearer e2e-secret-key' || req.headers.apikey !== 'e2e-secret-key') {
+      res.statusCode = 401; return res.end('{}');
+    }
+    res.statusCode = 200; return res.end('{}');
+  }
   const name = url.searchParams.get('user');
   const subject = subjects[name] ?? (/^flow-[0-9a-f-]{36}$/.test(name ?? '') ? `e2e-${name}` : undefined);
   if (url.pathname !== '/session' || !subject) { res.statusCode = 404; return res.end('{}'); }
