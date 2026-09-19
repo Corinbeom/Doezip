@@ -7,7 +7,7 @@ const {push}=vi.hoisted(()=>({push:vi.fn()}));
 vi.mock('next/navigation',()=>({useRouter:()=>({push})}));
 vi.mock('./api',()=>({createSession:vi.fn()}));
 vi.mock('@/shared/auth/auth-provider',()=>({useAuth:vi.fn()}));
-const connected={status:'connected' as const,user:{id:'user',displayName:'학습자',email:null},logout:vi.fn(),reconnect:vi.fn()};
+const connected={status:'connected' as const,user:{id:'user',displayName:'학습자',email:null,legalAccepted:true},logout:vi.fn(),reconnect:vi.fn(),acceptPolicies:vi.fn(),deleteAccount:vi.fn()};
 beforeEach(()=>{vi.clearAllMocks();vi.mocked(useAuth).mockReturnValue(connected);});
 it('does not create sessions automatically and prevents double starts while pending',async()=>{
  vi.mocked(createSession).mockImplementation(()=>new Promise(()=>{}));render(<StartSession taskId="task"/>);expect(createSession).not.toHaveBeenCalled();fireEvent.click(screen.getByRole('button'));fireEvent.click(screen.getByRole('button'));expect(createSession).toHaveBeenCalledTimes(1);expect(screen.getByRole('button')).toBeDisabled();

@@ -715,6 +715,69 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+    delete:
+      operationId: deleteMe
+      tags:
+      - auth
+      summary: 인증 계정과 모든 사용자 소유 학습 데이터 영구 삭제
+      responses:
+        '204':
+          description: 삭제 완료. 응답 본문 없음.
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 사용자를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: 외부 인증 계정을 삭제하지 못해 로컬 데이터도 유지됨
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /me/legal-acceptance:
+    put:
+      operationId: acceptLegalPolicies
+      tags:
+      - auth
+      summary: 현재 이용약관·개인정보 처리방침·AI 안내 확인 기록
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LegalAcceptanceRequest'
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: 현재 정책 버전이 아니거나 입력 형식 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 사용자를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /tasks:
     get:
       operationId: listTasks
@@ -2846,10 +2909,13 @@ components:
           type: string
           format: email
           nullable: true
+        legalAccepted:
+          type: boolean
       required:
       - id
       - displayName
       - email
+      - legalAccepted
     BootstrapRequest:
       type: object
       additionalProperties: false
@@ -2858,6 +2924,26 @@ components:
           type: string
           minLength: 1
           maxLength: 80
+    LegalAcceptanceRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        termsVersion:
+          type: string
+          minLength: 1
+          maxLength: 20
+        privacyVersion:
+          type: string
+          minLength: 1
+          maxLength: 20
+        aiNoticeVersion:
+          type: string
+          minLength: 1
+          maxLength: 20
+      required:
+      - termsVersion
+      - privacyVersion
+      - aiNoticeVersion
     Rubric:
       type: object
       additionalProperties: false

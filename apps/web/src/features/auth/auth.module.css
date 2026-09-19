@@ -6,6 +6,14 @@
 .primary:hover:not(:disabled) { background: var(--green-hover); }
 .primary:disabled { opacity: .5; cursor: not-allowed; }
 .back { display: inline-block; margin-top: 22px; color: var(--green); text-decoration: underline !important; }
+.legalNote { margin:14px 0 0!important; font-size:12px; line-height:1.7; }
+.legalNote a,.agreement a { color:var(--green); text-decoration:underline!important; }
+.agreement { margin-top:22px; text-align:left; }
+.agreement>p { margin:0 0 14px; color:var(--ink); }
+.agreement label { display:flex; min-height:44px; align-items:flex-start; gap:10px; padding:10px 2px; font-size:13px; line-height:1.55; }
+.agreement input { width:18px; height:18px; margin-top:1px; accent-color:var(--green); }
+.agreement b { margin-left:4px; color:var(--green); font-size:11px; }
+.secondary { width:100%; min-height:44px; margin-top:8px; border:1px solid var(--line); border-radius:10px; background:var(--surface); color:var(--green); cursor:pointer; }
 .card .notice { padding: 14px; background: var(--sage); border-radius: 10px; color: var(--ink); font-size: 14px; }
 .control { margin-left: auto; display: flex; align-items: center; gap: 12px; white-space: nowrap; font-size: 13px; }
 .control a, .control button { padding: 7px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--green); cursor: pointer; font: inherit; }

@@ -19,6 +19,14 @@ public class ApiExceptionHandler {
     ResponseEntity<ApiError> userNotFound(HttpServletRequest request) {
         return ResponseEntity.status(404).contentType(org.springframework.http.MediaType.APPLICATION_JSON).body(new ApiError("USER_NOT_FOUND", "사용자를 찾을 수 없습니다.", RequestIdFilter.id(request)));
     }
+    @ExceptionHandler(com.doezip.user.service.AccountDeletedException.class)
+    ResponseEntity<ApiError> accountDeleted(HttpServletRequest request) {
+        return ResponseEntity.status(410).contentType(org.springframework.http.MediaType.APPLICATION_JSON).body(new ApiError("ACCOUNT_DELETED", "삭제된 계정입니다. 다시 가입하려면 잠시 후 로그인해 주세요.", RequestIdFilter.id(request)));
+    }
+    @ExceptionHandler(com.doezip.user.service.AccountDeletionUnavailableException.class)
+    ResponseEntity<ApiError> accountDeletionUnavailable(HttpServletRequest request) {
+        return ResponseEntity.status(503).contentType(org.springframework.http.MediaType.APPLICATION_JSON).body(new ApiError("ACCOUNT_DELETION_UNAVAILABLE", "계정을 삭제하지 못했습니다. 데이터는 유지되었습니다. 잠시 후 다시 시도하세요.", RequestIdFilter.id(request)));
+    }
     @ExceptionHandler(TaskNotFoundException.class)
     ResponseEntity<ApiError> taskNotFound(HttpServletRequest request) {
         return ResponseEntity.status(404).contentType(org.springframework.http.MediaType.APPLICATION_JSON).body(new ApiError("TASK_NOT_FOUND", "과제를 찾을 수 없습니다.", RequestIdFilter.id(request)));

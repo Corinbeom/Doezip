@@ -55,6 +55,8 @@ app:
     jwk-set-uri: ${AUTH_JWK_SET_URI:}
     audience: ${AUTH_AUDIENCE:authenticated}
     provider-id: ${AUTH_PROVIDER_ID:}
+    admin-url: ${SUPABASE_AUTH_URL:}
+    secret-key: ${SUPABASE_SECRET_KEY:}
 
   evaluation:
     enabled: ${AI_EVALUATION_ENABLED:false}
