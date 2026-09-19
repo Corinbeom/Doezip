@@ -1,12 +1,14 @@
 'use client';
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { connectUser, onAuthenticationInvalidated, type User } from '@/shared/api/authenticated';
+import { acceptLegalPolicies, connectUser, deleteCurrentUser, onAuthenticationInvalidated, type User } from '@/shared/api/authenticated';
+import { legalPolicy } from '@/shared/legal/policy';
 import { getAuthClient } from './session';
 
-type State = { status: 'loading' | 'anonymous' | 'connected' | 'error'; user: User | null; logoutFailed?: boolean };
-type AuthContextValue = State & { reconnect: () => Promise<boolean>; logout: () => Promise<void> };
-const AuthContext = createContext<AuthContextValue>({ status: 'anonymous', user: null, reconnect: async () => false, logout: async () => {} });
+type ConnectedStatus='connected'|'legal_required';
+type State = { status: 'loading' | 'anonymous' | ConnectedStatus | 'error'; user: User | null; logoutFailed?: boolean };
+type AuthContextValue = State & { reconnect: () => Promise<ConnectedStatus|false>; acceptPolicies:()=>Promise<boolean>; logout: () => Promise<void>; deleteAccount:()=>Promise<void> };
+const AuthContext = createContext<AuthContextValue>({ status: 'anonymous', user: null, reconnect: async () => false, acceptPolicies:async()=>false, logout: async () => {},deleteAccount:async()=>{} });
 export function useAuth() { return useContext(AuthContext); }
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
@@ -35,13 +37,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       subject.current = session.data.session.user.id;
       const user = await connectUser(controller.signal);
       if (current !== generation.current) return false;
-      setState({ status: 'connected', user });
-      return true;
+      const status=user.legalAccepted?'connected':'legal_required';
+      setState({ status, user });
+      return status;
     } catch {
       if (current === generation.current) setState({ status: 'error', user: null });
       return false;
     }
   }, [clearPrivate]);
+  const acceptPolicies=useCallback(async()=>{
+    try{
+      const user=await acceptLegalPolicies({termsVersion:legalPolicy.termsVersion,privacyVersion:legalPolicy.privacyVersion,aiNoticeVersion:legalPolicy.aiNoticeVersion});
+      setState({status:'connected',user});return true;
+    }catch{return false;}
+  },[]);
   const logout = useCallback(async () => {
     clearPrivate(); subject.current = null;
     // Unmount sensitive editors before awaiting the provider's logout request.
@@ -52,6 +61,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setState({ status: 'anonymous', user: null });
     } catch { setState({ status: 'error', user: null, logoutFailed: true }); }
   }, [clearPrivate]);
+  const deleteAccount=useCallback(async()=>{
+    await deleteCurrentUser();
+    clearPrivate();subject.current=null;setState({status:'loading',user:null});
+    // The server has already removed the identity. Always remove the local SDK session,
+    // even if the provider can no longer acknowledge sign-out for that deleted user.
+    try{await getAuthClient()?.auth.signOut({scope:'local'});}catch{/* The product account is already deleted; do not retain its UI state. */}finally{setState({status:'anonymous',user:null});}
+  },[clearPrivate]);
   useEffect(() => {
     const client = getAuthClient();
     // Callback page owns exchange/bootstrap. A cached session must not override a bad callback.
@@ -67,5 +83,5 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthenticationInvalidated(() => { clearPrivate(); setState({ status: 'anonymous', user: null }); });
     return () => { active = false; subscription?.data.subscription.unsubscribe(); unsubscribe(); clearPrivate(); };
   }, [clearPrivate, reconnect]);
-  return <AuthContext.Provider value={{ ...state, reconnect, logout }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ ...state, reconnect, acceptPolicies, logout,deleteAccount }}>{children}</AuthContext.Provider>;
 }

@@ -39,8 +39,20 @@ export async function authenticatedStream(path:string,options:RequestInit):Promi
  }catch(error){invalidated(error);throw error;}
 }
 export type User = components['schemas']['User'];
-const userSchema: z.ZodType<User> = z.strictObject({ id: z.uuid(), displayName: z.string(), email: z.email().nullable() });
+const userSchema: z.ZodType<User> = z.strictObject({ id: z.uuid(), displayName: z.string(), email: z.email().nullable(), legalAccepted:z.boolean() });
 export async function connectUser(signal?: AbortSignal) {
   await authenticatedFetch('/me/bootstrap', userSchema, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}', signal });
   return authenticatedFetch('/me', userSchema, { signal });
+}
+export function acceptLegalPolicies(body:components['schemas']['LegalAcceptanceRequest'],signal?:AbortSignal){
+ return authenticatedFetch('/me/legal-acceptance',userSchema,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal});
+}
+export async function deleteCurrentUser(signal?:AbortSignal){
+ const request=await authorize('/me',{method:'DELETE',signal});
+ let response:Response;
+ try{const timeout=AbortSignal.timeout(15000);response=await fetch(request.url,{...request.options,signal:signal?AbortSignal.any([signal,timeout]):timeout,cache:'no-store'});}catch{throw new ApiError(0,'NETWORK_ERROR','API에 연결할 수 없습니다.');}
+ if(response.status===204)return;
+ const body=await response.json().catch(()=>null);
+ if(response.status===401)invalidationListeners.forEach(listener=>listener());
+ throw new ApiError(response.status,typeof body?.code==='string'?body.code:'HTTP_ERROR',typeof body?.message==='string'?body.message:'계정을 삭제하지 못했습니다.',typeof body?.requestId==='string'?body.requestId:undefined);
 }

@@ -1,15 +1,25 @@
-import {render,screen} from '@testing-library/react';
+import {fireEvent,render,screen,waitFor} from '@testing-library/react';
 import {QueryProvider} from '@/shared/api/query-provider';
 import {beforeEach,expect,it,vi} from 'vitest';
 import {LearningPage} from './learning-page';
 import {listFlows,type Flow} from './api';
 
-vi.mock('next/navigation',()=>({usePathname:()=>'/learn',useRouter:()=>({push:vi.fn()})}));
-vi.mock('@/shared/auth/auth-provider',()=>({useAuth:()=>({status:'connected',user:{id:'user-1',displayName:'은범',email:null},logout:vi.fn(),reconnect:vi.fn()})}));
+const {deleteAccount,replace}=vi.hoisted(()=>({deleteAccount:vi.fn(),replace:vi.fn()}));
+vi.mock('next/navigation',()=>({usePathname:()=>'/learn',useRouter:()=>({push:vi.fn(),replace})}));
+vi.mock('@/shared/auth/auth-provider',()=>({useAuth:()=>({status:'connected',user:{id:'user-1',displayName:'은범',email:null,legalAccepted:true},logout:vi.fn(),reconnect:vi.fn(),acceptPolicies:vi.fn(),deleteAccount})}));
 vi.mock('./api',async(importOriginal)=>({...await importOriginal<typeof import('./api')>(),listFlows:vi.fn()}));
 
 beforeEach(()=>{
   vi.mocked(listFlows).mockResolvedValue([]);
+  deleteAccount.mockReset();replace.mockReset();
+});
+
+it('requires an explicit irreversible confirmation before deleting the account',async()=>{
+  deleteAccount.mockResolvedValue(undefined);render(<QueryProvider><LearningPage/></QueryProvider>);
+  fireEvent.click(screen.getByRole('button',{name:'회원 탈퇴 및 데이터 삭제'}));
+  const remove=screen.getByRole('button',{name:'계정과 데이터 영구 삭제'});expect(remove).toBeDisabled();
+  fireEvent.click(screen.getByRole('checkbox',{name:/삭제 범위/}));fireEvent.change(screen.getByLabelText(/확인을 위해/),{target:{value:'탈퇴'}});
+  expect(remove).toBeEnabled();fireEvent.click(remove);await waitFor(()=>expect(deleteAccount).toHaveBeenCalledOnce());expect(replace).toHaveBeenCalledWith('/');
 });
 
 it('keeps task selection in the catalog and focuses my learning on saved records',async()=>{

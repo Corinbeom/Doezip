@@ -18,7 +18,7 @@ OAuth Client를 **Web application**으로 만든다.
 
 | 항목 | 현재 F01 로컬 값 |
 |---|---|
-| Authorized JavaScript origins | `http://localhost:3129` |
+| Authorized JavaScript origins | 현재 `.env`의 `http://localhost:<WEB_PORT>` (팀 확인 포트는 3189) |
 | Authorized redirect URIs (Google → Supabase) | Supabase Google provider 화면에 표시되는 `https://<project-ref>.supabase.co/auth/v1/callback` |
 
 발급한 Google Client ID와 Client Secret은 Supabase의 Authentication → Google provider 설정에 넣고 활성화한다.
@@ -27,19 +27,18 @@ Google 비밀 키를 Doezip `.env`나 채팅에 넣을 필요는 없다.
 ## 3. Supabase 복귀 주소와 서명 키
 
 Authentication URL 설정:
-- Site URL: `http://localhost:3129`
-- 허용 Redirect URL: `http://localhost:3129/auth/callback`
+- Site URL: 현재 `.env`의 `http://localhost:<WEB_PORT>`
+- 허용 Redirect URL: `http://localhost:<WEB_PORT>/auth/callback`
 
 두 callback을 혼동하지 않는다. Google은 Supabase로, Supabase는 Doezip `/auth/callback`으로 돌아온다.
-웹 포트를 변경하면 허용 origin·redirect·CORS도 함께 수정한다. 기본 README 포트 3000으로 실행한다면
-위 3129를 모두 3000으로 바꾼다. 광범위한 wildcard 복귀 URL은 등록하지 않는다.
+웹 포트를 변경하면 허용 origin·redirect·CORS도 함께 수정한다. 기본 README 포트는 3000이고 현재 팀 확인 포트는 3189다. 광범위한 wildcard 복귀 URL은 등록하지 않는다.
 
 JWT Signing Keys에서 비대칭 키 ES256 또는 RS256을 사용한다. 이 구현은 공유 비밀 HS256을 받지 않는다.
 프로젝트 issuer와 JWKS URL은 다음 설정과 정확히 일치해야 한다.
 
 ## 4. 로컬 환경변수
 
-실행할 checkout 루트의 `.env`에 설정한다. 현재 F04a 작업 공간은 `/Users/hwaseongcityboy/Desktop/doezip-worktrees/F05a-evaluation-lifecycle`다. 기존 `.env`를 덮어쓰지 말고 인증 항목만 채운다.
+실행할 checkout 루트의 `.env`에 설정한다. 기존 `.env`를 덮어쓰지 말고 인증 항목만 채운다.
 아래 예시의 `<project-ref>`와 공개 키를 실제 값으로 바꾼다.
 
 ```dotenv
@@ -50,10 +49,18 @@ AUTH_ISSUER=https://<project-ref>.supabase.co/auth/v1
 AUTH_JWK_SET_URI=https://<project-ref>.supabase.co/auth/v1/.well-known/jwks.json
 AUTH_AUDIENCE=authenticated
 AUTH_PROVIDER_ID=doezip-supabase
+SUPABASE_AUTH_URL=https://<project-ref>.supabase.co/auth/v1
+SUPABASE_SECRET_KEY=sb_secret_...
+NEXT_PUBLIC_LEGAL_CONTACT_EMAIL=<실제로 수신할 개인정보 문의 이메일>
+NEXT_PUBLIC_GEMINI_DATA_TIER=unpaid
 ```
 
 AUTH_PROVIDER_ID는 사용자를 구분하는 내부 제공자 코드다. 같은 DB에 연결하는 Supabase 프로젝트를
 교체할 때 이 코드를 그대로 재사용하지 말고 사용자 매핑 정책을 먼저 결정한다.
+`SUPABASE_SECRET_KEY`는 회원 탈퇴 시 Supabase 인증 사용자를 삭제하는 서버 전용 secret key다.
+legacy 프로젝트는 service_role key를 사용할 수 있다. 이 값은 `NEXT_PUBLIC_` 변수, Vercel 웹 설정,
+브라우저, 로그에 넣지 않는다. 로컬 API와 Render API에만 설정한다.
+`NEXT_PUBLIC_GEMINI_DATA_TIER`는 실제 Gemini API 결제·데이터 처리 조건과 맞춰 `paid` 또는 `unpaid`로 설정한다. 자세한 공개 안내와 동의 기록은 [P13 기록](P13_LEGAL_PRIVACY.md)을 따른다.
 이 파일은 Git 제외다. 설정 후 dev 서버를 재시작한다. production build 및 E2E는 공개 설정을 빌드에
 포함하므로 다시 빌드해야 한다. 기본 CI는 실제 계정 없이 AUTH_ENABLED=false로 동작한다.
 
@@ -68,6 +75,8 @@ AUTH_PROVIDER_ID는 사용자를 구분하는 내부 제공자 코드다. 같은
 - [ ] 새로고침 시 API 사용자 조회의 브라우저 네트워크 직접 관찰.
 - [ ] 로그아웃 후 사용자 표시와 개인 캐시 제거.
 - [ ] 독립 Google 계정 2개의 `/me`가 서로 다른 사용자를 반환.
+- [ ] 최초 및 기존 사용자의 정책 확인 → 원래 경로 복귀.
+- [ ] 별도 테스트 계정으로 회원 탈퇴 → Supabase 사용자와 되짚 학습 기록 삭제 → 기존 토큰 재연결 차단.
 
 외부 설정이 준비되기 전에는 이 체크리스트를 완료 처리하지 않는다. 자동 검증에서 생성한 서명 토큰과
 SDK 대역은 실제 Google 로그인 증거가 아니다.
@@ -78,6 +87,8 @@ SDK 대역은 실제 Google 로그인 증거가 아니다.
 이는 HttpOnly 서버 세션 방식이 아니다. Spring API는 각 요청의 Bearer access token을 검증한다.
 웹의 로그인 표시를 서버 권한 판정으로 사용하지 않는다. OAuth code·access/refresh token은 로그나 문서에 기록하지 않는다.
 로그아웃은 브라우저 세션·캐시를 정리하지만 이미 발급된 JWT는 만료 전 즉시 무효화된다고 주장하지 않는다.
+회원 탈퇴는 Supabase 인증 사용자를 서버에서 삭제한 뒤 사용자 소유 학습 데이터를 연쇄 삭제한다. 삭제 직후
+남은 JWT가 `/me/bootstrap`으로 계정을 다시 만들지 못하도록 식별자의 단방향 변환값을 최대 24시간 보관한다.
 실제 학습 자료의 소유권 검증은 해당 기능을 구현할 때 서버의 CurrentUser와 함께 적용한다.
 
 ## 공식 근거 (2026-09-10 확인)
@@ -87,4 +98,5 @@ SDK 대역은 실제 Google 로그인 증거가 아니다.
 - [Redirect URL 허용 목록](https://supabase.com/docs/guides/auth/redirect-urls)
 - [PKCE 코드 교환](https://supabase.com/docs/guides/auth/sessions/pkce-flow)
 - [JWT 서명 키](https://supabase.com/docs/guides/auth/signing-keys)
+- [Supabase 사용자 삭제와 JWT 만료 구간](https://supabase.com/docs/guides/auth/managing-user-data#deleting-users)
 - [Spring JWT 검증](https://docs.spring.io/spring-security/reference/6.5/servlet/oauth2/resource-server/jwt.html)

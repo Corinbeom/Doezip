@@ -30,7 +30,7 @@ API 운영 health: http://localhost:8080/actuator/health (`UP`: 200 / DB 장애 
 웹 http://localhost:3000/tasks 에서 현재 수행 가능한 보고서·구현 과제를 유형·난도·예상 시간·태그와 함께 비교한다. 이전 UUID 과제 상세 링크는 호환용으로 유지한다.
 공개 과제 조회 외에 인증된 사용자 연결 POST `/api/v1/me/bootstrap`, 조회 GET `/api/v1/me`를 제공한다. 과제 시작·공개 자료 열람·보고서 저장/복원 API도 제공한다. [F02b 범위](docs/F02B_REPORT_DRAFT.md)를 참고한다. 저장한 초안의 최초 제출·불변 제출본 조회는 [F02c 범위](docs/F02C_INITIAL_SUBMISSION.md)를 따른다. [F04a 검산 시작·열람](docs/F04A_CHALLENGE_START.md)을 제공하며 [F04b 검토 저장·제출](docs/F04B_CHALLENGE_REVIEW.md)도 제공한다. INITIAL 평가 요청·상태 조회와 저장된 결과 조회도 제공한다. FINAL 등 미구현 경로는 차단된다.
 
-Google 로그인 설정은 [인증 설정](docs/AUTH_SETUP.md)을 따른다. 설정이 없으면 `/login`에서 안내를 표시하고 로그인 버튼을 비활성화한다. 최초 Google 로그인은 사용자 확인 및 DB 연결 확인을 마쳤으며, 세부 검증 상태는 F01 기록을 따른다.
+Google 로그인 설정은 [인증 설정](docs/AUTH_SETUP.md)을 따른다. 설정이 없으면 `/login`에서 안내를 표시하고 로그인 버튼을 비활성화한다. 로그인한 사용자는 현재 이용약관·개인정보 처리방침·AI 이용 안내를 확인한 뒤 학습 기능을 이용한다. 공개 정책은 `/terms`, `/privacy`, `/ai-policy`에서 확인할 수 있다. 회원 탈퇴는 내 학습의 계정 관리에서 실행하며 되짚 인증 사용자와 사용자 소유 학습 기록을 삭제한다. 필요한 서버 전용 Supabase 설정과 운영 확인 항목은 [P13 기록](docs/P13_LEGAL_PRIVACY.md)을 따른다.
 
 `npm run dev`는 웹과 API만 함께 실행한다. **DB 시작은 별도**이며 먼저 `npm run db:up`을 실행한다.
 Ctrl+C는 이 실행기가 시작한 프로세스만 종료한다. DB와 영속 볼륨은 유지한다.
@@ -93,7 +93,7 @@ npm run deploy:smoke
 - 기존 `.env` 사용자는 `SPRING_PROFILES_ACTIVE=local`을 추가해야 조회용 가상 과제가 생성된다.
   `local`은 전용 개발 DB에서만 사용한다. 기본 프로필에는 샘플이 없으며 새 DB는 빈 목록을 반환한다.
   이미 local seed를 적용한 DB는 프로필을 바꿔도 데이터가 없어지지 않으므로 운영 DB로 재사용하지 않는다.
-- 웹 공개 설정은 `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`다. Supabase publishable 키만 사용하며 서버 비밀번호·Google Client Secret·Supabase secret 키·AI 키는 넣지 않는다.
+- 웹 공개 설정은 `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_LEGAL_CONTACT_EMAIL`, `NEXT_PUBLIC_GEMINI_DATA_TIER`다. 개인정보 문의 메일과 실제 Gemini 유·무료 처리 조건을 배포 환경과 일치시킨다. Supabase publishable 키만 사용하며 서버 비밀번호·Google Client Secret·Supabase secret 키·AI 키는 넣지 않는다.
 - 기본 포트는 web 3000 / api 8080 / PG 5432이며 로컬에 바인딩한다.
 - `DB_PORT` 변경 시 `DATABASE_URL`, `API_PORT` 변경 시 `NEXT_PUBLIC_API_BASE_URL`,
   `WEB_PORT` 변경 시 `CORS_ALLOWED_ORIGIN`도 맞춘다. 공개 URL 변경 후 production build를 다시 한다.

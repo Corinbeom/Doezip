@@ -264,6 +264,24 @@ export interface paths {
         get: operations["getMe"];
         put?: never;
         post?: never;
+        /** 인증 계정과 모든 사용자 소유 학습 데이터 영구 삭제 */
+        delete: operations["deleteMe"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/legal-acceptance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 현재 이용약관·개인정보 처리방침·AI 안내 확인 기록 */
+        put: operations["acceptLegalPolicies"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -849,9 +867,15 @@ export interface components {
             displayName: string;
             /** Format: email */
             email: string | null;
+            legalAccepted: boolean;
         };
         BootstrapRequest: {
             displayName?: string;
+        };
+        LegalAcceptanceRequest: {
+            termsVersion: string;
+            privacyVersion: string;
+            aiNoticeVersion: string;
         };
         Rubric: {
             code: string;
@@ -2209,6 +2233,102 @@ export interface operations {
             };
             /** @description 서비스 일시 불가 */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    deleteMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 삭제 완료. 응답 본문 없음. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 인증 실패 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description 사용자를 찾을 수 없음 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description 외부 인증 계정을 삭제하지 못해 로컬 데이터도 유지됨 */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    acceptLegalPolicies: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LegalAcceptanceRequest"];
+            };
+        };
+        responses: {
+            /** @description 성공 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+            /** @description 현재 정책 버전이 아니거나 입력 형식 오류 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description 인증 실패 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description 사용자를 찾을 수 없음 */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
