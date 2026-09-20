@@ -1,6 +1,7 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
 import {AiConversationPanel,AiMessage,MessageContent} from '@/shared/ui/ai-conversation';
+import {AiResponseProgress} from '@/shared/ui/ai-response-progress';
 import type {Turn} from './api';
 import styles from './coding-assistant.module.css';
 
@@ -10,12 +11,14 @@ const quickPrompts=[
  '수정 전에 확인할 경계 조건을 알려 줘.',
 ];
 
-export function CodingAssistant({turns,instruction,locked,waiting,busy,onInstruction,onAsk,onApply,canApply}:{
+export function CodingAssistant({turns,instruction,locked,waiting,busy,responding,pendingInstruction,onInstruction,onAsk,onApply,canApply}:{
  turns:Turn[];
  instruction:string;
  locked:boolean;
  waiting:boolean;
  busy:boolean;
+ responding:boolean;
+ pendingInstruction:string;
  onInstruction:(value:string)=>void;
  onAsk:()=>void;
  onApply:(turn:Turn)=>void;
@@ -23,7 +26,7 @@ export function CodingAssistant({turns,instruction,locked,waiting,busy,onInstruc
 }){
  const end=useRef<HTMLLIElement|null>(null);
  const [suggestionsPreference,setSuggestionsPreference]=useState<boolean|null>(null);
- useEffect(()=>{end.current?.scrollIntoView?.({block:'end'});},[turns.length,waiting]);
+ useEffect(()=>{end.current?.scrollIntoView?.({block:'end'});},[turns.length,waiting,responding]);
  const disabled=locked||busy||waiting;const suggestionsOpen=suggestionsPreference??false;
  const composer=locked?<p className={styles.readonly}>제출이 끝나 이전 대화와 수정안만 확인할 수 있습니다.</p>:<form onSubmit={event=>{event.preventDefault();if(disabled||!instruction.trim())return;setSuggestionsPreference(false);onAsk();}}>
   <details className={styles.quickPrompts} open={suggestionsOpen} onToggle={event=>setSuggestionsPreference(event.currentTarget.open)}><summary>질문 예시 <span>{suggestionsOpen?'접기':'펼치기'}</span></summary><div aria-label="질문 예시">{quickPrompts.map(prompt=><button key={prompt} type="button" disabled={disabled} onClick={()=>onInstruction(prompt)}>{prompt}</button>)}</div></details>
@@ -34,18 +37,19 @@ export function CodingAssistant({turns,instruction,locked,waiting,busy,onInstruc
  return <AiConversationPanel ariaLabel="AI와 함께 수정하기" title="코드 수정 대화" description="AI 수정안은 자동 적용되지 않습니다. 설명과 코드를 비교하고 직접 적용한 뒤 테스트하세요." composer={composer}>
   {turns.length===0&&!waiting&&<AiMessage role="assistant" label="AI 코치"><MessageContent text="먼저 코드를 실행해 실패를 확인해 보세요. 관찰한 결과를 알려 주면 원인과 수정 방향을 함께 살펴볼게요."/></AiMessage>}
   {turns.map(turn=><CodingTurn key={turn.id} turn={turn} onApply={onApply} canApply={canApply(turn)}/>) }
-  {waiting&&turns.every(turn=>turn.status!=='RUNNING')&&<AiMessage role="assistant" label="AI 코치" status="응답 생성 중…"><MessageContent text="현재 코드와 테스트 결과를 살펴보고 있어요."/></AiMessage>}
+  {pendingInstruction&&!turns.some(turn=>turn.status==='RUNNING'&&turn.instruction===pendingInstruction)&&<AiMessage role="user" label="나" status="전송됨"><MessageContent text={pendingInstruction}/></AiMessage>}
+  {(responding||waiting)&&turns.every(turn=>turn.status!=='RUNNING')&&<AiMessage role="assistant" label="AI 코치" status="응답 준비 중…"><AiResponseProgress context="code"/></AiMessage>}
   <li ref={end} aria-hidden="true" className={styles.end}/>
  </AiConversationPanel>;
 }
 
 function CodingTurn({turn,onApply,canApply}:{turn:Turn;onApply:(turn:Turn)=>void;canApply:boolean}){
- const response=turn.status==='RUNNING'?'수정안을 준비하고 있어요.':turn.status==='FAILED'?'응답을 완료하지 못했습니다. 다시 요청해 주세요.':turn.explanation||'수정안의 설명이 없습니다.';
+ const response=turn.status==='FAILED'?'응답을 완료하지 못했습니다. 다시 요청해 주세요.':turn.explanation||'수정안의 설명이 없습니다.';
  const actions=turn.proposedCode!==null?<button disabled={!canApply} onClick={()=>onApply(turn)}>검토한 수정안 적용</button>:undefined;
  return <>
   <AiMessage role="user" label="나"><MessageContent text={turn.instruction}/></AiMessage>
-  <AiMessage role="assistant" label="AI 코치" status={turn.status==='RUNNING'?'응답 생성 중…':turn.status==='FAILED'?'응답 실패':undefined} actions={actions}>
-   <MessageContent text={response}/>
+  <AiMessage role="assistant" label="AI 코치" status={turn.status==='RUNNING'?'응답 준비 중…':turn.status==='FAILED'?'응답 실패':undefined} actions={actions}>
+   {turn.status==='RUNNING'?<AiResponseProgress context="code"/>:<MessageContent text={response}/>}
    {turn.proposedCode!==null&&<div className={styles.proposal}><details><summary>변경 전 코드</summary><pre><code>{turn.baseCode}</code></pre></details><details><summary>제안된 코드 전체</summary><pre><code>{turn.proposedCode}</code></pre></details></div>}
   </AiMessage>
  </>;

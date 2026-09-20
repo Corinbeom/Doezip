@@ -1,4 +1,4 @@
-import {render,screen,fireEvent,waitFor} from '@testing-library/react';
+import {render,screen,fireEvent,waitFor,within} from '@testing-library/react';
 import {QueryClient,QueryClientProvider} from '@tanstack/react-query';
 import {beforeEach,expect,it,vi} from 'vitest';
 import {CodingPage} from './coding-page';
@@ -15,5 +15,9 @@ function mount(){return render(<QueryClientProvider client={new QueryClient({def
 it('applies a reviewed proposal and allows undo without automatically saving',async()=>{mount();const editor=await screen.findByRole('textbox',{name:'solution.js'});expect(screen.getByRole('region',{name:'AI와 함께 수정하기'})).toBeVisible();expect(screen.getByRole('log',{name:'AI 대화 기록'})).toBeVisible();expect(screen.getByText('질문 예시').closest('details')).not.toHaveAttribute('open');fireEvent.click(screen.getByRole('button',{name:'검토한 수정안 적용'}));expect(editor).toHaveValue(workspace.turns[0].proposedCode);expect(mutate).not.toHaveBeenCalled();fireEvent.click(screen.getByRole('button',{name:'AI 변경 되돌리기'}));expect(editor).toHaveValue(original);});
 it('does not apply an old proposal over unsaved edits',async()=>{mount();const editor=await screen.findByRole('textbox',{name:'solution.js'});fireEvent.change(editor,{target:{value:'my unsaved code'}});expect(screen.getByRole('button',{name:'검토한 수정안 적용'})).toBeDisabled();expect(editor).toHaveValue('my unsaved code');});
 it('does not let Enter submit an empty AI request',async()=>{mount();const input=await screen.findByRole('textbox',{name:'AI에게 요청'});fireEvent.keyDown(input,{key:'Enter'});expect(mutate).not.toHaveBeenCalled();});
+it('shows the submitted coding question and response preparation immediately',async()=>{
+ vi.mocked(mutate).mockImplementation(()=>new Promise(()=>{}));mount();const input=await screen.findByRole('textbox',{name:'AI에게 요청'});fireEvent.change(input,{target:{value:'실패 원인을 함께 확인해 줘.'}});fireEvent.click(screen.getByRole('button',{name:'질문 보내기'}));
+ expect(within(screen.getByRole('log',{name:'AI 대화 기록'})).getByText('실패 원인을 함께 확인해 줘.')).toBeVisible();expect(screen.getByText('전송됨')).toBeVisible();expect(screen.getByText('현재 코드와 테스트 결과를 확인하고 있어요.')).toBeVisible();expect(screen.getByText('0초')).toBeVisible();
+});
 it('preserves edits after a failed save',async()=>{vi.mocked(mutate).mockRejectedValue(new Error('연결 실패'));mount();const editor=await screen.findByRole('textbox',{name:'solution.js'});fireEvent.change(editor,{target:{value:'preserved'}});fireEvent.click(screen.getByRole('button',{name:'코드 저장'}));await waitFor(()=>expect(screen.getByRole('alert')).toHaveTextContent('연결 실패'));expect(editor).toHaveValue('preserved');});
 it('disables mutation after submission and distinguishes practice results from grading',async()=>{workspace.submittedAt='2026-09-15';mount();expect(await screen.findByRole('textbox',{name:'solution.js'})).toBeDisabled();expect(screen.queryByRole('button',{name:'최종 코드 제출'})).not.toBeInTheDocument();expect(screen.getByText(/구현 과제의 AI 역량 평가는 아직/)).toBeVisible();});
