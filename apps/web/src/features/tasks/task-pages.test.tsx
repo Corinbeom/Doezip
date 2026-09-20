@@ -1,12 +1,15 @@
 import {fireEvent,render,screen,within} from '@testing-library/react';
-import {afterEach,expect,it,vi} from 'vitest';
+import {afterEach,beforeEach,expect,it,vi} from 'vitest';
 import {QueryProvider} from '@/shared/api/query-provider';
 import {TaskDetailPage,TaskListPage} from './task-pages';
 import type {Task} from './api';
 import type {LearningTask} from '@/shared/api/learning-catalog';
+import type {Flow} from '@/features/learning/api';
 
-vi.mock('next/navigation',async(importOriginal)=>({...await importOriginal<typeof import('next/navigation')>(),usePathname:()=>'/tasks',useRouter:()=>({push:vi.fn()})}));
-vi.mock('@/shared/auth/auth-provider',()=>({useAuth:()=>({status:'disconnected',user:null})}));
+const mocks=vi.hoisted(()=>({push:vi.fn(),listFlows:vi.fn(),changeFlow:vi.fn(),auth:{status:'disconnected',user:null} as {status:string;user:{id:string}|null}}));
+vi.mock('next/navigation',async(importOriginal)=>({...await importOriginal<typeof import('next/navigation')>(),usePathname:()=>'/tasks',useRouter:()=>({push:mocks.push})}));
+vi.mock('@/shared/auth/auth-provider',()=>({useAuth:()=>mocks.auth}));
+vi.mock('@/features/learning/api',async(importOriginal)=>({...await importOriginal<typeof import('@/features/learning/api')>(),listFlows:mocks.listFlows,changeFlow:mocks.changeFlow}));
 
 const task:Task={
   id:'61111111-1111-4111-8111-111111111111',taskCode:'test-task',versionNo:1,
@@ -18,6 +21,7 @@ const coding:LearningTask={catalogId:'item-identity-coding',version:'learning-fl
 const activation:LearningTask={...report,catalogId:'activation-drop-report',version:'activation-drop-v1',estimatedMinutes:40,tags:['퍼널 분석','CSV·JSON','VOC'],title:'가입 후 활성화 하락 원인을 제품 리드에게 보고하기'};
 const retry:LearningTask={...coding,catalogId:'retry-policy-coding',version:'retry-policy-v1',estimatedMinutes:35,tags:['JavaScript','재시도 정책','예외 처리'],title:'결제 요청의 안전한 재시도 조건 구현하기'};
 const json=(data:unknown,status=200)=>new Response(JSON.stringify(data),{status});
+beforeEach(()=>{mocks.auth.status='disconnected';mocks.auth.user=null;mocks.push.mockReset();mocks.listFlows.mockReset();mocks.changeFlow.mockReset();mocks.listFlows.mockResolvedValue([]);});
 afterEach(()=>{vi.unstubAllGlobals();vi.unstubAllEnvs();});
 
 it('loads the unified public catalog and exposes report and coding tags',async()=>{
@@ -64,6 +68,17 @@ it('renders catalog detail with requirements and a login start path',async()=>{
   expect(screen.getByRole('heading',{name:'결과보다 판단 과정을 남겨요.'})).toBeInTheDocument();
   expect(screen.getByText('제안과 경계 테스트를 대조합니다.')).toBeInTheDocument();
   expect(screen.getByRole('link',{name:/로그인하고 시작하기/})).toHaveAttribute('href','/login?returnTo=%2Ftasks%2Fitem-identity-coding');
+});
+it('resumes an unfinished task instead of creating another learning record',async()=>{
+  mocks.auth.status='connected';mocks.auth.user={id:'user-1'};
+  mocks.listFlows.mockResolvedValue([{id:'active-flow',catalogId:coding.catalogId,kind:'CODING',mode:'TRAINING',flowVersion:coding.version,sessionId:null,codingId:'code-1',parentId:null,stage:'WORKING',version:0,notes:{explanation:'',verification:'',citations:[]},hints:[],snapshot:null,answers:null,feedback:null,feedbackStatus:'READY',task:coding,comparison:[]} as unknown as Flow]);
+  vi.stubGlobal('fetch',vi.fn().mockResolvedValue(json([report,coding])));
+  render(<QueryProvider><TaskDetailPage taskId={coding.catalogId}/></QueryProvider>);
+  const resume=await screen.findByRole('button',{name:/훈련 이어가기/});
+  expect(screen.getByText('작성 중인 기록이 있습니다. 새 기록을 만들지 않고 이어갑니다.')).toBeVisible();
+  fireEvent.click(resume);expect(mocks.push).toHaveBeenCalledWith('/learn/active-flow');expect(mocks.changeFlow).not.toHaveBeenCalled();
+  fireEvent.change(screen.getByLabelText('연습 방식'),{target:{value:'SIMULATION'}});
+  expect(screen.getByRole('button',{name:/이 과제 시작하기/})).toBeEnabled();
 });
 it('renders legacy public detail and rubrics safely as text',async()=>{
   const fetcher=vi.fn().mockResolvedValue(json(task));

@@ -28,6 +28,8 @@ public class FlowService {
   repo.db().queryForObject("SELECT pg_advisory_xact_lock(hashtext(?))",Object.class,user.toString());
   var prior=repo.db().queryForList("SELECT id FROM learning_flows WHERE user_id=? AND request_key=?",UUID.class,user,b.requestKey());
   if(!prior.isEmpty()){var f=repo.owned(user,prior.getFirst(),false);if(!f.path("task_catalog_id").asText().equals(b.catalogId())||!f.path("flow_version").asText().equals(b.version())||!f.path("mode").asText().equals(b.mode().name())||!Objects.equals(uuid(f,"parent_id"),parent))throw conflict();return view(f);}
+  var active=repo.active(user,b.catalogId(),b.mode().name());
+  if(active.isPresent())return view(active.get());
   if(repo.db().queryForObject("SELECT count(*) FROM learning_flows WHERE user_id=?",Integer.class,user)>=50)throw new SessionFailure(409,"FLOW_LIMIT");
   UUID session=null,code=null,id=UUID.randomUUID();
   if(kind==Kind.REPORT){var w=sessions.create(user,new SessionDtos.Create(FlowTasks.reportTaskId(b.catalogId(),b.version())));session=w.session().id();if(content!=null)sessions.save(user,session,new SessionDtos.Save(content,0));}
@@ -37,7 +39,7 @@ public class FlowService {
   repo.event(resource,"INITIAL_ARTIFACT",Map.of("content",session==null?coding.get(user,code).code():sessions.get(user,session).draft().markdown()));
   return view(repo.owned(user,id,false));
  }
- @Transactional public List<View> list(UUID user){return repo.db().queryForList("SELECT id FROM learning_flows WHERE user_id=? ORDER BY created_at DESC LIMIT 50",UUID.class,user).stream().map(id->view(repo.owned(user,id,false))).toList();}
+ @Transactional public List<View> list(UUID user){return repo.visible(user).stream().map(id->view(repo.owned(user,id,false))).toList();}
  @Transactional public View get(UUID user,UUID id){repo.owned(user,id,true);repo.expire(id);return view(repo.owned(user,id,false));}
  private View view(JsonNode f){
   var comparison=new ArrayList<JsonNode>();var parent=uuid(f,"parent_id");
