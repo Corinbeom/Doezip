@@ -62,7 +62,8 @@ function Editor({initial,userId,flow=false,onReady}:{initial:Workspace;userId:st
  {locked&&<section><h2>제출 확인</h2><p>코드, 대화, 마지막 테스트 기록과 설명이 저장되었습니다.</p><p>제출된 실행 기록: {view.lastRun?.results.filter(r=>r.passed).length} / {view.lastRun?.results.length}개 통과</p><p className={styles.note}>구현 과제의 AI 역량 평가는 아직 연결되지 않았습니다. 테스트 통과 수를 역량 점수로 사용하지 않습니다.</p></section>}
  </>}
  </section>;
- const assistant=<CodingAssistant turns={view.turns} instruction={instruction} locked={locked} waiting={waiting} busy={!!busy} onInstruction={setInstruction} onAsk={()=>void work('AI 수정안 생성 중',ask)} onApply={apply} canApply={turn=>!locked&&!busy&&!waiting&&!dirty&&saved.version===turn.baseVersion}/>;
+ const aiRequestBusy=busy==='AI 수정안 생성 중';
+ const assistant=<CodingAssistant turns={view.turns} instruction={instruction} locked={locked} waiting={waiting} busy={!!busy} responding={aiRequestBusy} pendingInstruction={aiRequestBusy?instruction:''} onInstruction={setInstruction} onAsk={()=>void work('AI 수정안 생성 중',ask)} onApply={apply} canApply={turn=>!locked&&!busy&&!waiting&&!dirty&&saved.version===turn.baseVersion}/>;
  return <>{!flow&&<p><Link href="/coding">내 구현 과제 목록</Link></p>}<p role="status">{locked?'제출 완료 · 읽기 전용':busy||waiting?'처리 중…':dirty?'저장하지 않은 변경이 있습니다.':'저장됨'}</p>{error&&<div role="alert" className={styles.error}>{error}<div className={styles.buttons}><button disabled={!!busy} onClick={()=>{if(window.confirm('저장하지 않은 변경을 버리고 서버 저장본을 불러올까요?'))window.location.reload();}}>서버 저장본 불러오기</button></div></div>}
 {flow?<WorkPanels artifact={artifact} assistant={assistant}/>:<div className={styles.grid}>{artifact}{assistant}</div>}</>;
 }
