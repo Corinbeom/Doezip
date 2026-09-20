@@ -929,6 +929,38 @@ class SessionIntegrationTest {
       assertThat(request("/api/v1/learning-flows",HttpMethod.POST,alice,unknownVersion).getStatusCode().value()).isEqualTo(404);
       assertThat(request("/api/v1/learning-flows",HttpMethod.POST,alice,"{\"requestKey\":\""+UUID.randomUUID()+"\",\"kind\":\"CODING\",\"mode\":\"TRAINING\"}").getStatusCode().value()).isEqualTo(400);
     }
+    @Test void learningFlowCreationResumesOneActiveAttemptAndHidesHistoricalDuplicates()throws Exception {
+      var first=newFlow("CODING","TRAINING");UUID firstId=UUID.fromString(first.path("id").asText());UUID firstCode=UUID.fromString(first.path("codingId").asText());
+      String body=mapper.writeValueAsString(Map.of("requestKey",UUID.randomUUID(),"catalogId",first.path("catalogId").asText(),"version",first.path("flowVersion").asText(),"mode","TRAINING"));
+      var resumed=json(request("/api/v1/learning-flows",HttpMethod.POST,alice,body));
+      assertThat(resumed.path("id").asText()).isEqualTo(first.path("id").asText());
+      assertThat(database.queryForObject("SELECT count(*) FROM learning_flows WHERE user_id=(SELECT user_id FROM learning_flows WHERE id=?) AND task_catalog_id=? AND mode='TRAINING'",Integer.class,firstId,first.path("catalogId").asText())).isEqualTo(1);
+
+      UUID duplicateCode=UUID.randomUUID(),duplicateFlow=UUID.randomUUID();
+      database.update("INSERT INTO coding_workspaces(id,user_id,task_version,code,version,submitted_at,explanation,last_run,created_at,updated_at) SELECT ?,user_id,task_version,code,version,submitted_at,explanation,last_run,created_at+interval '1 second',updated_at FROM coding_workspaces WHERE id=?",duplicateCode,firstCode);
+      database.update("INSERT INTO learning_flows(id,user_id,request_key,task_catalog_id,task_kind,mode,flow_version,coding_id,created_at) SELECT ?,user_id,?,task_catalog_id,task_kind,mode,flow_version,?,created_at+interval '1 second' FROM learning_flows WHERE id=?",duplicateFlow,UUID.randomUUID(),duplicateCode,firstId);
+
+      var list=json(request("/api/v1/learning-flows",HttpMethod.GET,alice,null));
+      var visible=java.util.stream.StreamSupport.stream(list.spliterator(),false).filter(item->item.path("catalogId").asText().equals(first.path("catalogId").asText())&&item.path("mode").asText().equals("TRAINING")&& !item.path("stage").asText().equals("FEEDBACK")).toList();
+      assertThat(visible).hasSize(1);assertThat(visible.getFirst().path("id").asText()).isEqualTo(duplicateFlow.toString());
+      var resumedDuplicate=json(request("/api/v1/learning-flows",HttpMethod.POST,alice,mapper.writeValueAsString(Map.of("requestKey",UUID.randomUUID(),"catalogId",first.path("catalogId").asText(),"version",first.path("flowVersion").asText(),"mode","TRAINING"))));
+      assertThat(resumedDuplicate.path("id").asText()).isEqualTo(duplicateFlow.toString());
+      assertThat(database.queryForObject("SELECT count(*) FROM learning_flows WHERE task_catalog_id=? AND mode='TRAINING'",Integer.class,first.path("catalogId").asText())).isEqualTo(2);
+
+      var sealedTraining=sealFlow(resumedDuplicate);String trainingPath="/api/v1/learning-flows/"+duplicateFlow;
+      request(trainingPath+"/answers",HttpMethod.POST,alice,"{\"decision\":\"I checked the result\",\"change\":\"I would test another case\"}");
+      var afterCompletion=json(request("/api/v1/learning-flows",HttpMethod.GET,alice,null));
+      assertThat(java.util.stream.StreamSupport.stream(afterCompletion.spliterator(),false).filter(item->item.path("catalogId").asText().equals(first.path("catalogId").asText())&&item.path("mode").asText().equals("TRAINING")&&!item.path("stage").asText().equals("FEEDBACK"))).isEmpty();
+      var nextTraining=newFlow("CODING","TRAINING");
+      assertThat(nextTraining.path("id").asText()).isNotIn(sealedTraining.path("id").asText(),first.path("id").asText());
+
+      var simulation=newFlow("CODING","SIMULATION");
+      assertThat(simulation.path("id").asText()).isNotEqualTo(duplicateFlow.toString());
+      var sealedSimulation=sealFlow(simulation);String simulationPath="/api/v1/learning-flows/"+simulation.path("id").asText();
+      request(simulationPath+"/answers",HttpMethod.POST,alice,"{\"decision\":\"I checked the result\",\"change\":\"I would test another case\"}");
+      var nextSimulation=newFlow("CODING","SIMULATION");
+      assertThat(nextSimulation.path("id").asText()).isNotEqualTo(sealedSimulation.path("id").asText());
+    }
     @Test void legacySnapshotTasksAreEnrichedWithoutChangingTheStoredRecord()throws Exception {
       var flow=newFlow("REPORT","TRAINING");UUID id=UUID.fromString(flow.path("id").asText());
       var snapshot=mapper.createObjectNode();snapshot.put("artifact","Archived report");snapshot.putArray("records");

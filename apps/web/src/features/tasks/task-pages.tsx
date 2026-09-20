@@ -7,7 +7,7 @@ import {useQuery} from '@tanstack/react-query';
 import {ApiError} from '@/shared/api/client';
 import {useAuth} from '@/shared/auth/auth-provider';
 import {getLearningCatalog,type LearningTask} from '@/shared/api/learning-catalog';
-import {changeFlow} from '@/features/learning/api';
+import {changeFlow,listFlows} from '@/features/learning/api';
 import {getTask,type Task} from './api';
 import {LearningShell,Arrow} from '@/shared/ui/learning-shell';
 import styles from './tasks.module.css';
@@ -60,11 +60,15 @@ export function TaskListPage() {
 function StartLearningTask({task}:{task:LearningTask}) {
   const auth=useAuth();const router=useRouter();const [mode,setMode]=useState<'TRAINING'|'SIMULATION'>('TRAINING');const [busy,setBusy]=useState(false);const [error,setError]=useState('');
   const pending=useRef<{catalogId:string;version:string;mode:string;requestKey:string}|null>(null);const request=useRef<AbortController|null>(null);
+  const flows=useQuery({queryKey:['learning-list',auth.user?.id],queryFn:({signal})=>listFlows(signal),enabled:auth.status==='connected'&&!!auth.user,meta:{private:true},retry:false});
+  const current=flows.data?.find(flow=>flow.catalogId===task.catalogId&&flow.mode===mode&&flow.stage!=='FEEDBACK');
   useEffect(()=>()=>request.current?.abort(),[]);
   if(auth.status==='loading')return <p role="status">로그인 상태를 확인하는 중…</p>;
   if(auth.status!=='connected'||!auth.user)return <Link className={styles.button} href={'/login?returnTo='+encodeURIComponent('/tasks/'+task.catalogId)}>로그인하고 시작하기<Arrow/></Link>;
-  async function start(){if(busy)return;const controller=new AbortController();request.current=controller;setBusy(true);setError('');const body=pending.current?.catalogId===task.catalogId&&pending.current.version===task.version&&pending.current.mode===mode?pending.current:{catalogId:task.catalogId,version:task.version,mode,requestKey:crypto.randomUUID()};pending.current=body;try{const flow=await changeFlow('',body,'POST',controller.signal);if(!controller.signal.aborted)router.push('/learn/'+flow.id);}catch{if(!controller.signal.aborted)setError('과제를 시작하지 못했습니다. 잠시 후 다시 시도해 주세요.');}finally{if(!controller.signal.aborted)setBusy(false);}}
-  return <div className={styles.startControl}><label htmlFor="catalog-mode">연습 방식</label><select id="catalog-mode" value={mode} onChange={event=>setMode(event.target.value as typeof mode)} disabled={busy}><option value="TRAINING">훈련 · 안내와 힌트 제공</option><option value="SIMULATION">모의 전형 · 스스로 수행</option></select><p>{mode==='TRAINING'?'막히는 지점에서 힌트를 선택해 볼 수 있습니다.':'힌트 없이 수행한 기록으로 피드백을 받습니다.'}</p>{error&&<p role="alert">{error}</p>}<button className={styles.button} type="button" onClick={()=>void start()} disabled={busy}>{busy?'과제를 준비하는 중…':'이 과제 시작하기'}<Arrow/></button></div>;
+  async function start(){if(busy||flows.isPending)return;if(current){router.push('/learn/'+current.id);return;}const controller=new AbortController();request.current=controller;setBusy(true);setError('');const body=pending.current?.catalogId===task.catalogId&&pending.current.version===task.version&&pending.current.mode===mode?pending.current:{catalogId:task.catalogId,version:task.version,mode,requestKey:crypto.randomUUID()};pending.current=body;try{const flow=await changeFlow('',body,'POST',controller.signal);if(!controller.signal.aborted)router.push('/learn/'+flow.id);}catch{if(!controller.signal.aborted)setError('과제를 시작하지 못했습니다. 잠시 후 다시 시도해 주세요.');}finally{if(!controller.signal.aborted)setBusy(false);}}
+  const description=current?'작성 중인 기록이 있습니다. 새 기록을 만들지 않고 이어갑니다.':mode==='TRAINING'?'막히는 지점에서 힌트를 선택해 볼 수 있습니다.':'힌트 없이 수행한 기록으로 피드백을 받습니다.';
+  const action=flows.isPending?'진행 중인 학습 확인 중…':current?`${mode==='TRAINING'?'훈련':'모의 전형'} 이어가기`:'이 과제 시작하기';
+  return <div className={styles.startControl}><label htmlFor="catalog-mode">연습 방식</label><select id="catalog-mode" value={mode} onChange={event=>setMode(event.target.value as typeof mode)} disabled={busy}><option value="TRAINING">훈련 · 안내와 힌트 제공</option><option value="SIMULATION">모의 전형 · 스스로 수행</option></select><p>{description}</p>{error&&<p role="alert">{error}</p>}<button className={styles.button} type="button" onClick={()=>void start()} disabled={busy||flows.isPending}>{busy?'과제를 준비하는 중…':action}<Arrow/></button></div>;
 }
 
 function CatalogTaskDetail({catalogId}:{catalogId:string}) {
